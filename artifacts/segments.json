@@ -1,0 +1,41 @@
+{
+  "chosen_k": 2,
+  "silhouette_score": 0.5847,
+  "feature_set": "fallback",
+  "primary_scores": {
+    "2": 0.4325,
+    "3": 0.3394,
+    "4": 0.3539,
+    "5": 0.3191,
+    "6": 0.3254
+  },
+  "fallback_searched": true,
+  "fallback_scores": {
+    "2": 0.5847,
+    "3": 0.5349,
+    "4": 0.5123,
+    "5": 0.4994,
+    "6": 0.4945
+  },
+  "xyz_method": "tertile",
+  "cluster_sizes": {
+    "0": 298,
+    "1": 202
+  },
+  "abc_counts": {
+    "A": 364,
+    "B": 96,
+    "C": 40
+  },
+  "xyz_counts": {
+    "Z": 167,
+    "X": 167,
+    "Y": 166
+  },
+  "tier_counts": {
+    "Strategic": 332,
+    "Tail": 135,
+    "Core": 33
+  },
+  "passed": true
+}

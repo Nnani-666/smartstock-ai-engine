@@ -1,0 +1,120 @@
+{
+  "anomaly": {
+    "recall": 0.998,
+    "precision": 0.5787,
+    "false_positive_rate": 0.0073,
+    "injected_count": 9129,
+    "true_positives": 9111,
+    "false_positives": 6633,
+    "false_negatives": 18,
+    "passed": true
+  },
+  "segmentation": {
+    "chosen_k": 2,
+    "silhouette_score": 0.5847,
+    "feature_set": "fallback",
+    "primary_scores": {
+      "2": 0.4325,
+      "3": 0.3394,
+      "4": 0.3539,
+      "5": 0.3191,
+      "6": 0.3254
+    },
+    "fallback_searched": true,
+    "fallback_scores": {
+      "2": 0.5847,
+      "3": 0.5349,
+      "4": 0.5123,
+      "5": 0.4994,
+      "6": 0.4945
+    },
+    "xyz_method": "tertile",
+    "cluster_sizes": {
+      "0": 298,
+      "1": 202
+    },
+    "abc_counts": {
+      "A": 364,
+      "B": 96,
+      "C": 40
+    },
+    "xyz_counts": {
+      "Z": 167,
+      "X": 167,
+      "Y": 166
+    },
+    "tier_counts": {
+      "Strategic": 332,
+      "Tail": 135,
+      "Core": 33
+    },
+    "passed": true
+  },
+  "forecasting": {
+    "daily": {
+      "naive": {
+        "rmse": 6.454,
+        "mae": 5.127
+      },
+      "seasonal_naive": {
+        "rmse": 6.391,
+        "mae": 5.074
+      },
+      "holt_winters": {
+        "rmse": 4.635,
+        "mae": 3.682
+      },
+      "random_forest": {
+        "rmse": 4.696,
+        "mae": 3.736
+      }
+    },
+    "weekly": {
+      "naive": {
+        "rmse": 33.892,
+        "mae": 27.295
+      },
+      "seasonal_naive": {
+        "rmse": 17.474,
+        "mae": 13.875
+      },
+      "holt_winters": {
+        "rmse": 12.45,
+        "mae": 10.099
+      },
+      "random_forest": {
+        "rmse": 13.653,
+        "mae": 11.168
+      }
+    },
+    "best_model": "holt_winters",
+    "improvements_vs_naive": {
+      "rmse_improvement": 0.2818,
+      "mae_improvement": 0.2818
+    },
+    "improvements_vs_seasonal_naive": {
+      "rmse_improvement": 0.2748,
+      "mae_improvement": 0.2743
+    },
+    "passed": true
+  },
+  "inventory_simulation": {
+    "static_policy": {
+      "total_stockout_days": 1351,
+      "fill_rate": 0.9808,
+      "mean_on_hand": 242.63,
+      "total_demand": 1386097,
+      "total_fulfilled": 1359495
+    },
+    "dynamic_policy": {
+      "total_stockout_days": 621,
+      "fill_rate": 0.9918,
+      "mean_on_hand": 262.08,
+      "total_demand": 1386097,
+      "total_fulfilled": 1374706
+    },
+    "stockout_days_reduction": 0.5403,
+    "inventory_delta": 19.45,
+    "passed": true
+  }
+}

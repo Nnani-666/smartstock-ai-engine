@@ -1,0 +1,38 @@
+# Python & Virtual Environments
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Xcode / iOS Build Artifacts
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+smartstock.db
+
+# Secrets & Local Config
+.env
+*.pem
+*.key
+
+# Raw Datasets (never commit raw data)
+data/raw/
+
+# Temporary / OS files
+.DS_Store
+*.tmp
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
