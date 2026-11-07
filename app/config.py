@@ -77,8 +77,9 @@ API_KEY: str | None = os.getenv("API_KEY", None)
 
 # Supabase Configuration
 SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://txpvoqdecsjpmklelxdb.supabase.co")
-SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cHZvcWRlY3NqcG1rbGVseGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1OTQ5ODUsImV4cCI6MjEwODE3MDk4NX0.TeTd1LoMIfP2j5QSTLL0XQuZVYweU7bLB4NQ1PS5RxQ")
-SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cHZvcWRlY3NqcG1rbGVseGRiIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjU5NDk4NSwiZXhwIjoyMTA4MTcwOTg1fQ.idvbeQZkM1lQyh4UVsDnPugPL96u5fRcwjX_n873xEQ")
+SUPABASE_ANON_KEY: str | None = os.getenv("SUPABASE_ANON_KEY", None)
+SUPABASE_SERVICE_ROLE_KEY: str | None = os.getenv("SUPABASE_SERVICE_ROLE_KEY", None)
+
 
 # Allowed CORS Origins
 ALLOWED_ORIGINS: list[str] = [

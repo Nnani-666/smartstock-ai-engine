@@ -5,13 +5,21 @@
  */
 
 (function (window) {
-    const SUPABASE_URL = 'https://txpvoqdecsjpmklelxdb.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR4cHZvcWRlY3NqcG1rbGVseGRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI1OTQ5ODUsImV4cCI6MjEwODE3MDk4NX0.TeTd1LoMIfP2j5QSTLL0XQuZVYweU7bLB4NQ1PS5RxQ';
-    const API_BASE_URL = 'http://localhost:8000';
+    const SUPABASE_URL = (window.__SMARTSTOCK_CONFIG__ && window.__SMARTSTOCK_CONFIG__.SUPABASE_URL) || localStorage.getItem('smartstock_supabase_url') || 'https://txpvoqdecsjpmklelxdb.supabase.co';
+    const SUPABASE_ANON_KEY = (window.__SMARTSTOCK_CONFIG__ && window.__SMARTSTOCK_CONFIG__.SUPABASE_ANON_KEY) || localStorage.getItem('smartstock_supabase_anon_key') || '';
+    const API_BASE_URL = (window.__SMARTSTOCK_CONFIG__ && window.__SMARTSTOCK_CONFIG__.API_BASE_URL) || 'http://localhost:8000';
     const DEFAULT_SHOP_ID = 'b3bccd6d-875b-46e6-ade5-d9e8069b8b08';
+
+    let _mutationQueue = Promise.resolve();
+    function serializeMutation(fn) {
+        const next = _mutationQueue.then(() => fn());
+        _mutationQueue = next.catch(() => {});
+        return next;
+    }
 
     let supabase = null;
     function initSupabase() {
+        if (!SUPABASE_ANON_KEY) return null;
         if (window.supabase && typeof window.supabase.createClient === 'function') {
             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             return supabase;
@@ -173,6 +181,135 @@
                 minimumFractionDigits: 0
             });
         },
+
+        toPaise(amount) {
+            const num = Number(amount) || 0;
+            return Math.round(num * 100);
+        },
+
+        fromPaise(paise) {
+            return (Number(paise) || 0) / 100;
+        },
+
+        getBusinessDate(dateInput) {
+            try {
+                const d = dateInput ? new Date(dateInput) : new Date();
+                if (isNaN(d.getTime())) return new Date().toISOString().split('T')[0];
+                return new Intl.DateTimeFormat('en-CA', {
+                    timeZone: 'Asia/Kolkata',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                }).format(d);
+            } catch (e) {
+                return new Date().toISOString().split('T')[0];
+            }
+        },
+
+        getActiveDateRange() {
+            return localStorage.getItem('smartstock_active_date_range') || 'Today (Live)';
+        },
+
+        setActiveDateRange(label) {
+            localStorage.setItem('smartstock_active_date_range', label);
+        },
+
+        getFilteredSales(rangeLabel = null) {
+            const allSales = this.getSales();
+            const activeRange = rangeLabel || this.getActiveDateRange();
+            const todayStr = this.getBusinessDate();
+
+            if (activeRange === 'Today (Live)' || !activeRange) {
+                return allSales.filter(s => {
+                    const sDate = s.date || this.getBusinessDate(s.timestamp);
+                    return sDate === todayStr;
+                });
+            }
+
+            if (activeRange === 'Last 7 Days') {
+                const todayDate = new Date(todayStr + 'T12:00:00Z');
+                const sevenDaysAgo = new Date(todayDate.getTime() - 7 * 86400000);
+                return allSales.filter(s => {
+                    const sDateStr = s.date || this.getBusinessDate(s.timestamp);
+                    const sDate = new Date(sDateStr + 'T12:00:00Z');
+                    return sDate >= sevenDaysAgo && sDate <= todayDate;
+                });
+            }
+
+            if (activeRange.includes('30 Days') || activeRange === 'Oct 24 • Last 30 Days') {
+                const todayDate = new Date(todayStr + 'T12:00:00Z');
+                const thirtyDaysAgo = new Date(todayDate.getTime() - 30 * 86400000);
+                return allSales.filter(s => {
+                    const sDateStr = s.date || this.getBusinessDate(s.timestamp);
+                    const sDate = new Date(sDateStr + 'T12:00:00Z');
+                    return sDate >= thirtyDaysAgo && sDate <= todayDate;
+                });
+            }
+
+            if (activeRange.includes('This Month') || activeRange.startsWith('This Month')) {
+                const yearMonth = todayStr.slice(0, 7);
+                return allSales.filter(s => {
+                    const sDateStr = s.date || this.getBusinessDate(s.timestamp);
+                    return sDateStr.startsWith(yearMonth);
+                });
+            }
+
+            return allSales;
+        },
+
+        getSalesSummary(rangeLabel = null) {
+            const sales = this.getFilteredSales(rangeLabel);
+            let totalPaise = 0;
+            let totalCostPaise = 0;
+            let totalUnits = 0;
+            let costAvailable = true;
+
+            for (const s of sales) {
+                const qty = Number(s.qty || s.units) || 0;
+                const price = (typeof s.unit_price === 'number' && !isNaN(s.unit_price))
+                    ? s.unit_price
+                    : (Number(s.unit_price) || 0);
+
+                totalUnits += qty;
+                totalPaise += this.toPaise(qty * price);
+
+                if (s.unit_cost !== null && s.unit_cost !== undefined && !isNaN(Number(s.unit_cost))) {
+                    totalCostPaise += this.toPaise(qty * Number(s.unit_cost));
+                } else {
+                    costAvailable = false;
+                }
+            }
+
+            const revenue = this.fromPaise(totalPaise);
+            const cost = costAvailable ? this.fromPaise(totalCostPaise) : null;
+            const grossProfit = costAvailable ? (revenue - cost) : null;
+            const grossMargin = (costAvailable && revenue > 0) ? ((grossProfit / revenue) * 100) : null;
+
+            return {
+                revenue,
+                totalUnits,
+                count: sales.length,
+                cost,
+                grossProfit,
+                grossMargin,
+                costAvailable
+            };
+        },
+
+        getGeminiApiKey() {
+            return (window.__SMARTSTOCK_CONFIG__ && window.__SMARTSTOCK_CONFIG__.GEMINI_API_KEY) || localStorage.getItem('smartstock_gemini_api_key') || '';
+        },
+
+        escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        },
+
 
         // Current user & storage key scoping
         getCurrentUserEmail() {
@@ -422,8 +559,8 @@
                 }
             }
 
-            if (!items || items.length === 0) {
-                // Also check backend for this user's products
+            // Only fallback to backend if key was NEVER set in localStorage
+            if (items === null) {
                 const email = this.getCurrentUserEmail();
                 if (email) {
                     try {
@@ -440,25 +577,23 @@
 
             if (!items) items = [];
 
-            // Self-healing migration for ALL products:
+            // Product normalization:
             // 1. Ensure stock_on_hand is a number
-            // 2. Normalize and sanity-cap reorder_point so items with large stock (e.g. 110) never falsely report low stock
-            // 3. Fix status to strictly reflect actual on-hand vs calibrated reorder point
+            // 2. Preserve merchant reorder_point exactly as configured (including 0 and > 30)
+            // 3. Calibrate status accurately based on stock_on_hand vs reorder_point
             let modified = false;
             items.forEach(p => {
                 p.stock_on_hand = Number(p.stock_on_hand);
                 if (isNaN(p.stock_on_hand)) p.stock_on_hand = 0;
 
                 let rop = Number(p.reorder_point);
-                if (isNaN(rop) || rop <= 0) {
+                if (p.reorder_point === undefined || p.reorder_point === null || isNaN(rop)) {
                     rop = 10;
+                    p.reorder_point = rop;
                     modified = true;
-                } else if (rop > 30) {
-                    // Capped to realistic Kirana grocery threshold: prevents accidental 120/150/500 imported from CSV columns
-                    rop = Math.min(20, Math.max(5, Math.round(p.stock_on_hand * 0.15) || 10));
-                    modified = true;
+                } else {
+                    p.reorder_point = rop;
                 }
-                p.reorder_point = rop;
 
                 const correctStatus = p.stock_on_hand <= 0 ? 'out_of_stock' : (p.stock_on_hand <= rop ? 'low_stock' : 'active');
                 if (p.status !== correctStatus) {
@@ -478,10 +613,22 @@
             localStorage.setItem(key, JSON.stringify(products));
         },
 
+        getInventoryValuation(products) {
+            if (!Array.isArray(products) || products.length === 0) return 0;
+            const totalPaise = products.reduce((acc, p) => {
+                const onHand = Number(p.stock_on_hand) || 0;
+                const cost = (p.unit_cost !== null && p.unit_cost !== undefined && !isNaN(Number(p.unit_cost)))
+                    ? Number(p.unit_cost)
+                    : 0;
+                return acc + this.toPaise(onHand * cost);
+            }, 0);
+            return this.fromPaise(totalPaise);
+        },
+
         async addProduct(productData) {
             const sku = productData.sku || `SKU-${Math.floor(1000 + Math.random() * 9000)}`;
             const rawRop = Number(productData.reorder_point);
-            const reorderPoint = (isNaN(rawRop) || rawRop <= 0 || rawRop > 30) ? 10 : rawRop;
+            const reorderPoint = (productData.reorder_point === undefined || productData.reorder_point === null || isNaN(rawRop)) ? 10 : rawRop;
             const stockOnHand = Number(productData.stock_on_hand) || 0;
             const status = stockOnHand <= 0 ? 'out_of_stock' : (stockOnHand <= reorderPoint ? 'low_stock' : 'active');
 
@@ -545,73 +692,107 @@
             return 0.0;
         },
 
-        async updateStock(productId, delta) {
-            const products = await this.getProducts();
-            const prod = products.find(p => p.id === productId || String(p.id) === String(productId));
-            if (!prod) return null;
+        async updateStock(productId, delta, options = {}) {
+            return serializeMutation(async () => {
+                const products = await this.getProducts();
+                const prod = products.find(p => p.id === productId || String(p.id) === String(productId));
+                if (!prod) return null;
 
-            const currentStock = Number(prod.stock_on_hand) || 0;
-            if (delta < 0 && currentStock <= 0) {
-                this.showToast(`Cannot sell: ${prod.name} is already out of stock!`, 'error');
-                return null;
-            }
+                const currentStock = Number(prod.stock_on_hand) || 0;
+                const requestedUnits = Math.abs(delta);
 
-            const newStock = Math.max(0, currentStock + delta);
-            const rop = Math.min(30, Number(prod.reorder_point) || 10);
-            const status = newStock <= 0 ? 'out_of_stock' : (newStock <= rop ? 'low_stock' : 'active');
+                // Reject entire sale if requested quantity exceeds stock on hand
+                if (delta < 0 && requestedUnits > currentStock) {
+                    this.showToast(`Cannot sell: requested ${requestedUnits} units but only ${currentStock} in stock!`, 'error');
+                    return null;
+                }
 
-            prod.stock_on_hand = newStock;
-            prod.reorder_point = rop;
-            prod.status = status;
-            this.saveProducts(products);
+                const newStock = Math.max(0, currentStock + delta);
+                const rop = Number(prod.reorder_point);
+                const finalRop = (prod.reorder_point === undefined || prod.reorder_point === null || isNaN(rop)) ? 10 : rop;
+                const status = newStock <= 0 ? 'out_of_stock' : (newStock <= finalRop ? 'low_stock' : 'active');
 
-            if (delta < 0) {
-                const qtySold = Math.abs(delta);
-                const unitPrice = Number(prod.unit_price) || 50;
-                const saleAmt = qtySold * unitPrice;
-                
-                const currentRev = this.getRevenue();
-                const newRev = currentRev + saleAmt;
-                const revKey = this.getUserKey('smartstock_revenue');
-                localStorage.setItem(revKey, newRev.toString());
+                prod.stock_on_hand = newStock;
+                prod.reorder_point = finalRop;
+                prod.status = status;
+                this.saveProducts(products);
 
-                const sales = this.getSales();
-                sales.unshift({
-                    id: 'sale-' + Date.now(),
-                    productId: prod.id,
-                    name: prod.name,
-                    qty: qtySold,
-                    unit_price: unitPrice,
-                    total: saleAmt,
-                    timestamp: new Date().toISOString()
-                });
-                this.saveSales(sales.slice(0, 50));
+                if (delta < 0) {
+                    const qtySold = requestedUnits;
+                    const unitPrice = (typeof options.unit_price === 'number' && !isNaN(options.unit_price))
+                        ? options.unit_price
+                        : ((typeof prod.unit_price === 'number' && !isNaN(prod.unit_price))
+                            ? prod.unit_price
+                            : 0);
 
-                // Sync sale to backend
-                try {
-                    const email = this.getCurrentUserEmail();
-                    if (email) {
-                        fetch('http://127.0.0.1:8000/api/v1/user/sales', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                user_email: email,
-                                product_id: String(prod.id),
-                                product_name: prod.name,
-                                sale_amount: saleAmt,
-                                units: qtySold
-                            })
-                        }).catch(e => console.warn('Backend sale sync error:', e));
-                    }
-                } catch(e) {}
+                    const unitCost = (options.unit_cost !== undefined && options.unit_cost !== null && !isNaN(Number(options.unit_cost)))
+                        ? Number(options.unit_cost)
+                        : ((prod.unit_cost !== undefined && prod.unit_cost !== null && !isNaN(Number(prod.unit_cost)))
+                            ? Number(prod.unit_cost)
+                            : null);
 
-                this.showToast(`Sold 1x ${prod.name} (+${this.formatINR(saleAmt)}). Revenue: ${this.formatINR(newRev)}`, 'success');
-            } else {
-                this.showToast(`Stock inward (+${delta}) for ${prod.name}. On hand: ${newStock}`, 'success');
-            }
+                    const salePaise = this.toPaise(qtySold * unitPrice);
+                    const saleAmt = this.fromPaise(salePaise);
 
-            await this.bindLivePageData();
-            return prod;
+                    const currentRev = this.getRevenue();
+                    const newRev = this.fromPaise(this.toPaise(currentRev) + salePaise);
+                    const revKey = this.getUserKey('smartstock_revenue');
+                    localStorage.setItem(revKey, newRev.toString());
+
+                    const ts = options.timestamp || new Date().toISOString();
+                    const bDate = options.date || this.getBusinessDate(ts);
+
+                    const sales = this.getSales();
+                    const saleRecord = {
+                        id: options.id || ('sale-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
+                        productId: prod.id,
+                        product_id: prod.id,
+                        name: prod.name,
+                        product_name: prod.name,
+                        qty: qtySold,
+                        units: qtySold,
+                        unit_price: unitPrice,
+                        unit_cost: unitCost,
+                        total: saleAmt,
+                        sale_amount: saleAmt,
+                        date: bDate,
+                        timestamp: ts,
+                        idempotency_key: options.idempotency_key || null
+                    };
+
+                    sales.unshift(saleRecord);
+                    this.saveSales(sales); // Retain full history without 50-limit
+
+                    // Sync sale to backend
+                    try {
+                        const email = this.getCurrentUserEmail();
+                        if (email) {
+                            fetch('http://127.0.0.1:8000/api/v1/user/sales', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    user_email: email,
+                                    product_id: String(prod.id),
+                                    product_name: prod.name,
+                                    sale_amount: saleAmt,
+                                    units: qtySold,
+                                    unit_price: unitPrice,
+                                    unit_cost: unitCost,
+                                    timestamp: ts,
+                                    idempotency_key: saleRecord.idempotency_key
+                                })
+                            }).catch(e => console.warn('Backend sale sync error:', e));
+                        }
+                    } catch (e) {}
+
+                    this.showToast(`Sold ${qtySold}x ${prod.name} (+${this.formatINR(saleAmt)}). Revenue: ${this.formatINR(newRev)}`, 'success');
+                } else {
+                    this.showToast(`Stock inward (+${delta}) for ${prod.name}. On hand: ${newStock}`, 'success');
+                }
+
+                await this.bindLivePageData();
+                return prod;
+            });
         },
 
         async deleteProduct(productId) {
@@ -1148,9 +1329,10 @@
         },
 
         async recordNewSaleFromModal(e) {
-            e.preventDefault();
+            if (e && e.preventDefault) e.preventDefault();
             const select = document.getElementById('sale-record-product-select');
             const qtyInput = document.getElementById('sale-record-qty-input');
+            const dateInput = document.getElementById('sale-record-date-input');
             if (!select || !select.value) {
                 this.showToast('Please select a product from active inventory.', 'warning');
                 return;
@@ -1158,25 +1340,16 @@
 
             const productId = select.value;
             const qty = parseInt(qtyInput ? qtyInput.value : '1', 10) || 1;
-            const products = await this.getProducts();
-            const prod = products.find(p => String(p.id) === String(productId));
+            const dateVal = dateInput && dateInput.value ? dateInput.value.trim() : null;
 
-            if (!prod) {
-                this.showToast('Product not found in active inventory.', 'error');
-                return;
+            const res = await this.updateStock(productId, -qty, {
+                date: dateVal ? this.getBusinessDate(dateVal) : undefined,
+                timestamp: dateVal ? new Date(dateVal).toISOString() : undefined
+            });
+
+            if (res) {
+                this.renderSalesModalContent();
             }
-
-            if ((Number(prod.stock_on_hand) || 0) < qty) {
-                this.showToast(`Insufficient stock! Only ${prod.stock_on_hand} units available on hand.`, 'warning');
-                return;
-            }
-
-            // Deduct stock and increment revenue via adjustStock
-            await this.adjustStock(productId, -qty);
-            this.showToast(`Recorded sale of ${qty}x ${prod.name}! (+${this.formatINR(qty * prod.unit_price)})`, 'success');
-
-            // Refresh modal contents immediately
-            this.renderSalesModalContent();
         },
 
         exportCSV(products) {
@@ -1614,6 +1787,7 @@
         },
 
         showToast(message, type = 'info') {
+            if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
             let container = document.getElementById('toast-container');
             if (!container) {
                 container = document.createElement('div');
@@ -1754,12 +1928,22 @@
             }
         },
 
-        createPoDraftFromForecast() {
+        async createPoDraftFromForecast() {
             const qtyInput = document.getElementById('order-qty-input');
             const qty = parseInt(qtyInput ? qtyInput.value : '36', 10) || 36;
             const prodName = document.querySelector('main h2')?.textContent?.trim() || 'Inventory Item';
-            const unitCost = window.currentForecastUnitCost || 28.0;
-            const total = qty * unitCost;
+            const unitCost = (typeof window.currentForecastUnitCost === 'number' && !isNaN(window.currentForecastUnitCost))
+                ? window.currentForecastUnitCost
+                : 28.0;
+            const total = this.fromPaise(this.toPaise(qty * unitCost));
+
+            const products = await this.getProducts();
+            const prod = products.find(p => p.name === prodName || (p.name && prodName && p.name.toLowerCase() === prodName.toLowerCase())) || products[0];
+
+            if (prod) {
+                prod.stock_on_order = (Number(prod.stock_on_order) || 0) + qty;
+                this.saveProducts(products);
+            }
 
             const purchaseOrders = this.getPurchaseOrders();
             const year = new Date().getFullYear();
@@ -1773,7 +1957,9 @@
                 status: 'ordered',
                 supplier: 'Metro Wholesale / Regional Supply Hub',
                 items: [{
-                    name: prodName,
+                    product_id: prod ? prod.id : undefined,
+                    productId: prod ? prod.id : undefined,
+                    name: prod ? prod.name : prodName,
                     units: qty,
                     unit_cost: unitCost,
                     total_cost: total
@@ -1789,7 +1975,9 @@
             this.showToast(`Purchase Order ${poNumber} issued & sent to supplier!`, 'success');
             localStorage.setItem('smartstock_po_filter', 'ordered');
             setTimeout(() => {
-                window.location.href = '05_purchase_orders.html';
+                if (typeof window !== 'undefined' && window.location) {
+                    window.location.href = '05_purchase_orders.html';
+                }
             }, 500);
         },
 
@@ -2191,80 +2379,94 @@
         },
 
         async receivePO(poId) {
-            const purchaseOrders = this.getPurchaseOrders();
-            const po = purchaseOrders.find(o => String(o.id) === String(poId) || o.po_number === poId);
-            if (!po) {
-                this.showToast('Purchase Order not found', 'error');
-                return;
-            }
-            if (po.status === 'completed') {
-                this.showToast('This PO has already been received into inventory.', 'info');
-                return;
-            }
-
-            const products = await this.getProducts();
-            let totalUnitsReceived = 0;
-
-            if (Array.isArray(po.items)) {
-                po.items.forEach(it => {
-                    const p = products.find(prod => 
-                        (it.product_id && String(prod.id) === String(it.product_id)) ||
-                        (prod.name && prod.name.toLowerCase().trim() === (it.name || it.item || '').toLowerCase().trim())
-                    );
-                    const units = Number(it.units || it.quantity) || 0;
-                    if (p) {
-                        p.stock_on_hand = (Number(p.stock_on_hand) || 0) + units;
-                        p.stock_on_order = Math.max(0, (Number(p.stock_on_order) || 0) - units);
-                        const rop = Math.min(30, Number(p.reorder_point) || 10);
-                        p.reorder_point = rop;
-                        p.status = p.stock_on_hand > rop ? 'active' : 'low_stock';
-                        totalUnitsReceived += units;
-                    } else if (units > 0) {
-                        // Create product if missing from active catalog
-                        const cost = Number(it.unit_cost) || 100;
-                        const newProd = {
-                            id: it.product_id || ('loc-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
-                            shop_id: this.config.shopId,
-                            sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
-                            name: it.name || it.item || 'Replenished Item',
-                            description: 'Stock inwarded from purchase order',
-                            unit_cost: cost,
-                            unit_price: Math.round(cost * 1.25),
-                            stock_on_hand: units,
-                            stock_on_order: 0,
-                            safety_stock: 4,
-                            reorder_point: 10,
-                            lead_time_days: 3,
-                            status: units > 10 ? 'active' : 'low_stock',
-                            abc_class: 'B',
-                            xyz_class: 'X',
-                            tier: 'Core',
-                            category_name: 'Groceries & Household'
-                        };
-                        products.unshift(newProd);
-                        totalUnitsReceived += units;
-                    }
-                });
-            }
-
-            po.status = 'completed';
-            po.inwarded_at = new Date().toISOString();
-
-            this.saveProducts(products);
-            this.savePurchaseOrders(purchaseOrders);
-
-            // Sync receive to backend
-            try {
-                const email = this.getCurrentUserEmail();
-                if (email) {
-                    fetch(`http://127.0.0.1:8000/api/v1/user/purchase-orders/${po.id}/receive?email=${encodeURIComponent(email)}`, {
-                        method: 'POST'
-                    }).catch(e => console.warn('PO receive backend sync error:', e));
+            return serializeMutation(async () => {
+                const purchaseOrders = this.getPurchaseOrders();
+                const po = purchaseOrders.find(o => String(o.id) === String(poId) || o.po_number === poId);
+                if (!po) {
+                    this.showToast('Purchase Order not found', 'error');
+                    return { success: false, error: 'Purchase Order not found' };
                 }
-            } catch (e) {}
+                if (po.status === 'cancelled') {
+                    this.showToast('Cannot receive a cancelled Purchase Order', 'error');
+                    return { success: false, error: 'Cannot receive cancelled order' };
+                }
+                if (po.status === 'completed') {
+                    this.showToast('This PO has already been received into inventory.', 'info');
+                    return { success: true, replayed: true, po };
+                }
 
-            this.showToast(`Inwarded ${totalUnitsReceived} units from ${po.po_number}! Stock updated.`, 'success');
-            await this.bindLivePageData();
+                const products = await this.getProducts();
+                let totalUnitsReceived = 0;
+
+                if (Array.isArray(po.items)) {
+                    po.items.forEach(it => {
+                        const units = Number(it.units !== undefined ? it.units : it.quantity);
+                        if (!isFinite(units) || units <= 0) {
+                            return; // skip non-positive or invalid units
+                        }
+
+                        const p = products.find(prod =>
+                            (it.product_id && String(prod.id) === String(it.product_id)) ||
+                            (it.productId && String(prod.id) === String(it.productId)) ||
+                            (prod.name && prod.name.toLowerCase().trim() === (it.name || it.item || '').toLowerCase().trim())
+                        );
+
+                        if (p) {
+                            p.stock_on_hand = (Number(p.stock_on_hand) || 0) + units;
+                            p.stock_on_order = Math.max(0, (Number(p.stock_on_order) || 0) - units);
+                            const rop = Number(p.reorder_point);
+                            const finalRop = (p.reorder_point === undefined || p.reorder_point === null || isNaN(rop)) ? 10 : rop;
+                            p.reorder_point = finalRop;
+                            p.status = p.stock_on_hand <= 0 ? 'out_of_stock' : (p.stock_on_hand <= finalRop ? 'low_stock' : 'active');
+                            totalUnitsReceived += units;
+                        } else {
+                            // Create product if missing from active catalog
+                            const cost = (it.unit_cost !== null && it.unit_cost !== undefined && !isNaN(Number(it.unit_cost))) ? Number(it.unit_cost) : 100;
+                            const newProd = {
+                                id: it.product_id || it.productId || ('loc-' + Date.now() + '-' + Math.floor(Math.random() * 1000)),
+                                shop_id: this.config.shopId,
+                                sku: it.sku || `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
+                                name: it.name || it.item || 'Replenished Item',
+                                description: 'Stock inwarded from purchase order',
+                                unit_cost: cost,
+                                unit_price: Math.round(cost * 1.25),
+                                stock_on_hand: units,
+                                stock_on_order: 0,
+                                safety_stock: 4,
+                                reorder_point: 10,
+                                lead_time_days: 3,
+                                status: units > 10 ? 'active' : 'low_stock',
+                                abc_class: 'B',
+                                xyz_class: 'X',
+                                tier: 'Core',
+                                category_name: 'Groceries & Household'
+                            };
+                            products.unshift(newProd);
+                            totalUnitsReceived += units;
+                        }
+                    });
+                }
+
+                po.status = 'completed';
+                po.inwarded_at = new Date().toISOString();
+
+                this.saveProducts(products);
+                this.savePurchaseOrders(purchaseOrders);
+
+                // Sync receive to backend
+                try {
+                    const email = this.getCurrentUserEmail();
+                    if (email) {
+                        fetch(`http://127.0.0.1:8000/api/v1/user/purchase-orders/${po.id}/receive?email=${encodeURIComponent(email)}`, {
+                            method: 'POST'
+                        }).catch(e => console.warn('PO receive backend sync error:', e));
+                    }
+                } catch (e) {}
+
+                this.showToast(`Inwarded ${totalUnitsReceived} units from ${po.po_number}! Stock updated.`, 'success');
+                await this.bindLivePageData();
+                return { success: true, totalUnitsReceived, po };
+            });
         },
 
         currentPOFilter: 'all',
@@ -2395,6 +2597,7 @@
         },
 
         selectDateRange(rangeLabel) {
+            this.setActiveDateRange(rangeLabel);
             localStorage.setItem('smartstock_date_range', rangeLabel);
             const labelEl = document.getElementById('overview-date-range-label');
             if (labelEl) labelEl.textContent = rangeLabel;
@@ -2417,33 +2620,49 @@
             this.bindLivePageData();
         },
 
-        // Google AI Studio (Gemini 2.5 Flash) API Integration
-        GEMINI_API_KEY: (typeof atob === 'function') 
-            ? atob('QVEuQWI4Uk42S3Q0dWM2Y1Jzek96LXJkZUZ4QTJTMkJ2ZWlfRlc2OWZyQ2EyNTVSZi13WGc=')
-            : '',
-
         async runAIInventoryAnalysis(forceRefresh = false) {
-            const cacheKey = 'smartstock_gemini_analysis';
-            const cached = localStorage.getItem(cacheKey);
-            const now = Date.now();
-            const TTL = 15 * 60 * 1000; // 15 mins cache to preserve user free quota
-
-            if (!forceRefresh && cached) {
-                try {
-                    const parsed = JSON.parse(cached);
-                    if (now - parsed.timestamp < TTL) {
-                        return parsed.data;
-                    }
-                } catch (e) {}
-            }
-
+            const apiKey = this.getGeminiApiKey();
             const products = await this.getProducts();
             if (products.length === 0) {
                 return null;
             }
 
+            const todayStr = this.getBusinessDate();
+            const lowItems = products.filter(p => (Number(p.stock_on_hand) || 0) <= (Number(p.reorder_point) || 10));
+            const outItems = products.filter(p => (Number(p.stock_on_hand) || 0) <= 0);
+            const sales = this.getSales();
+            const todaySummary = this.getSalesSummary('Today (Live)');
+
+            const cacheKey = this.getUserKey('smartstock_ai_analysis_cache');
+            const cached = localStorage.getItem(cacheKey);
+            const now = Date.now();
+            const TTL = 15 * 60 * 1000; // 15 mins cache
+            const signature = `${todayStr}_${products.length}_${lowItems.length}_${sales.length}_${todaySummary.revenue}`;
+
+            if (!forceRefresh && cached) {
+                try {
+                    const parsed = JSON.parse(cached);
+                    if (now - parsed.timestamp < TTL && parsed.signature === signature) {
+                        return parsed.data;
+                    }
+                } catch (e) {}
+            }
+
+            const fallback = {
+                stock_health_status: outItems.length > 0 ? "Critical Stockouts" : (lowItems.length > 0 ? "Action Needed" : "Optimal Health"),
+                critical_risks: lowItems.map(p => `${this.escapeHtml(p.name)}: Current stock (${p.stock_on_hand}) is below reorder threshold (${p.reorder_point || 10}).`),
+                recommendations: lowItems.map(p => `Dispatch PO for ${Math.max(10, (p.reorder_point || 10) * 2 - p.stock_on_hand)} units of ${this.escapeHtml(p.name)}.`),
+                summary: lowItems.length === 0
+                    ? `All ${products.length} products have healthy inventory buffers. Operations are running smoothly.`
+                    : `${lowItems.length} products require restocking to prevent missed customer sales.`
+            };
+
+            if (!apiKey) {
+                return fallback;
+            }
+
             const catalogSummary = products.map(p => 
-                `- ${p.name}: Stock ${p.stock_on_hand}, Reorder at ${p.reorder_point || 5}, Price Rs ${p.unit_price || 0}, Cost Rs ${p.unit_cost || 0}`
+                `- ${p.name}: Stock ${p.stock_on_hand}, Reorder at ${p.reorder_point || 10}, Price Rs ${p.unit_price || 0}, Cost Rs ${p.unit_cost || 0}`
             ).join('\n');
 
             const promptText = `You are SmartStock AI retail intelligence engine for Indian retail & Kirana stores.
@@ -2457,7 +2676,7 @@ Provide a JSON response only with keys:
 - summary: 1-2 friendly sentences explaining store health and expected customer demand.`;
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.GEMINI_API_KEY}`, {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2477,6 +2696,7 @@ Provide a JSON response only with keys:
                 const parsedData = JSON.parse(rawText);
                 localStorage.setItem(cacheKey, JSON.stringify({
                     timestamp: now,
+                    signature: signature,
                     data: parsedData
                 }));
 
@@ -2484,18 +2704,59 @@ Provide a JSON response only with keys:
                 return parsedData;
             } catch (err) {
                 console.warn('Gemini API call failed, using intelligent local heuristic fallback:', err);
-                const lowItems = products.filter(p => p.stock_on_hand <= (p.reorder_point || 5));
-                const outItems = products.filter(p => p.stock_on_hand === 0);
-                const fallback = {
-                    stock_health_status: outItems.length > 0 ? "Critical Stockouts" : (lowItems.length > 0 ? "Action Needed" : "Optimal Health"),
-                    critical_risks: lowItems.map(p => `${p.name}: Current stock (${p.stock_on_hand}) is below reorder threshold (${p.reorder_point || 5}).`),
-                    recommendations: lowItems.map(p => `Dispatch PO for ${Math.max(10, (p.reorder_point || 5) * 2 - p.stock_on_hand)} units of ${p.name}.`),
-                    summary: lowItems.length === 0 
-                        ? `All ${products.length} products have healthy inventory buffers. Operations are running smoothly.` 
-                        : `${lowItems.length} products require restocking to prevent missed customer sales.`
-                };
                 return fallback;
             }
+        },
+
+        calculateDayOfWeekDemand(salesList = null) {
+            const sales = salesList || this.getSales();
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const actuals = [0, 0, 0, 0, 0, 0, 0];
+
+            for (const s of sales) {
+                const qty = Number(s.qty !== undefined ? s.qty : s.units) || 0;
+                const dStr = s.date || (s.timestamp ? s.timestamp.split('T')[0] : null);
+                if (dStr) {
+                    const d = new Date(dStr + 'T12:00:00Z');
+                    if (!isNaN(d.getTime())) {
+                        const dayIdx = (d.getUTCDay() + 6) % 7; // Mon=0 .. Sun=6
+                        actuals[dayIdx] += qty;
+                    }
+                }
+            }
+            return { days, actuals };
+        },
+
+        calculateCompletedDayAverage(salesList = null, numDays = 7, refDate = null) {
+            const sales = salesList || this.getSales();
+            const todayStr = refDate ? this.getBusinessDate(refDate) : this.getBusinessDate();
+            const todayMs = new Date(todayStr + 'T00:00:00Z').getTime();
+
+            // Completed days strictly before today: [today - numDays, today - 1]
+            const dailyTotals = {};
+            for (let i = 1; i <= numDays; i++) {
+                const dayMs = todayMs - i * 86400000;
+                const dStr = new Date(dayMs).toISOString().split('T')[0];
+                dailyTotals[dStr] = 0; // initialize zero-sale days
+            }
+
+            for (const s of sales) {
+                const sDate = s.date || this.getBusinessDate(s.timestamp);
+                if (dailyTotals.hasOwnProperty(sDate)) {
+                    const qty = Number(s.qty !== undefined ? s.qty : s.units) || 0;
+                    dailyTotals[sDate] += qty;
+                }
+            }
+
+            const totalUnits = Object.values(dailyTotals).reduce((sum, q) => sum + q, 0);
+            const average = numDays > 0 ? (totalUnits / numDays) : 0;
+
+            return {
+                numDays,
+                totalUnits,
+                dailyTotals,
+                average: Math.round(average * 100) / 100
+            };
         },
 
         async renderAIIntelligenceCard(products) {
@@ -2597,7 +2858,7 @@ Provide a JSON response only with keys:
         renderDemandVelocity(products, salesList) {
             const container = document.getElementById('demand-velocity-container');
             if (!container) return;
-            if (products.length === 0) {
+            if (!products || products.length === 0) {
                 container.innerHTML = `
                     <div class="w-full relative py-8 text-center text-xs text-on-surface-variant">
                         <span class="material-symbols-outlined text-[28px] text-outline mb-1 block">monitoring</span>
@@ -2608,30 +2869,26 @@ Provide a JSON response only with keys:
                 return;
             }
 
-            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const todayIndex = (new Date().getDay() + 6) % 7;
+            const allSales = salesList || this.getSales();
+            const { days, actuals } = this.calculateDayOfWeekDemand(allSales);
+            const { average: completedAvg } = this.calculateCompletedDayAverage(allSales, 7);
 
-            const totalCatalogUnits = products.reduce((acc, p) => acc + (p.stock_on_hand || 0), 0);
-            const baseDailyUnits = Math.max(8, Math.round(totalCatalogUnits * 0.08));
+            const todayDayIdx = (new Date().getDay() + 6) % 7;
+            const baseDailyUnits = completedAvg > 0 ? completedAvg : Math.max(1, Math.round(products.reduce((acc, p) => acc + (p.stock_on_hand || 0), 0) * 0.05));
 
             const dayMultipliers = [0.85, 0.9, 1.05, 1.15, 1.35, 1.45, 1.1];
             const dayData = days.map((day, idx) => {
                 const mult = dayMultipliers[idx];
                 const predicted = Math.round(baseDailyUnits * mult);
-                let actual = Math.round(baseDailyUnits * (mult * 0.95));
-                if (idx > todayIndex) {
-                    actual = 0;
-                } else if (idx === todayIndex) {
-                    actual = Math.max(salesList.length, Math.round(baseDailyUnits * mult * 0.9));
-                }
-                return { day, actual, predicted, isToday: idx === todayIndex };
+                const actual = actuals[idx];
+                return { day, actual, predicted, isToday: idx === todayDayIdx };
             });
 
-            const maxVal = Math.max(...dayData.map(d => Math.max(d.actual, d.predicted)), 20);
+            const maxVal = Math.max(...dayData.map(d => Math.max(d.actual, d.predicted)), 10);
 
             const barsHtml = dayData.map(d => {
-                const actHeight = d.actual > 0 ? Math.max(12, Math.round((d.actual / maxVal) * 85)) : 4;
-                const predHeight = Math.max(14, Math.round((d.predicted / maxVal) * 85));
+                const actHeight = d.actual > 0 ? Math.max(8, Math.round((d.actual / maxVal) * 85)) : 4;
+                const predHeight = Math.max(10, Math.round((d.predicted / maxVal) * 85));
 
                 return `
                     <div class="flex-1 flex flex-col items-center gap-1.5 group">
@@ -2656,7 +2913,7 @@ Provide a JSON response only with keys:
                     <div class="flex items-center justify-between text-xs bg-surface-container-low p-2 rounded-lg">
                         <span class="text-on-surface-variant font-medium">Avg Sales Velocity: <b class="text-primary font-mono">${baseDailyUnits} units/day</b></span>
                         <span class="text-secondary font-bold font-code-sm flex items-center gap-0.5">
-                            <span class="material-symbols-outlined text-[13px]">trending_up</span> +14.2% AI Lift
+                            <span class="material-symbols-outlined text-[13px]">trending_up</span> Actual-Driven Model
                         </span>
                     </div>
                     <div class="flex items-end justify-between gap-1 pt-1">
@@ -2664,7 +2921,7 @@ Provide a JSON response only with keys:
                     </div>
                     <div class="text-[11px] text-on-surface-variant flex items-center gap-1.5 pt-1 border-t border-outline/10">
                         <span class="material-symbols-outlined text-[14px] text-secondary">psychology</span>
-                        <span>Predictive ML anticipates peak Kirana basket demand on <b>Friday & Saturday</b>.</span>
+                        <span>Weekly demand aggregated from actual customer sales transactions.</span>
                     </div>
                 </div>
             `;
@@ -3753,7 +4010,8 @@ Provide a JSON response only with keys:
         },
 
         async bindLivePageData() {
-            const currentPage = window.location.pathname.split('/').pop();
+            if (typeof document === 'undefined') return;
+            const currentPage = (typeof window !== 'undefined' && window.location && window.location.pathname) ? window.location.pathname.split('/').pop() : '';
             const storedUser = localStorage.getItem('smartstock_user');
             let parsedUser = null;
             if (storedUser) {
@@ -3873,8 +4131,17 @@ Provide a JSON response only with keys:
 
             // 1. Overview Page Binding
             if (currentPage === '02_overview.html') {
-                const totalValue = products.reduce((acc, p) => acc + (Number(p.stock_on_hand || 0) * Number(p.unit_price || 0)), 0);
-                const lowStockCount = products.filter(p => (Number(p.stock_on_hand) || 0) <= Math.min(30, Number(p.reorder_point) || 10)).length;
+                const totalValue = this.getInventoryValuation(products);
+                const lowStockCount = products.filter(p => (Number(p.stock_on_hand) || 0) <= (Number(p.reorder_point) || 10)).length;
+
+                // Active timeframe
+                const activeRange = this.getActiveDateRange();
+                const rangeLabelEl = document.getElementById('overview-date-range-label');
+                if (rangeLabelEl) rangeLabelEl.textContent = activeRange;
+
+                const summary = this.getSalesSummary(activeRange);
+                const liveRev = summary.revenue;
+                const salesList = this.getFilteredSales(activeRange);
 
                 // Greeting & Subtitle
                 const greetEl = document.querySelector('.font-headline-lg-mobile, .font-headline-lg');
@@ -3894,8 +4161,6 @@ Provide a JSON response only with keys:
 
                 // 4 Overview Metric Cards
                 const invValCards = document.querySelectorAll('main .font-headline-md');
-                const liveRev = SmartStock.getRevenue();
-                const salesList = SmartStock.getSales();
 
                 if (invValCards && invValCards[0]) {
                     invValCards[0].textContent = SmartStock.formatINR(liveRev);
@@ -3907,7 +4172,7 @@ Provide a JSON response only with keys:
                     } else if (salesList.length > 0) {
                         revTrend.innerHTML = `<span class="material-symbols-outlined text-[13px] mr-0.5">trending_up</span>+${salesList.length} sales`;
                     } else {
-                        revTrend.innerHTML = `<span class="material-symbols-outlined text-[13px] mr-0.5">trending_up</span>+4.2%`;
+                        revTrend.innerHTML = `<span class="material-symbols-outlined text-[13px] mr-0.5">trending_up</span>+0.0%`;
                     }
                 }
 
@@ -3929,11 +4194,21 @@ Provide a JSON response only with keys:
                 }
 
                 if (invValCards && invValCards[3]) {
-                    invValCards[3].textContent = '0';
+                    if (summary.costAvailable) {
+                        invValCards[3].textContent = SmartStock.formatINR(summary.grossProfit);
+                    } else {
+                        invValCards[3].textContent = 'Unavailable';
+                    }
                 }
                 const slowTied = document.querySelector('.text-secondary.font-semibold');
-                if (slowTied && products.length === 0) {
-                    slowTied.textContent = '₹0.00';
+                if (slowTied) {
+                    if (summary.costAvailable && summary.grossMargin !== null) {
+                        slowTied.textContent = `${summary.grossMargin.toFixed(1)}% margin`;
+                    } else if (!summary.costAvailable) {
+                        slowTied.textContent = 'Unavailable';
+                    } else if (products.length === 0) {
+                        slowTied.textContent = '₹0.00';
+                    }
                 }
 
                 // AI Triggers Badge
@@ -3954,11 +4229,11 @@ Provide a JSON response only with keys:
                                     Your store catalog currently has 0 items. Enter items manually or import a spreadsheet to begin tracking stock and AI alerts.
                                 </p>
                                 <div class="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
-                                    <button onclick="SmartStock.openAddProductModal()" class="w-full sm:w-auto px-4 py-2.5 bg-primary text-on-primary rounded-xl font-semibold text-xs shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                                    <button onclick="SmartStock.openAddProductModal()" class="w-full sm:w-auto px-4 py-2.5 bg-primary text-on-primary rounded-xl font-semibold text-xs shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                                         <span class="material-symbols-outlined text-[16px]">add_circle</span>
                                         <span>+ Add Product</span>
                                     </button>
-                                    <button onclick="SmartStock.openImportModal()" class="w-full sm:w-auto px-4 py-2.5 bg-surface-container text-on-surface rounded-xl font-semibold text-xs hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                                    <button onclick="SmartStock.openImportModal()" class="w-full sm:w-auto px-4 py-2.5 bg-surface-container text-on-surface rounded-xl font-semibold text-xs hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                                         <span class="material-symbols-outlined text-[16px]">upload_file</span>
                                         <span>Import File (CSV)</span>
                                     </button>
@@ -3966,7 +4241,7 @@ Provide a JSON response only with keys:
                             </div>
                         `;
                     } else {
-                        const lowItems = products.filter(p => (Number(p.stock_on_hand) || 0) <= Math.min(30, Number(p.reorder_point) || 10));
+                        const lowItems = products.filter(p => (Number(p.stock_on_hand) || 0) <= (Number(p.reorder_point) || 10));
                         if (lowItems.length === 0) {
                             cardContainer.innerHTML = `
                                 <div class="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline/10 text-center">
@@ -3986,12 +4261,12 @@ Provide a JSON response only with keys:
                                             </div>
                                             <h4 class="font-bold text-sm text-on-surface truncate">${p.name}</h4>
                                             <p class="text-xs text-on-surface-variant mt-0.5">
-                                                On-hand: <b class="text-secondary">${p.stock_on_hand} units</b> • Reorder Point: <b>${p.reorder_point || 5} units</b>
+                                                On-hand: <b class="text-secondary">${p.stock_on_hand} units</b> • Reorder Point: <b>${p.reorder_point || 10} units</b>
                                             </p>
                                         </div>
                                     </div>
                                     <div class="mt-3 flex items-center justify-between pt-2 border-t border-outline/10">
-                                        <span class="text-xs text-on-surface-variant">Recommended Order: <b>${Math.max(10, (p.reorder_point || 5) * 2 - p.stock_on_hand)} units</b></span>
+                                        <span class="text-xs text-on-surface-variant">Recommended Order: <b>${Math.max(10, (p.reorder_point || 10) * 2 - p.stock_on_hand)} units</b></span>
                                         <a href="05_purchase_orders.html" class="px-3 h-8 bg-secondary text-on-secondary rounded-lg font-semibold text-xs flex items-center gap-1 shadow-sm active:scale-95">
                                             <span>Replenish</span>
                                         </a>
@@ -4003,7 +4278,7 @@ Provide a JSON response only with keys:
                 }
 
                 // Date Range Label
-                const savedDateRange = localStorage.getItem('smartstock_date_range') || 'Oct 24 • Last 30 Days';
+                const savedDateRange = this.getActiveDateRange();
                 const dateRangeLabel = document.getElementById('overview-date-range-label');
                 if (dateRangeLabel) dateRangeLabel.textContent = savedDateRange;
 
@@ -4052,7 +4327,13 @@ Provide a JSON response only with keys:
                     const skuCatEl = document.querySelector('main p.font-code-sm.uppercase');
                     if (skuCatEl) skuCatEl.textContent = `${prod.sku || 'SKU'} • ${prod.category_name || 'Retail Inventory'}`;
 
-                    window.currentForecastUnitCost = prod.unit_cost || Math.round((prod.unit_price || 100) * 0.85);
+                    window.currentForecastUnitCost = (prod.unit_cost !== null && prod.unit_cost !== undefined && !isNaN(Number(prod.unit_cost)))
+                        ? Number(prod.unit_cost)
+                        : Math.round((Number(prod.unit_price) || 100) * 0.85);
+
+                    // Update on-hand and on-order displays if available on page
+                    const onHandSpan = document.querySelector('.bg-surface-container-low .text-error.font-bold');
+                    if (onHandSpan) onHandSpan.textContent = prod.stock_on_hand;
 
                     const switchBtn = document.querySelector('button[aria-label="Switch SKU"]');
                     if (switchBtn) {
@@ -4687,17 +4968,25 @@ Provide a JSON response only with keys:
     };
 
     function initSmartStock() {
+        if (typeof document === 'undefined') return;
         SmartStock.client();
         SmartStock.injectModals();
         SmartStock.bindNavigation();
         SmartStock.bindLivePageData();
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initSmartStock);
-    } else {
-        initSmartStock();
+    if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initSmartStock);
+        } else {
+            initSmartStock();
+        }
     }
 
-    window.SmartStock = SmartStock;
-})(window);
+    if (typeof window !== 'undefined') {
+        window.SmartStock = SmartStock;
+    }
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = SmartStock;
+    }
+})(typeof window !== 'undefined' ? window : (typeof globalThis !== 'undefined' ? globalThis : this));

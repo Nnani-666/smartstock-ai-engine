@@ -19,7 +19,7 @@ def get_supabase_admin() -> Client:
     global _supabase_admin_client
     if _supabase_admin_client is None:
         if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-            raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured")
+            raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be configured in environment")
         _supabase_admin_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
     return _supabase_admin_client
 
@@ -28,7 +28,13 @@ class SupabaseAppService:
     """Business operations adapter for the live SmartStock application."""
 
     def __init__(self, client: Client | None = None):
-        self.client = client or get_supabase_admin()
+        self._client = client
+
+    @property
+    def client(self) -> Client:
+        if self._client is None:
+            self._client = get_supabase_admin()
+        return self._client
 
     # 1. Shops & Settings
     def get_shop_by_code(self, store_code: str = "STORE-402") -> dict[str, Any] | None:

@@ -6,6 +6,7 @@ import json
 import logging
 import sqlite3
 from contextlib import asynccontextmanager
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Literal
 
 import joblib
@@ -375,33 +376,54 @@ def get_metrics():
 # LIVE SMARTSTOCK APPLICATION ROUTES (SUPABASE INTEGRATION)
 # ----------------------------------------------------------------------
 
-supabase_service = SupabaseAppService()
+_supabase_service: SupabaseAppService | None = None
+
+def get_supabase_service() -> SupabaseAppService:
+    """Return lazily initialized Supabase service."""
+    global _supabase_service
+    if _supabase_service is None:
+        _supabase_service = SupabaseAppService()
+    return _supabase_service
+
 
 @app.get("/api/v1/products")
 def api_list_products(status: str | None = None, limit: int = 50, offset: int = 0):
     """Retrieve live products list from Supabase."""
-    return supabase_service.list_products(status=status, limit=limit, offset=offset)
+    try:
+        return get_supabase_service().list_products(status=status, limit=limit, offset=offset)
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
 @app.get("/api/v1/insights")
 def api_list_insights(active_only: bool = True):
     """Retrieve live inventory insights from Supabase."""
-    return supabase_service.list_insights(active_only=active_only)
+    try:
+        return get_supabase_service().list_insights(active_only=active_only)
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
 @app.get("/api/v1/purchase-orders")
 def api_list_purchase_orders():
     """Retrieve purchase orders from Supabase."""
-    return supabase_service.list_purchase_orders()
+    try:
+        return get_supabase_service().list_purchase_orders()
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
 @app.get("/api/v1/shop")
 def api_get_shop(code: str = "STORE-402"):
     """Retrieve current shop profile from Supabase."""
-    shop = supabase_service.get_shop_by_code(code)
+    try:
+        shop = get_supabase_service().get_shop_by_code(code)
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
     if not shop:
         raise HTTPException(status_code=404, detail="Shop not found")
     return shop
+
 
 
 # ----------------------------------------------------------------------
@@ -454,9 +476,12 @@ class POCreateRequest(BaseModel):
 class SaleRecordRequest(BaseModel):
     user_email: str
     product_id: str | None = None
-    product_name: str
-    sale_amount: float
+    product_name: str | None = None
+    sale_amount: float | None = None
     units: int = 1
+    unit_cost: float | None = None
+    timestamp: str | None = None
+    idempotency_key: str | None = None
 
 
 @app.post("/api/v1/auth/register")
@@ -485,8 +510,11 @@ def register_user(req: UserRegisterRequest, db: sqlite3.Connection = Depends(get
     )
     db.commit()
 
+    token = hashlib.sha256(f"{user_id}_{clean_email}_{datetime.utcnow().strftime('%Y-%m-%d')}".encode()).hexdigest()
+
     return {
         "status": "ok",
+        "token": token,
         "user": {
             "id": user_id,
             "email": clean_email,
@@ -512,8 +540,11 @@ def login_user(req: UserLoginRequest, db: sqlite3.Connection = Depends(get_db)):
     if user_dict["password_hash"] != pw_hash:
         raise HTTPException(status_code=401, detail="Incorrect password. Access denied.")
 
+    token = hashlib.sha256(f"{user_dict['id']}_{user_dict['email']}_{datetime.utcnow().strftime('%Y-%m-%d')}".encode()).hexdigest()
+
     return {
         "status": "ok",
+        "token": token,
         "user": {
             "id": user_dict["id"],
             "email": user_dict["email"],
@@ -521,6 +552,43 @@ def login_user(req: UserLoginRequest, db: sqlite3.Connection = Depends(get_db)):
             "phone": user_dict["phone"],
             "manager": user_dict["manager"],
         },
+    }
+
+
+@app.get("/api/v1/auth/me")
+def get_auth_me(
+    authorization: str | None = Header(None),
+    email: str | None = Query(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """Retrieve profile of authenticated merchant user."""
+    clean_email = email.strip().lower() if email else None
+    if not clean_email and authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM app_users")
+        for u in cursor.fetchall():
+            expected = hashlib.sha256(f"{u['id']}_{u['email']}_{datetime.utcnow().strftime('%Y-%m-%d')}".encode()).hexdigest()
+            if token == expected:
+                clean_email = u["email"]
+                break
+
+    if not clean_email:
+        raise HTTPException(status_code=401, detail="Missing or invalid authentication credentials")
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM app_users WHERE email = ?", (clean_email,))
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_dict = dict(row)
+    return {
+        "id": user_dict["id"],
+        "email": user_dict["email"],
+        "store": user_dict["store_name"],
+        "phone": user_dict["phone"],
+        "manager": user_dict["manager"],
     }
 
 
@@ -631,6 +699,8 @@ def receive_user_po(po_id: str, email: str = Query(...), db: sqlite3.Connection 
     po_dict = dict(row)
     if po_dict["status"] == "completed":
         return {"status": "already_completed", "message": "PO already inwarded"}
+    if po_dict["status"] == "cancelled":
+        raise HTTPException(status_code=400, detail="Cannot receive a cancelled purchase order")
 
     items = []
     try:
@@ -638,20 +708,28 @@ def receive_user_po(po_id: str, email: str = Query(...), db: sqlite3.Connection 
     except Exception:
         pass
 
-    # Increment stock in app_products for each item
+    # Increment stock in app_products for each valid item
     for it in items:
         units = int(it.get("units") or it.get("quantity") or 0)
+        if units <= 0:
+            continue
         p_name = it.get("name") or it.get("item")
         p_id = it.get("product_id")
         if p_id:
             cursor.execute(
-                "UPDATE app_products SET stock_on_hand = stock_on_hand + ?, status = 'active' WHERE id = ? AND user_email = ?",
-                (units, p_id, clean_email),
+                """UPDATE app_products
+                   SET stock_on_hand = stock_on_hand + ?,
+                       status = CASE WHEN stock_on_hand + ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand + ? <= reorder_point THEN 'low_stock' ELSE 'active' END
+                   WHERE id = ? AND user_email = ?""",
+                (units, units, units, p_id, clean_email),
             )
         elif p_name:
             cursor.execute(
-                "UPDATE app_products SET stock_on_hand = stock_on_hand + ?, status = 'active' WHERE name = ? AND user_email = ?",
-                (units, p_name, clean_email),
+                """UPDATE app_products
+                   SET stock_on_hand = stock_on_hand + ?,
+                       status = CASE WHEN stock_on_hand + ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand + ? <= reorder_point THEN 'low_stock' ELSE 'active' END
+                   WHERE name = ? AND user_email = ?""",
+                (units, units, units, p_name, clean_email),
             )
 
     now_iso = datetime.utcnow().isoformat()
@@ -666,35 +744,195 @@ def receive_user_po(po_id: str, email: str = Query(...), db: sqlite3.Connection 
 
 @app.post("/api/v1/user/sales")
 def record_user_sale(req: SaleRecordRequest, db: sqlite3.Connection = Depends(get_write_db)):
-    """Record a sale: decrements 1 unit of stock from user's inventory."""
+    """Record a sale with atomic stock verification, Decimal pricing, and unit_cost."""
     clean_email = req.user_email.strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise HTTPException(status_code=400, detail="Valid user email required")
+    if req.units <= 0:
+        raise HTTPException(status_code=400, detail="Sale units must be greater than zero")
+
     cursor = db.cursor()
-    sale_id = str(uuid.uuid4())
-    now_iso = datetime.utcnow().isoformat()
 
-    cursor.execute(
-        """INSERT INTO app_sales (id, user_email, product_id, product_name, sale_amount, units, timestamp)
-           VALUES (?, ?, ?, ?, ?, ?, ?)""",
-        (sale_id, clean_email, req.product_id, req.product_name, req.sale_amount, req.units, now_iso),
-    )
+    # Idempotency check
+    if req.idempotency_key:
+        cursor.execute(
+            "SELECT id, sale_amount, units FROM app_sales WHERE idempotency_key = ? AND user_email = ?",
+            (req.idempotency_key, clean_email),
+        )
+        existing = cursor.fetchone()
+        if existing:
+            return {
+                "status": "ok",
+                "sale_id": existing["id"],
+                "replayed": True,
+                "message": "Sale already processed",
+            }
 
-    # Decrement stock in catalog
+    # Validate timestamp if provided
+    if req.timestamp:
+        try:
+            datetime.fromisoformat(req.timestamp.replace("Z", "+00:00"))
+            sale_timestamp = req.timestamp
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid timestamp format. ISO-8601 required.")
+    else:
+        sale_timestamp = datetime.utcnow().isoformat()
+
+    # Look up product in user's catalog
     if req.product_id:
         cursor.execute(
-            """UPDATE app_products 
-               SET stock_on_hand = MAX(0, stock_on_hand - ?),
-                   status = CASE WHEN stock_on_hand - ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand - ? <= reorder_point THEN 'low_stock' ELSE 'active' END
-               WHERE id = ? AND user_email = ?""",
-            (req.units, req.units, req.units, req.product_id, clean_email),
+            "SELECT * FROM app_products WHERE id = ? AND user_email = ?",
+            (req.product_id, clean_email),
         )
     elif req.product_name:
         cursor.execute(
-            """UPDATE app_products 
-               SET stock_on_hand = MAX(0, stock_on_hand - ?),
-                   status = CASE WHEN stock_on_hand - ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand - ? <= reorder_point THEN 'low_stock' ELSE 'active' END
-               WHERE name = ? AND user_email = ?""",
-            (req.units, req.units, req.units, req.product_name, clean_email),
+            "SELECT * FROM app_products WHERE name = ? AND user_email = ?",
+            (req.product_name, clean_email),
+        )
+    else:
+        raise HTTPException(status_code=400, detail="Either product_id or product_name must be provided")
+
+    prod_row = cursor.fetchone()
+    if not prod_row:
+        raise HTTPException(status_code=404, detail="Product not found in user inventory")
+
+    prod = dict(prod_row)
+    current_stock = int(prod["stock_on_hand"])
+
+    # Strict overselling check: reject entire sale when quantity exceeds stock
+    if current_stock < req.units:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient stock on hand: requested {req.units} units, but only {current_stock} available.",
         )
 
-    db.commit()
-    return {"status": "ok", "sale_id": sale_id}
+    # Decimal price calculation
+    unit_price_dec = Decimal(str(prod["unit_price"] or 0))
+    calc_amount = (unit_price_dec * Decimal(req.units)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    final_amount = float(calc_amount)
+
+    # Historical cost basis
+    final_cost = prod["unit_cost"] if prod["unit_cost"] is not None else req.unit_cost
+
+    sale_id = str(uuid.uuid4())
+    prod_name = prod["name"]
+
+    try:
+        # Atomic stock deduction
+        new_stock = current_stock - req.units
+        rop = int(prod["reorder_point"]) if prod["reorder_point"] is not None else 0
+        new_status = "out_of_stock" if new_stock <= 0 else ("low_stock" if new_stock <= rop else "active")
+
+        cursor.execute(
+            "UPDATE app_products SET stock_on_hand = ?, status = ? WHERE id = ? AND user_email = ?",
+            (new_stock, new_status, prod["id"], clean_email),
+        )
+
+        # Insert sale transaction
+        cursor.execute(
+            """INSERT INTO app_sales (id, user_email, product_id, product_name, sale_amount, units, unit_cost, timestamp, idempotency_key)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (sale_id, clean_email, prod["id"], prod_name, final_amount, req.units, final_cost, sale_timestamp, req.idempotency_key),
+        )
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Transaction failed during sale recording: %s", e)
+        raise HTTPException(status_code=500, detail="Database transaction failed during sale")
+
+    return {
+        "status": "ok",
+        "sale_id": sale_id,
+        "product_name": prod_name,
+        "units": req.units,
+        "sale_amount": final_amount,
+        "unit_cost": final_cost,
+        "remaining_stock": new_stock,
+    }
+
+
+@app.get("/api/v1/user/sales")
+def get_user_sales(
+    email: str = Query(...),
+    start_date: str | None = Query(None),
+    end_date: str | None = Query(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """List sales for a merchant without arbitrary truncation."""
+    clean_email = email.strip().lower()
+    cursor = db.cursor()
+    query = "SELECT * FROM app_sales WHERE user_email = ?"
+    params = [clean_email]
+
+    if start_date:
+        query += " AND timestamp >= ?"
+        params.append(start_date)
+    if end_date:
+        query += " AND timestamp <= ?"
+        params.append(end_date)
+
+    query += " ORDER BY timestamp DESC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.get("/api/v1/user/sales/summary")
+def get_sales_summary(
+    email: str = Query(...),
+    date: str | None = Query(None),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """Return aggregated daily/period sales summary including revenue, units, and gross profit."""
+    clean_email = email.strip().lower()
+    cursor = db.cursor()
+    query = "SELECT * FROM app_sales WHERE user_email = ?"
+    params = [clean_email]
+
+    if date:
+        query += " AND timestamp LIKE ?"
+        params.append(f"{date}%")
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+
+    total_rev_dec = Decimal("0.00")
+    total_cost_dec = Decimal("0.00")
+    total_units = 0
+    cost_available = True
+
+    for r in rows:
+        units = int(r["units"] or 0)
+        total_units += units
+        sale_amt = Decimal(str(r["sale_amount"] or 0))
+        total_rev_dec += sale_amt
+
+        if r["unit_cost"] is not None:
+            unit_cost_dec = Decimal(str(r["unit_cost"]))
+            total_cost_dec += (unit_cost_dec * Decimal(units))
+        else:
+            cost_available = False
+
+    total_rev = float(total_rev_dec.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    if cost_available:
+        total_cost = float(total_cost_dec.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+        gross_profit = float((total_rev_dec - total_cost_dec).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+        margin_pct = (
+            float(((Decimal(str(gross_profit)) / total_rev_dec) * 100).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+            if total_rev > 0
+            else 0.0
+        )
+    else:
+        total_cost = None
+        gross_profit = None
+        margin_pct = None
+
+    return {
+        "revenue": total_rev,
+        "total_units": total_units,
+        "transaction_count": len(rows),
+        "total_cost": total_cost,
+        "gross_profit": gross_profit,
+        "gross_margin_pct": margin_pct,
+        "cost_available": cost_available,
+    }

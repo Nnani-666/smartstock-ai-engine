@@ -378,12 +378,16 @@
       const actionLabel = document.getElementById('po-btn-label');
       const btnDecrease = document.getElementById('btn-decrease');
       const btnIncrease = document.getElementById('btn-increase');
-      const unitCost = 28.00;
+      function getUnitCost() {
+        return (typeof window.currentForecastUnitCost === 'number' && !isNaN(window.currentForecastUnitCost))
+          ? window.currentForecastUnitCost
+          : 28.00;
+      }
 
       function updateDisplay(val) {
         const qty = Math.max(1, parseInt(val, 10) || 1);
         input.value = qty;
-        const total = (qty * unitCost).toFixed(2);
+        const total = (qty * getUnitCost()).toFixed(2);
         if (costDisplay) costDisplay.textContent = '₹' + Number(total).toLocaleString('en-IN') + ' est.';
         if (actionLabel) actionLabel.textContent = 'Create Purchase Order Draft with ' + qty + ' units';
       }

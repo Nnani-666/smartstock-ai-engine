@@ -151,9 +151,19 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
                 product_name TEXT NOT NULL,
                 sale_amount REAL DEFAULT 0,
                 units INTEGER DEFAULT 1,
-                timestamp TEXT NOT NULL
+                unit_cost REAL DEFAULT NULL,
+                timestamp TEXT NOT NULL,
+                idempotency_key TEXT
             );
         """)
+
+        # Migration: ensure unit_cost and idempotency_key columns exist on older tables
+        cursor.execute("PRAGMA table_info(app_sales);")
+        sales_cols = [row[1] for row in cursor.fetchall()]
+        if "unit_cost" not in sales_cols:
+            cursor.execute("ALTER TABLE app_sales ADD COLUMN unit_cost REAL DEFAULT NULL;")
+        if "idempotency_key" not in sales_cols:
+            cursor.execute("ALTER TABLE app_sales ADD COLUMN idempotency_key TEXT;")
 
         # Indexes for fast lookup
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);")
@@ -163,6 +173,8 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_products_user ON app_products(user_email);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_po_user ON app_purchase_orders(user_email);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_sales_user ON app_sales(user_email);")
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_app_sales_idempotency ON app_sales(idempotency_key) WHERE idempotency_key IS NOT NULL;")
+
 
         # Seed default demo account if not exists
         cursor.execute("SELECT id FROM app_users WHERE email = 'owner@sharmakirana.in'")
