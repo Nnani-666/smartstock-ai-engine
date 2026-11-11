@@ -31,6 +31,7 @@ data/raw/
 # Temporary / OS files
 .DS_Store
 *.tmp
+*.apk
 .pytest_cache/
 .coverage
 htmlcov/
