@@ -7,14 +7,43 @@ import hmac
 import logging
 import secrets
 import sqlite3
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 
 from app.db import get_db
 
 logger = logging.getLogger(__name__)
+
+# In-memory sliding-window rate limit buckets (path:client_ip -> list of timestamps)
+_rate_limit_buckets: dict[str, list[float]] = {}
+
+
+def clear_rate_limits() -> None:
+    """Clear rate limit buckets (primarily for test isolation)."""
+    _rate_limit_buckets.clear()
+
+
+def make_rate_limiter(max_requests: int, window_seconds: int = 60):
+    """Create a FastAPI dependency enforcing a sliding-window rate limit per IP & route."""
+    def _rate_limit(request: Request) -> None:
+        client_ip = request.client.host if request.client else "unknown"
+        key = f"{request.url.path}:{client_ip}"
+        now = time.monotonic()
+        cutoff = now - window_seconds
+        hits = [t for t in _rate_limit_buckets.get(key, []) if t > cutoff]
+        if len(hits) >= max_requests:
+            _rate_limit_buckets[key] = hits
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many requests. Please wait a minute and try again.",
+            )
+        hits.append(now)
+        _rate_limit_buckets[key] = hits
+
+    return _rate_limit
 
 # Security Constants (OWASP 2023+ PBKDF2-HMAC-SHA256 Standard)
 PBKDF2_ALGORITHM = "sha256"

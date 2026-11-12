@@ -318,6 +318,19 @@
                 .replace(/'/g, '&#039;');
         },
 
+        escapeJsAttr(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        },
+
 
         // Current user & storage key scoping
         getCurrentUserEmail() {
@@ -1125,12 +1138,15 @@
                 const prodPills = suppliedProducts.length > 0 
                     ? suppliedProducts.map(p => `
                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-container text-on-surface text-[11px] font-medium border border-outline/10">
-                            <span class="font-mono text-[10px] text-outline">${p.sku || 'SKU'}</span>
-                            <span class="truncate max-w-[130px]">${p.name}</span>
+                            <span class="font-mono text-[10px] text-outline">${this.escapeHtml(p.sku || 'SKU')}</span>
+                            <span class="truncate max-w-[130px]">${this.escapeHtml(p.name)}</span>
                             <span class="font-bold text-primary font-mono text-[10px]">(${p.stock_on_hand} left)</span>
                         </span>
                     `).join('')
                     : `<span class="text-[11px] text-outline italic">No catalog items linked yet</span>`;
+
+                const encodedSupplier = encodeURIComponent(s.name || '').replace(/'/g, '%27');
+                const safePhone = this.escapeHtml(s.phone || '');
 
                 return `
                     <div class="bg-surface-container-lowest p-4 rounded-2xl border border-outline/15 shadow-xs space-y-3">
@@ -1141,13 +1157,13 @@
                                 </div>
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-2">
-                                        <h4 class="font-bold text-sm text-on-surface truncate">${s.name}</h4>
+                                        <h4 class="font-bold text-sm text-on-surface truncate">${this.escapeHtml(s.name)}</h4>
                                         <span class="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-[9px] font-bold uppercase tracking-wider shrink-0">Verified</span>
                                     </div>
-                                    <p class="text-xs text-on-surface-variant truncate">${s.category || 'Wholesale Supplier'} • <span class="font-medium text-secondary">Lead: ${s.lead_time_days || 3}d</span></p>
+                                    <p class="text-xs text-on-surface-variant truncate">${this.escapeHtml(s.category || 'Wholesale Supplier')} • <span class="font-medium text-secondary">Lead: ${s.lead_time_days || 3}d</span></p>
                                 </div>
                             </div>
-                            <button onclick="SmartStock.quickOrderFromSupplier('${encodeURIComponent(s.name)}')" class="h-8 px-3 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1 active:scale-95 shadow-xs shrink-0 cursor-pointer">
+                            <button onclick="SmartStock.quickOrderFromSupplier('${encodedSupplier}')" class="h-8 px-3 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1 active:scale-95 shadow-xs shrink-0 cursor-pointer">
                                 <span class="material-symbols-outlined text-[15px]">add_shopping_cart</span>
                                 <span>Create PO</span>
                             </button>
@@ -1167,17 +1183,17 @@
                         <!-- Contact & Hub Details -->
                         <div class="flex items-center justify-between pt-1 border-t border-outline/10 text-xs text-on-surface-variant flex-wrap gap-2">
                             <div class="flex items-center gap-3">
-                                <a href="tel:${s.phone}" class="flex items-center gap-1 text-primary hover:underline font-mono text-[11px]">
+                                <a href="tel:${safePhone}" class="flex items-center gap-1 text-primary hover:underline font-mono text-[11px]">
                                     <span class="material-symbols-outlined text-[14px]">call</span>
-                                    <span>${s.phone}</span>
+                                    <span>${safePhone}</span>
                                 </a>
                                 <span class="text-outline/40">•</span>
                                 <span class="flex items-center gap-1 text-[11px] text-outline truncate max-w-[150px]">
                                     <span class="material-symbols-outlined text-[14px]">warehouse</span>
-                                    <span>${s.hub || 'Depot Hub'}</span>
+                                    <span>${this.escapeHtml(s.hub || 'Depot Hub')}</span>
                                 </span>
                             </div>
-                            <button onclick="SmartStock.quickOrderFromSupplier('${encodeURIComponent(s.name)}')" class="text-primary font-semibold text-xs hover:underline flex items-center gap-0.5 cursor-pointer">
+                            <button onclick="SmartStock.quickOrderFromSupplier('${encodedSupplier}')" class="text-primary font-semibold text-xs hover:underline flex items-center gap-0.5 cursor-pointer">
                                 <span>Order Stock</span>
                                 <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
                             </button>
@@ -1285,8 +1301,8 @@
                     prodSelect.innerHTML = '<option value="">No products in catalog to sell</option>';
                 } else {
                     prodSelect.innerHTML = products.map((p) => `
-                        <option value="${p.id}" data-price="${p.unit_price || 0}" data-stock="${p.stock_on_hand || 0}" data-name="${p.name}">
-                            ${p.name} (Stock: ${p.stock_on_hand}) • ${this.formatINR(p.unit_price)}
+                        <option value="${this.escapeHtml(p.id)}" data-price="${p.unit_price || 0}" data-stock="${p.stock_on_hand || 0}" data-name="${this.escapeHtml(p.name)}">
+                            ${this.escapeHtml(p.name)} (Stock: ${p.stock_on_hand}) • ${this.formatINR(p.unit_price)}
                         </option>
                     `).join('');
                 }
@@ -1320,7 +1336,7 @@
                                         <span class="material-symbols-outlined text-[18px]">receipt</span>
                                     </div>
                                     <div class="min-w-0">
-                                        <h5 class="font-bold text-xs text-on-surface truncate">${s.name || s.product_name || 'Retail Sale'}</h5>
+                                        <h5 class="font-bold text-xs text-on-surface truncate">${this.escapeHtml(s.name || s.product_name || 'Retail Sale')}</h5>
                                         <p class="text-[11px] text-on-surface-variant font-mono">
                                             ${units}x @ ${SmartStock.formatINR(s.unit_price || (total / units))} • <span class="text-outline">${dateStr}, ${timeStr}</span>
                                         </p>
@@ -1751,7 +1767,7 @@
                         <div class="p-3 bg-secondary-fixed/30 rounded-xl flex items-start gap-3 border border-secondary/20">
                             <span class="material-symbols-outlined text-secondary text-[22px] shrink-0 mt-0.5">warning</span>
                             <div class="min-w-0 flex-1 text-xs">
-                                <p class="font-bold text-on-surface truncate">Low Stock: ${p.name}</p>
+                                <p class="font-bold text-on-surface truncate">Low Stock: ${this.escapeHtml(p.name)}</p>
                                 <p class="text-on-surface-variant mt-0.5">
                                     Current on-hand: <b class="text-secondary">${p.stock_on_hand} units</b> (Reorder point: ${p.reorder_point || 5}).
                                 </p>
@@ -1770,7 +1786,7 @@
                             <span class="material-symbols-outlined text-primary text-[22px] shrink-0 mt-0.5">check_circle</span>
                             <div class="text-xs">
                                 <p class="font-bold text-on-surface">Inventory Fully Healthy</p>
-                                <p class="text-on-surface-variant mt-0.5">All ${products.length} products in ${storeName} have healthy stock levels above minimum reorder points.</p>
+                                <p class="text-on-surface-variant mt-0.5">All ${products.length} products in ${this.escapeHtml(storeName)} have healthy stock levels above minimum reorder points.</p>
                             </div>
                         </div>
                     `;
@@ -1779,7 +1795,7 @@
                         <div class="p-3 bg-surface-container-low rounded-xl flex items-start gap-3">
                             <span class="material-symbols-outlined text-primary text-[22px] shrink-0 mt-0.5">storefront</span>
                             <div class="text-xs">
-                                <p class="font-bold text-on-surface">Welcome to ${storeName}!</p>
+                                <p class="font-bold text-on-surface">Welcome to ${this.escapeHtml(storeName)}!</p>
                                 <p class="text-on-surface-variant mt-0.5">Your catalog is currently empty. Tap "+ Add Product" or "Import File" to add your products.</p>
                             </div>
                         </div>
@@ -2220,13 +2236,13 @@
                 html += `
                     <div class="bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-outline/10 space-y-3 relative overflow-hidden" id="replenish-card-${idx}">
                         <div class="flex items-start gap-3">
-                            <input type="checkbox" id="rep-check-${idx}" class="replenish-item-checkbox h-5 w-5 rounded mt-0.5 accent-primary cursor-pointer shrink-0" checked onchange="SmartStock.updateReplenishTotals()" data-idx="${idx}" data-id="${p.id}">
+                            <input type="checkbox" id="rep-check-${idx}" class="replenish-item-checkbox h-5 w-5 rounded mt-0.5 accent-primary cursor-pointer shrink-0" checked onchange="SmartStock.updateReplenishTotals()" data-idx="${idx}" data-id="${this.escapeHtml(p.id)}">
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 flex-wrap mb-1">
-                                    <span class="font-mono text-[11px] text-outline">${p.sku || 'SKU'}</span>
+                                    <span class="font-mono text-[11px] text-outline">${this.escapeHtml(p.sku || 'SKU')}</span>
                                     ${statusBadge}
                                 </div>
-                                <h4 class="font-bold text-sm text-on-surface truncate">${p.name}</h4>
+                                <h4 class="font-bold text-sm text-on-surface truncate">${this.escapeHtml(p.name)}</h4>
                                 <div class="flex items-center gap-3 text-xs text-on-surface-variant mt-1">
                                     <span>Price: <b class="text-on-surface">${SmartStock.formatINR(unitPrice)}</b></span>
                                     <span>•</span>
@@ -2539,8 +2555,8 @@
                 return;
             }
             select.innerHTML = products.map(p => `
-                <option value="${p.id}" data-cost="${p.unit_cost || Math.round((p.unit_price || 100)*0.85)}" data-name="${p.name}" data-sku="${p.sku}">
-                    ${p.name} (Stock: ${p.stock_on_hand} | Cost: ₹${p.unit_cost || 0})
+                <option value="${this.escapeHtml(p.id)}" data-cost="${p.unit_cost || Math.round((p.unit_price || 100)*0.85)}" data-name="${this.escapeHtml(p.name)}" data-sku="${this.escapeHtml(p.sku)}">
+                    ${this.escapeHtml(p.name)} (Stock: ${p.stock_on_hand} | Cost: ₹${p.unit_cost || 0})
                 </option>
             `).join('');
             this.calculateNewPOTotal();
@@ -3053,8 +3069,8 @@
                                     <span class="material-symbols-outlined text-[17px] ${ev.iconColor}">${ev.icon}</span>
                                 </div>
                                 <div class="min-w-0 flex-1">
-                                    <p class="font-bold text-xs text-on-surface truncate">${ev.title}</p>
-                                    <p class="text-[11px] text-on-surface-variant truncate">${ev.sub} • <span class="text-outline">${ev.time}</span></p>
+                                    <p class="font-bold text-xs text-on-surface truncate">${this.escapeHtml(ev.title)}</p>
+                                    <p class="text-[11px] text-on-surface-variant truncate">${this.escapeHtml(ev.sub)} • <span class="text-outline">${this.escapeHtml(ev.time)}</span></p>
                                 </div>
                             </div>
                             <div class="text-right shrink-0 pl-2">
@@ -4056,6 +4072,24 @@
                 return;
             }
 
+            // Verify token server-side when token is present (reject forged/expired sessions)
+            const authToken = this.getAuthToken();
+            if (currentPage && currentPage !== '01_signin.html' && authToken) {
+                try {
+                    const verifyRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (verifyRes.status === 401 || verifyRes.status === 403) {
+                        localStorage.removeItem('smartstock_token');
+                        localStorage.removeItem('smartstock_user');
+                        window.location.href = '01_signin.html';
+                        return;
+                    }
+                } catch (netErr) {
+                    // Offline or backend unavailable - continue with cached session
+                }
+            }
+
             // If already signed in and on 01_signin.html, auto-proceed to overview
             if (currentPage === '01_signin.html' && parsedUser && parsedUser.email) {
                 window.location.href = '02_overview.html';
@@ -4154,7 +4188,7 @@
             document.querySelectorAll('img[alt="Profile"]').forEach(img => {
                 const parent = img.parentElement;
                 if (parent) {
-                    const initial = currentStoreName.trim().charAt(0).toUpperCase() || 'S';
+                    const initial = this.escapeHtml(currentStoreName.trim().charAt(0).toUpperCase() || 'S');
                     parent.innerHTML = `<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-bold shadow-xs select-none">${initial}</div>`;
                 }
             });
@@ -4287,9 +4321,9 @@
                                         <div class="flex-1 min-w-0">
                                             <div class="flex items-center gap-1.5 mb-1">
                                                 <span class="bg-secondary-fixed text-on-secondary-fixed font-label-sm text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">Reorder Needed</span>
-                                                <span class="font-mono text-[11px] text-outline">${p.sku || 'SKU'}</span>
+                                                <span class="font-mono text-[11px] text-outline">${this.escapeHtml(p.sku || 'SKU')}</span>
                                             </div>
-                                            <h4 class="font-bold text-sm text-on-surface truncate">${p.name}</h4>
+                                            <h4 class="font-bold text-sm text-on-surface truncate">${this.escapeHtml(p.name)}</h4>
                                             <p class="text-xs text-on-surface-variant mt-0.5">
                                                 On-hand: <b class="text-secondary">${p.stock_on_hand} units</b> • Reorder Point: <b>${p.reorder_point || 10} units</b>
                                             </p>
@@ -4472,7 +4506,7 @@
                     return `
                         <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low">
                             <div class="min-w-0 flex-1">
-                                <p class="font-label-lg text-label-lg text-on-surface font-semibold truncate">${p.name}</p>
+                                <p class="font-label-lg text-label-lg text-on-surface font-semibold truncate">${this.escapeHtml(p.name)}</p>
                                 <p class="font-code-sm text-code-sm text-on-surface-variant">${needed} units × ${SmartStock.formatINR(cost)}</p>
                             </div>
                             <div class="text-right pl-2">
@@ -4597,7 +4631,7 @@
                                             return `
                                                 <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs py-1.5 border-b border-outline/10 last:border-b-0 gap-1">
                                                     <div class="flex items-center gap-1.5 flex-wrap">
-                                                        <span class="font-semibold text-on-surface">${it.name || it.item}</span>
+                                                        <span class="font-semibold text-on-surface">${this.escapeHtml(it.name || it.item)}</span>
                                                         ${stockBadge}
                                                     </div>
                                                     <div class="flex items-center gap-2 text-on-surface-variant font-mono">
@@ -4615,10 +4649,10 @@
                                         <div class="flex items-start justify-between gap-2">
                                             <div>
                                                 <div class="flex items-center gap-2">
-                                                    <span class="font-mono text-xs font-bold text-primary">${po.po_number || po.id}</span>
+                                                    <span class="font-mono text-xs font-bold text-primary">${this.escapeHtml(po.po_number || po.id)}</span>
                                                     ${statusBadge}
                                                 </div>
-                                                <p class="text-xs text-on-surface-variant mt-0.5">${po.supplier || 'Metro Wholesale'} • <span class="text-outline">${dateStr}</span></p>
+                                                <p class="text-xs text-on-surface-variant mt-0.5">${this.escapeHtml(po.supplier || 'Metro Wholesale')} • <span class="text-outline">${dateStr}</span></p>
                                             </div>
                                             <div class="text-right">
                                                 <span class="font-bold text-sm text-primary block">${SmartStock.formatINR(po.total_amount || po.total || 0)}</span>
@@ -4638,7 +4672,7 @@
                                                 <span>${isCompleted ? 'Inwarded to Store Inventory' : 'Awaiting Supplier Delivery'}</span>
                                             </div>
                                             ${!isCompleted ? `
-                                                <button onclick="SmartStock.receivePO('${po.id}')" class="h-8 px-3 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1.5 active:opacity-90 shadow-xs cursor-pointer">
+                                                <button onclick="SmartStock.receivePO('${this.escapeJsAttr(po.id)}')" class="h-8 px-3 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1.5 active:opacity-90 shadow-xs cursor-pointer">
                                                     <span class="material-symbols-outlined text-[15px]">inventory_2</span>
                                                     <span>Receive Stock</span>
                                                 </button>
@@ -4834,27 +4868,27 @@
 
                         return `
                         <div class="inventory-card bg-surface-container-lowest rounded-xl p-3.5 shadow-sm border border-outline/10 relative overflow-hidden transition-all"
-                             data-id="${p.id}"
+                             data-id="${this.escapeHtml(p.id)}"
                              data-status="${statusKey}"
                              data-stock="${stock}"
                              data-reorder="${rop}"
-                             data-category="${(p.category_name || 'General').toLowerCase()}"
+                             data-category="${this.escapeHtml((p.category_name || 'General').toLowerCase())}"
                              data-price="${p.unit_price || 0}"
-                             data-name="${(p.name || '').toLowerCase()}"
-                             data-sku="${(p.sku || '').toLowerCase()}">
+                             data-name="${this.escapeHtml((p.name || '').toLowerCase())}"
+                             data-sku="${this.escapeHtml((p.sku || '').toLowerCase())}">
                             <div class="absolute left-0 top-0 bottom-0 w-1.5 ${isZero ? 'bg-error' : (isLow ? 'bg-secondary' : 'bg-primary')}"></div>
                             <div class="flex items-start justify-between gap-2 pl-1.5">
                                 <div class="flex items-start gap-2.5 min-w-0 flex-1">
                                     <label class="cursor-pointer relative flex items-center pt-0.5" onclick="event.stopPropagation()">
-                                        <input type="checkbox" class="item-checkbox w-4 h-4 rounded text-primary accent-[#0b3127] cursor-pointer" data-id="${p.id}" onchange="SmartStock.onItemSelectChange()">
+                                        <input type="checkbox" class="item-checkbox w-4 h-4 rounded text-primary accent-[#0b3127] cursor-pointer" data-id="${this.escapeHtml(p.id)}" onchange="SmartStock.onItemSelectChange()">
                                     </label>
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
-                                            <span class="font-mono text-[11px] font-semibold text-outline">${p.sku || 'SKU'}</span>
+                                            <span class="font-mono text-[11px] font-semibold text-outline">${this.escapeHtml(p.sku || 'SKU')}</span>
                                             <span>•</span>
-                                            <span>${p.category_name || 'General'}</span>
+                                            <span>${this.escapeHtml(p.category_name || 'General')}</span>
                                         </div>
-                                        <h3 class="font-bold text-sm text-on-surface truncate mt-0.5">${p.name}</h3>
+                                        <h3 class="font-bold text-sm text-on-surface truncate mt-0.5">${this.escapeHtml(p.name)}</h3>
                                         <div class="flex items-center gap-3 text-xs text-on-surface-variant mt-1">
                                             <span>Price: <b class="text-on-surface">${SmartStock.formatINR(p.unit_price)}</b></span>
                                             <span>Cost: <span class="text-outline">${SmartStock.formatINR(p.unit_cost)}</span></span>
@@ -4883,19 +4917,19 @@
 
                             <div class="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-outline/10">
                                 <div class="flex items-center gap-1">
-                                    <button onclick="SmartStock.openEditProductModal('${p.id}')" class="text-primary hover:bg-primary/10 p-1.5 rounded-lg active:scale-95 transition-all text-xs cursor-pointer" title="Edit Item & Reorder Point">
+                                    <button onclick="SmartStock.openEditProductModal('${this.escapeJsAttr(p.id)}')" class="text-primary hover:bg-primary/10 p-1.5 rounded-lg active:scale-95 transition-all text-xs cursor-pointer" title="Edit Item & Reorder Point">
                                         <span class="material-symbols-outlined text-[17px]">edit</span>
                                     </button>
-                                    <button onclick="SmartStock.deleteProduct('${p.id}')" class="text-error hover:bg-error-container/20 p-1.5 rounded-lg active:scale-95 transition-all text-xs cursor-pointer" title="Delete Product">
+                                    <button onclick="SmartStock.deleteProduct('${this.escapeJsAttr(p.id)}')" class="text-error hover:bg-error-container/20 p-1.5 rounded-lg active:scale-95 transition-all text-xs cursor-pointer" title="Delete Product">
                                         <span class="material-symbols-outlined text-[17px]">delete</span>
                                     </button>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <button onclick="SmartStock.updateStock('${p.id}', -1)" class="h-8 px-2.5 rounded-lg bg-surface-container text-on-surface font-semibold text-xs flex items-center gap-1 active:bg-surface-variant transition-all cursor-pointer">
+                                    <button onclick="SmartStock.updateStock('${this.escapeJsAttr(p.id)}', -1)" class="h-8 px-2.5 rounded-lg bg-surface-container text-on-surface font-semibold text-xs flex items-center gap-1 active:bg-surface-variant transition-all cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px] text-secondary">remove_circle_outline</span>
                                         <span>-1 Sell</span>
                                     </button>
-                                    <button onclick="SmartStock.updateStock('${p.id}', 10)" class="h-8 px-2.5 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1 active:opacity-90 shadow-xs transition-all cursor-pointer">
+                                    <button onclick="SmartStock.updateStock('${this.escapeJsAttr(p.id)}', 10)" class="h-8 px-2.5 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1 active:opacity-90 shadow-xs transition-all cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px]">add_circle</span>
                                         <span>+10 Stock</span>
                                     </button>

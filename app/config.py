@@ -73,8 +73,11 @@ DEFAULT_SERVICE_LEVELS = {
 # API Configuration
 API_TITLE: str = "Supply Chain Demand & Inventory Optimization Engine"
 API_VERSION: str = "1.0.0"
+ENVIRONMENT: str = os.getenv("SMARTSTOCK_ENV", "development").strip().lower()
 API_KEY: str | None = os.getenv("API_KEY", None)
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY", None)
+RATE_LIMIT_AUTH_PER_MIN: int = int(os.getenv("RATE_LIMIT_AUTH_PER_MIN", "30"))
+RATE_LIMIT_AI_PER_MIN: int = int(os.getenv("RATE_LIMIT_AI_PER_MIN", "20"))
 
 # Supabase Configuration
 SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://txpvoqdecsjpmklelxdb.supabase.co")

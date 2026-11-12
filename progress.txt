@@ -1,6 +1,6 @@
 # SmartStock — Autonomous Progress & Audit Log (Ralph Loop)
 Initialized: 2026-11-12
-Current State: Phase 1 (Security Hardening & Data Protection) — Verification & QA
+Current State: Phase 1 (Security Hardening & Data Protection) — CLOSED & VERIFIED
 Working Branch: feature/phase1-security-hardening
 Baseline Recovery Branch: recovery-phase0-baseline (Commit c81a1fe)
 Baseline Tag: recovery-baseline-v0
@@ -87,7 +87,7 @@ Baseline Tag: recovery-baseline-v0
     - Server now derives tenant identity strictly from authenticated session (`current_user["email"]`). Cross-tenant queries/mutations receive 403 Forbidden; unauthenticated requests receive 401 Unauthorized.
 
 [x] SEC-02: PBKDF2-HMAC-SHA256 Password Hashing & Login Migration
-    - Implemented `hash_password` and `verify_password` in `app/auth.py` using PBKDF2-HMAC-SHA256 (100,000 iterations) with unique 16-byte random cryptographic salt (`secrets.token_hex(16)`).
+    - Implemented `hash_password` and `verify_password` in `app/auth.py` using PBKDF2-HMAC-SHA256 (600,000 iterations) with unique 16-byte random cryptographic salt (`secrets.token_hex(16)`).
     - Preserved legacy accounts with seamless zero-downtime login-time migration: verifies legacy SHA-256 hash and automatically upgrades `password_hash` to PBKDF2 upon successful login.
     - Removed plaintext password storage from `smartstock_accounts_registry` in `stitch/smartstock-bridge.js`.
 
@@ -95,7 +95,7 @@ Baseline Tag: recovery-baseline-v0
     - Added `app_sessions` table and indexes in `app/db.py`.
     - Implemented `create_session` generating 256-bit random tokens (`secrets.token_hex(32)`) with 7-day expiration (`expires_at`).
     - Added `POST /api/v1/auth/logout` endpoint and `revoke_session` to invalidate active tokens.
-    - Updated `get_current_user` with datetime-aware expiration validation and seamless migration for any active legacy tokens.
+    - Updated `get_current_user` with datetime-aware expiration validation; legacy deterministic SHA-256 token fallback removed to prevent session forgery.
 
 [x] SEC-04: Server-Side Gemini AI Assistant Proxy
     - Implemented authenticated `POST /api/v1/ai/assistant` in `app/main.py` reading `GEMINI_API_KEY` from server config (`app/config.py`).
@@ -106,19 +106,21 @@ Baseline Tag: recovery-baseline-v0
 [x] SEC-05: CORS Restrictions
     - Updated `app/config.py` `ALLOWED_ORIGINS` to remove wildcard `"*"` and default to explicit trusted localhost/Supabase origins, configurable via `ALLOWED_ORIGINS` env var.
 
-[x] Security, CodeRabbit Remediation & Regression Test Verification
-    - Executed independent CodeRabbit Security Reviewer subagent inspection.
-    - Remediated all Critical/Major findings discovered during review:
+[x] Security, CodeRabbit Remediation, Phase 1 Closure & Regression Test Verification
+    - CodeRabbit CLI binary (`coderabbit`) was unavailable in this shell environment; executed independent CodeRabbit Security Reviewer subagent static audit + manual security verification.
+    - Remediated all Critical/Major findings discovered during review and closure:
       * Removed forgeable legacy deterministic token fallback in `app/auth.py`.
-      * Upgraded PBKDF2-HMAC-SHA256 to 600,000 iterations with automatic rehash and bounds check.
+      * Upgraded PBKDF2-HMAC-SHA256 to 600,000 iterations with automatic rehash and iteration bounds validation.
       * Secured live Supabase routes (`/api/v1/products`, `/insights`, `/purchase-orders`, `/shop`) with `Depends(get_current_user)`.
+      * Enforced fail-closed `API_KEY` check on analytical routes when `SMARTSTOCK_ENV=production` (`app/main.py`, `app/config.py`).
+      * Added sliding-window rate limiting on `/api/v1/auth/register`, `/api/v1/auth/login`, and `/api/v1/ai/assistant` (`429 Too Many Requests`).
       * Fixed TOCTOU stock deduction and PO receiving race conditions via `BEGIN IMMEDIATE` and atomic conditional SQL.
       * Scoped `idx_app_sales_user_idempotency` per `(user_email, idempotency_key)` and enabled `PRAGMA foreign_keys = ON`.
-      * Escaped Gemini AI outputs in `renderAIIntelligenceCard`, blocked client auth bypass on 401/403, and added CSV formula sanitization.
+      * Escaped dynamic fields across all `innerHTML` renderers in `stitch/smartstock-bridge.js` (suppliers, sales, notifications, replenishment, POs, floor activity, overview, inventory cards, AI summary), added `escapeJsAttr` for inline attributes, hardened auth guard with server `/api/v1/auth/me` check when token exists, blocked client auth bypass on 401/403, and added CSV formula sanitization.
       * Moved Gemini API key from query string `?key=` to `x-goog-api-key` header and separated `systemInstruction`.
-    - Created `tests/test_security_phase1.py` (17 dedicated security tests).
-    - Verified full Python test suite: 72/72 PASSED in 16.24s (85% coverage).
-    - Verified Node.js retail logic test suite: 17/17 PASSED in 96.76ms.
-    - Verified Playwright E2E suite: 8/8 PASSED in 6.8s.
-    - Total Verified Tests Passing: 97 tests (100% pass rate).
+    - Created `tests/test_security_phase1.py` (20 dedicated security tests).
+    - Verified full Python test suite: 75/75 PASSED in 16.02s (85% coverage).
+    - Verified Node.js retail logic test suite: 17/17 PASSED in 96.5ms.
+    - Verified Playwright E2E suite: 8/8 PASSED in 4.5s.
+    - Total Verified Tests Passing: 100/100 (100% pass rate).
 

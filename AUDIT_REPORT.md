@@ -293,3 +293,28 @@ flowchart LR
 
 ---
 *End of Complete Application Audit Report (Phase 0)*
+
+---
+
+## 13. Phase 1 Security Hardening & Closure Addendum (2026-11-12)
+
+Following approval, Phase 1 was executed on branch `feature/phase1-security-hardening`:
+
+### 13.1 Resolved Phase 0 Security Risks
+- **SEC-01 (CRITICAL — RESOLVED):** Added `Depends(get_current_user)` to all `/api/v1/user/*` and live Supabase endpoints; cross-tenant email queries/bodies fail with `403 Forbidden`, unauthenticated requests fail with `401 Unauthorized`.
+- **SEC-02 (HIGH — RESOLVED):** Replaced static-salted SHA-256 with `PBKDF2-HMAC-SHA256` (`600,000` iterations, unique 16-byte random salt) with transparent login-time rehash migration and iteration bounds validation. Removed plaintext password storage from browser `localStorage`.
+- **SEC-03 (HIGH — RESOLVED):** Replaced predictable tokens with 256-bit random tokens persisted in `app_sessions` (7-day expiry + `/api/v1/auth/logout` revocation). Removed legacy deterministic SHA-256 token fallback to prevent forgery.
+- **SEC-04 (HIGH — RESOLVED):** Moved Gemini calls to authenticated server proxy `POST /api/v1/ai/assistant` passing `GEMINI_API_KEY` via `x-goog-api-key` header and `systemInstruction` isolation.
+- **SEC-05 (MEDIUM — RESOLVED):** Removed `*` wildcard from default `ALLOWED_ORIGINS`.
+
+### 13.2 CodeRabbit Review & Closure Remediations
+- **Note on Tool Availability:** The `coderabbit` CLI binary is not installed locally; an independent **CodeRabbit Security Reviewer** subagent inspected all modified files directly via static review and flagged additional critical/major issues resolved in Phase 1:
+  - **TOCTOU Race Conditions:** Fixed via `BEGIN IMMEDIATE` and atomic conditional SQL in `record_user_sale` and `receive_user_po`.
+  - **Unsafe DOM Rendering & Auth Guard (XSS — RESOLVED IN CLOSURE):** Added `escapeHtml` / `escapeJsAttr` escaping across all dynamic `innerHTML` templates in `stitch/smartstock-bridge.js` (suppliers, sales, notifications, replenishment, PO ledger, floor activity, overview, inventory cards, AI summary) and synced to iOS/Android asset bundles. Hardened page load auth guard to validate `smartstock_token` via `/api/v1/auth/me`.
+  - **Rate Limiting (RESOLVED IN CLOSURE):** Added in-memory sliding-window rate limiting on `/api/v1/auth/login`, `/api/v1/auth/register`, and `/api/v1/ai/assistant` (`429 Too Many Requests`).
+  - **Analytical Route Production Guard (RESOLVED IN CLOSURE):** `verify_api_key` fails closed (`503`) when `SMARTSTOCK_ENV=production` and `API_KEY` is unset.
+
+### 13.3 Phase 1 Final Verified Test Results (100 / 100 Passing)
+- **Python Suite (`pytest`):** **75 / 75 PASSED** in 16.02s (85% coverage) — 37 core analytical + 18 retail server + 20 Phase 1 security tests.
+- **Node.js Frontend Business Logic (`npm run test:unit`):** **17 / 17 PASSED** in 96.5ms.
+- **Playwright E2E Suite (`npx playwright test`):** **8 / 8 PASSED** in 4.5s.

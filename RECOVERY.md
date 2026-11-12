@@ -109,10 +109,10 @@ python3 -m http.server 3000 --directory stitch
 ```
 - Access in browser: `http://localhost:3000`
 
-### 3.3 Automated Test Suites
+### 3.3 Automated Test Suites (100 Total Verified Tests)
 ```bash
-# 1. Run Python Unit & Retail Server Tests (55 tests)
-PYTHONPATH=. .venv/bin/pytest tests/test_api.py tests/test_anomaly.py tests/test_forecasting.py tests/test_rules.py tests/test_safety_stock.py tests/test_segmentation.py tests/test_simulation.py tests/test_retail_server.py
+# 1. Run Python Analytical, Retail Server & Security Tests (75 tests)
+PYTHONPATH=. .venv/bin/pytest tests/test_api.py tests/test_anomaly.py tests/test_forecasting.py tests/test_rules.py tests/test_safety_stock.py tests/test_segmentation.py tests/test_simulation.py tests/test_retail_server.py tests/test_security_phase1.py
 
 # 2. Run Node.js Retail Business Logic Tests (17 tests)
 npm run test:unit
@@ -123,7 +123,10 @@ npx playwright test
 
 ---
 
-## 4. Emergency Contacts & Verification Checklist
-- **Baseline Git Hash:** `c81a1fe88bce955e6cbf4d8e5792aeebfec1f88c`
+## 4. Phase Checkpoints & Emergency Verification Checklist
+- **Phase 0 Recovery Baseline Hash:** `c81a1fe88bce955e6cbf4d8e5792aeebfec1f88c` (`recovery-phase0-baseline` / `recovery-baseline-v0`)
+- **Phase 1 Security Branch:** `feature/phase1-security-hardening`
+- **SQLite Hot Backup:** `data/supply_chain_backup_baseline.db` (`PRAGMA integrity_check` -> `ok`)
+- **Phase 1 Additive Schema Note:** `init_db()` adds `app_sessions` and tenant-scoped `idx_app_sales_user_idempotency` without touching or deleting existing `app_users`, `app_products`, `app_purchase_orders`, `app_sales`, `sales`, or `sku_master` records.
 - **Clean Tree Check:** `git status` should return `nothing to commit, working tree clean`.
 - **Remote Push Confirmed:** Both branch `recovery-phase0-baseline` and tag `recovery-baseline-v0` are verified present on GitHub `origin`.

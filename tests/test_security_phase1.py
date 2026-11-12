@@ -14,11 +14,13 @@ import hashlib
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.auth import LEGACY_SALT
+import app.main as app_main
+from app.auth import LEGACY_SALT, clear_rate_limits
 from app.config import ALLOWED_ORIGINS
 from app.db import get_db, get_write_db
 from app.main import app
@@ -455,3 +457,41 @@ def test_cors_origins_do_not_contain_wildcard_by_default():
     """ALLOWED_ORIGINS must not contain wildcard '*' by default."""
     assert "*" not in ALLOWED_ORIGINS
     assert "http://localhost:3000" in ALLOWED_ORIGINS
+
+
+def test_analytical_routes_fail_closed_in_production_without_api_key(client, monkeypatch):
+    """In production mode without API_KEY configured, analytical routes must fail closed (503)."""
+    monkeypatch.setattr(app_main, "ENVIRONMENT", "production")
+    monkeypatch.setattr(app_main, "API_KEY", None)
+    res = client.get("/skus?limit=5")
+    assert res.status_code == 503
+    assert "api_key is required" in res.json()["detail"].lower()
+
+
+def test_auth_rate_limiting_enforced(client):
+    """Repeated login attempts exceeding threshold must return 429 Too Many Requests."""
+    clear_rate_limits()
+    try:
+        hit_429 = False
+        for _ in range(35):
+            r = client.post(
+                "/api/v1/auth/login",
+                json={"email": "ratelimit@store.in", "password": "wrongpassword"},
+            )
+            if r.status_code == 429:
+                hit_429 = True
+                break
+        assert hit_429, "Expected rate limiter to return HTTP 429 after 30 requests"
+    finally:
+        clear_rate_limits()
+
+
+def test_frontend_bridge_no_exposed_gemini_keys_and_escaped_renderers():
+    """Verify stitch/smartstock-bridge.js contains zero exposed Gemini endpoints and escapes AI output."""
+    bridge_path = Path(__file__).resolve().parent.parent / "stitch" / "smartstock-bridge.js"
+    content = bridge_path.read_text(encoding="utf-8")
+    assert "generativelanguage.googleapis.com" not in content
+    assert "smartstock_gemini_api_key" not in content
+    assert "this.escapeHtml(aiData.summary)" in content
+    assert "this.escapeJsAttr(po.id)" in content
+    assert "this.escapeJsAttr(p.id)" in content

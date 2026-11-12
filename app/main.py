@@ -23,6 +23,7 @@ from app.auth import (
     create_session,
     get_current_user,
     hash_password,
+    make_rate_limiter,
     revoke_session,
     verify_password,
 )
@@ -31,12 +32,18 @@ from app.config import (
     API_KEY,
     API_TITLE,
     API_VERSION,
+    ENVIRONMENT,
     GEMINI_API_KEY,
     LAST_DATA_DATE,
     METRICS_PATH,
     MODEL_PATH,
+    RATE_LIMIT_AI_PER_MIN,
+    RATE_LIMIT_AUTH_PER_MIN,
     SEGMENTS_PATH,
 )
+
+auth_rate_limiter = make_rate_limiter(RATE_LIMIT_AUTH_PER_MIN, 60)
+ai_rate_limiter = make_rate_limiter(RATE_LIMIT_AI_PER_MIN, 60)
 from app.db import get_db, get_write_db
 from app.schemas import (
     AnomalyItem,
@@ -119,7 +126,12 @@ app.add_middleware(
 
 
 def verify_api_key(x_api_key: str | None = Header(None)) -> None:
-    """Dependency: enforce API key check if API_KEY environment variable is set."""
+    """Dependency: enforce API key check when API_KEY is set or in production."""
+    if ENVIRONMENT == "production" and not API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Server configuration error: API_KEY is required in production mode.",
+        )
     if API_KEY is not None and (not x_api_key or not hmac.compare_digest(x_api_key, API_KEY)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -497,7 +509,7 @@ class AIAssistantRequest(BaseModel):
     context_type: str = "store_summary"
 
 
-@app.post("/api/v1/auth/register")
+@app.post("/api/v1/auth/register", dependencies=[Depends(auth_rate_limiter)])
 def register_user(req: UserRegisterRequest, db: sqlite3.Connection = Depends(get_write_db)):
     """Register a new merchant account with PBKDF2 password security and isolated data namespace."""
     clean_email = req.email.strip().lower()
@@ -538,7 +550,7 @@ def register_user(req: UserRegisterRequest, db: sqlite3.Connection = Depends(get
     }
 
 
-@app.post("/api/v1/auth/login")
+@app.post("/api/v1/auth/login", dependencies=[Depends(auth_rate_limiter)])
 def login_user(req: UserLoginRequest, db: sqlite3.Connection = Depends(get_write_db)):
     """Authenticate merchant user with strict password verification and zero-downtime PBKDF2 rehash."""
     clean_email = req.email.strip().lower()
@@ -1050,7 +1062,7 @@ def get_sales_summary(
     }
 
 
-@app.post("/api/v1/ai/assistant")
+@app.post("/api/v1/ai/assistant", dependencies=[Depends(ai_rate_limiter)])
 def ai_assistant_endpoint(
     req: AIAssistantRequest,
     current_user: dict[str, Any] = Depends(get_current_user),

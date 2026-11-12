@@ -96,5 +96,16 @@ graph TD
 - **Backend:** Python 3.9+ / 3.11+, FastAPI 0.110+, Uvicorn 0.28+, Pydantic 2.6+, Scikit-Learn 1.4+, Statsmodels 0.14+, Pandas 2.1+, NumPy 1.26+.
 - **Frontend:** Vanilla ES6+ JavaScript, Tailwind CSS, Material Symbols Outlined, Canvas 2D, HTML5 Web Storage.
 - **Testing Frameworks:** Pytest 8.0+ (`pytest-cov`), Node.js native test runner (`node:test`), Playwright 1.56+.
-- **Database Support:** SQLite 3 (WAL mode) and Supabase PostgreSQL with RLS.
+- **Database Support:** SQLite 3 (WAL mode, `PRAGMA foreign_keys = ON`) and Supabase PostgreSQL with RLS.
 - **Mobile Platforms:** iOS (Xcode 15+, SwiftUI, iOS 16+) and Android (API 26+, Jetpack Compose, Kotlin 1.9+).
+
+---
+
+## 5. Security & Multi-Tenant Guarantees (Phase 1 Hardened)
+- **Authentication & Passwords:** PBKDF2-HMAC-SHA256 (`600,000` iterations, unique 16-byte cryptographic random salt per user) with transparent login-time migration from legacy SHA-256 accounts (`app/auth.py`).
+- **Session Tokens:** 256-bit cryptographically random session tokens persisted in `app_sessions` with 7-day expiration (`expires_at`) and revocation via `POST /api/v1/auth/logout`.
+- **Multi-Tenant Isolation:** Every `/api/v1/user/*` and live Supabase endpoint enforces `Depends(get_current_user)` and scopes database operations strictly by `current_user["email"]`, rejecting forged emails with `403 Forbidden` and unauthenticated requests with `401 Unauthorized`.
+- **Atomic Inventory & PO Updates:** `BEGIN IMMEDIATE` transactions with conditional SQL updates prevent TOCTOU race conditions during concurrent sales and PO inwarding.
+- **Server-Side AI Proxy:** `POST /api/v1/ai/assistant` handles Gemini 2.5 Flash requests server-side via `x-goog-api-key` header, eliminating browser API key exposure.
+- **Rate Limiting & Fail-Closed Production Auth:** Sliding-window rate limiting guards `/api/v1/auth/*` and `/api/v1/ai/assistant` (`429 Too Many Requests`). When `SMARTSTOCK_ENV=production`, analytical routes fail closed (`503`) if `API_KEY` is unconfigured.
+- **XSS & CSV Formula Defense:** Frontend `stitch/smartstock-bridge.js` escapes dynamic values in `innerHTML` templates (`escapeHtml`, `escapeJsAttr`), validates tokens via `/api/v1/auth/me`, and neutralizes CSV formula prefixes (`exportCSV`).
