@@ -143,16 +143,28 @@ def test_api_decision_batch_over_limit(client: TestClient):
 
 
 def test_api_live_app_routes(client: TestClient):
-    """Verify live SmartStock application routes."""
-    resp_prod = client.get("/api/v1/products")
+    """Verify live SmartStock application routes require authentication and respond."""
+    # Unauthenticated request must return 401
+    assert client.get("/api/v1/products").status_code == 401
+
+    # Register & authenticate test user
+    reg = client.post("/api/v1/auth/register", json={
+        "email": "live_api_tester@store.in",
+        "password": "TestPassword123!",
+        "store_name": "Live API Store",
+    })
+    assert reg.status_code == 200
+    headers = {"Authorization": f"Bearer {reg.json()['token']}"}
+
+    resp_prod = client.get("/api/v1/products", headers=headers)
     assert resp_prod.status_code == 200
 
-    resp_ins = client.get("/api/v1/insights")
+    resp_ins = client.get("/api/v1/insights", headers=headers)
     assert resp_ins.status_code == 200
 
-    resp_po = client.get("/api/v1/purchase-orders")
+    resp_po = client.get("/api/v1/purchase-orders", headers=headers)
     assert resp_po.status_code == 200
 
-    resp_shop = client.get("/api/v1/shop?code=STORE-402")
+    resp_shop = client.get("/api/v1/shop?code=STORE-402", headers=headers)
     assert resp_shop.status_code in [200, 404]
 

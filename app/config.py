@@ -74,21 +74,33 @@ DEFAULT_SERVICE_LEVELS = {
 API_TITLE: str = "Supply Chain Demand & Inventory Optimization Engine"
 API_VERSION: str = "1.0.0"
 API_KEY: str | None = os.getenv("API_KEY", None)
+GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY", None)
 
 # Supabase Configuration
 SUPABASE_URL: str = os.getenv("SUPABASE_URL", "https://txpvoqdecsjpmklelxdb.supabase.co")
 SUPABASE_ANON_KEY: str | None = os.getenv("SUPABASE_ANON_KEY", None)
 SUPABASE_SERVICE_ROLE_KEY: str | None = os.getenv("SUPABASE_SERVICE_ROLE_KEY", None)
 
-
-# Allowed CORS Origins
-ALLOWED_ORIGINS: list[str] = [
-    "*",
+# Allowed CORS Origins (Configurable and restricted to trusted origins)
+DEFAULT_ALLOWED_ORIGINS: list[str] = [
     "http://localhost:3000",
-    "http://localhost:8000",
-    "http://localhost:8080",
-    "http://127.0.0.1:8000",
     "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "http://localhost:5050",
+    "http://127.0.0.1:5050",
+    "http://localhost:6060",
+    "http://127.0.0.1:6060",
+    "http://localhost:8080",
     "https://txpvoqdecsjpmklelxdb.supabase.co",
 ]
+env_origins = os.getenv("ALLOWED_ORIGINS")
+if env_origins:
+    try:
+        import json
+        ALLOWED_ORIGINS: list[str] = json.loads(env_origins)
+    except Exception:
+        ALLOWED_ORIGINS = [o.strip() for o in env_origins.split(",") if o.strip()]
+else:
+    ALLOWED_ORIGINS = DEFAULT_ALLOWED_ORIGINS
 

@@ -131,9 +131,17 @@ def client(temp_db: Path, tiny_rf_model: RandomForestRegressor) -> Generator[Tes
         finally:
             conn.close()
 
-    app.dependency_overrides[app.dependency_overrides.get(None, None)] = override_get_db
-    from app.db import get_db
+    def override_get_write_db():
+        conn = sqlite3.connect(str(temp_db))
+        conn.row_factory = sqlite3.Row
+        try:
+            yield conn
+        finally:
+            conn.close()
+
+    from app.db import get_db, get_write_db
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_write_db] = override_get_write_db
 
     # Inject state
     app_state["rf_model"] = tiny_rf_model

@@ -296,8 +296,16 @@
             };
         },
 
-        getGeminiApiKey() {
-            return (window.__SMARTSTOCK_CONFIG__ && window.__SMARTSTOCK_CONFIG__.GEMINI_API_KEY) || localStorage.getItem('smartstock_gemini_api_key') || '';
+        getAuthToken() {
+            return (window.__SMARTSTOCK_CONFIG__ && window.__SMARTSTOCK_CONFIG__.AUTH_TOKEN) || localStorage.getItem('smartstock_token') || '';
+        },
+
+        getAuthHeaders(extraHeaders = {}) {
+            const token = this.getAuthToken();
+            return {
+                ...extraHeaders,
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
         },
 
         escapeHtml(str) {
@@ -336,7 +344,6 @@
                 if (!reg['owner@sharmakirana.in']) {
                     reg['owner@sharmakirana.in'] = {
                         email: 'owner@sharmakirana.in',
-                        password: 'terminal123',
                         passwordHash: this.simpleHash('terminal123'),
                         store: 'Sharma Kirana Store',
                         phone: '+91 98765 43210',
@@ -404,8 +411,9 @@
             let backendSuccess = false;
             let backendUser = null;
             let backendErrMsg = null;
+            let backendAuthRejected = false;
             try {
-                const resp = await fetch('http://127.0.0.1:8000/api/v1/auth/login', {
+                const resp = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: cleanEmail, password: password })
@@ -414,12 +422,22 @@
                     const data = await resp.json();
                     backendSuccess = true;
                     backendUser = data.user;
+                    if (data.token) {
+                        localStorage.setItem('smartstock_token', data.token);
+                    }
                 } else {
                     const errData = await resp.json().catch(() => ({}));
-                    backendErrMsg = errData.detail || 'Incorrect password. Access denied.';
+                    backendErrMsg = errData.detail || 'Invalid email or password.';
+                    if (resp.status === 401 || resp.status === 403) {
+                        backendAuthRejected = true;
+                    }
                 }
             } catch (netErr) {
                 // Backend unreachable, fallback to verified local accounts registry
+            }
+
+            if (backendAuthRejected) {
+                return { data: null, error: { message: backendErrMsg } };
             }
 
             if (backendSuccess && backendUser) {
@@ -435,13 +453,13 @@
                 return { data: { user: userObj }, error: null };
             }
 
-            // 2. Strict verification against local accounts registry
+            // 2. Strict verification against local accounts registry (offline fallback)
             const accounts = this.getAccountsRegistry();
             const account = accounts[cleanEmail];
             if (account) {
-                if (account.password === password || account.passwordHash === this.simpleHash(password)) {
+                if (account.passwordHash === this.simpleHash(password)) {
                     // Valid credentials matching local registry! Also sync to backend in background
-                    fetch('http://127.0.0.1:8000/api/v1/auth/register', {
+                    fetch(`${API_BASE_URL}/api/v1/auth/register`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -451,7 +469,9 @@
                             phone: account.phone || '',
                             manager: account.manager || 'Store Owner'
                         })
-                    }).catch(() => {});
+                    }).then(r => r.ok ? r.json() : null)
+                      .then(d => { if (d && d.token) localStorage.setItem('smartstock_token', d.token); })
+                      .catch(() => {});
 
                     const userObj = {
                         email: cleanEmail,
@@ -489,7 +509,7 @@
 
             // 1. Try FastAPI backend registration
             try {
-                const resp = await fetch('http://127.0.0.1:8000/api/v1/auth/register', {
+                const resp = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -500,7 +520,12 @@
                         manager: 'Store Owner'
                     })
                 });
-                if (!resp.ok) {
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.token) {
+                        localStorage.setItem('smartstock_token', data.token);
+                    }
+                } else {
                     const errData = await resp.json().catch(() => ({}));
                     if (resp.status === 400 && errData.detail && errData.detail.toLowerCase().includes('already registered')) {
                         return { data: null, error: { message: errData.detail } };
@@ -510,11 +535,10 @@
                 console.warn('Backend register error (offline):', e);
             }
 
-            // 2. Save in accounts registry
+            // 2. Save in accounts registry (never store plaintext password)
             const accounts = this.getAccountsRegistry();
             accounts[cleanEmail] = {
                 email: cleanEmail,
-                password: password,
                 passwordHash: this.simpleHash(password),
                 store: shopName,
                 phone: phone || '',
@@ -541,6 +565,14 @@
         },
 
         async signOut() {
+            const token = this.getAuthToken();
+            if (token) {
+                fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }).catch(() => {});
+            }
+            localStorage.removeItem('smartstock_token');
             localStorage.removeItem('smartstock_session');
             localStorage.removeItem('smartstock_user');
             window.location.href = '01_signin.html';
@@ -561,10 +593,12 @@
 
             // Only fallback to backend if key was NEVER set in localStorage
             if (items === null) {
-                const email = this.getCurrentUserEmail();
-                if (email) {
+                const token = this.getAuthToken();
+                if (token) {
                     try {
-                        const resp = await fetch(`http://127.0.0.1:8000/api/v1/user/products?email=${encodeURIComponent(email)}`);
+                        const resp = await fetch(`${API_BASE_URL}/api/v1/user/products`, {
+                            headers: this.getAuthHeaders()
+                        });
                         if (resp.ok) {
                             const backendItems = await resp.json();
                             if (Array.isArray(backendItems) && backendItems.length > 0) {
@@ -658,13 +692,12 @@
 
             // Sync to backend if available
             try {
-                const email = this.getCurrentUserEmail();
-                if (email) {
-                    fetch('http://127.0.0.1:8000/api/v1/user/products', {
+                const token = this.getAuthToken();
+                if (token) {
+                    fetch(`${API_BASE_URL}/api/v1/user/products`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({
-                            user_email: email,
                             name: newProduct.name,
                             sku: newProduct.sku,
                             unit_cost: newProduct.unit_cost,
@@ -765,13 +798,12 @@
 
                     // Sync sale to backend
                     try {
-                        const email = this.getCurrentUserEmail();
-                        if (email) {
-                            fetch('http://127.0.0.1:8000/api/v1/user/sales', {
+                        const token = this.getAuthToken();
+                        if (token) {
+                            fetch(`${API_BASE_URL}/api/v1/user/sales`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                                 body: JSON.stringify({
-                                    user_email: email,
                                     product_id: String(prod.id),
                                     product_name: prod.name,
                                     sale_amount: saleAmt,
@@ -1357,15 +1389,20 @@
                 this.downloadTemplate();
                 return;
             }
+            const sanitizeCsvCell = (val) => {
+                const str = String(val || '');
+                const safeStr = /^[=+\-@\t\r]/.test(str) ? `'${str}` : str;
+                return `"${safeStr.replace(/"/g, '""')}"`;
+            };
             const headers = ['SKU', 'Product Name', 'Price INR', 'Cost INR', 'Stock On Hand', 'Reorder Point', 'Status'];
             const rows = products.map(p => [
-                `"${p.sku || ''}"`,
-                `"${(p.name || '').replace(/"/g, '""')}"`,
+                sanitizeCsvCell(p.sku),
+                sanitizeCsvCell(p.name),
                 p.unit_price || 0,
                 p.unit_cost || 0,
                 p.stock_on_hand || 0,
                 p.reorder_point || 5,
-                `"${p.status || 'active'}"`
+                sanitizeCsvCell(p.status || 'active')
             ]);
 
             const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -2068,13 +2105,12 @@
 
             // Sync to backend
             try {
-                const email = this.getCurrentUserEmail();
-                if (email) {
-                    fetch('http://127.0.0.1:8000/api/v1/user/purchase-orders', {
+                const token = this.getAuthToken();
+                if (token) {
+                    fetch(`${API_BASE_URL}/api/v1/user/purchase-orders`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({
-                            user_email: email,
                             po_number: poNumber,
                             supplier: newPO.supplier,
                             status: newPO.status,
@@ -2352,13 +2388,12 @@
 
             // Sync to backend if available
             try {
-                const email = this.getCurrentUserEmail();
-                if (email) {
-                    fetch('http://127.0.0.1:8000/api/v1/user/purchase-orders', {
+                const token = this.getAuthToken();
+                if (token) {
+                    fetch(`${API_BASE_URL}/api/v1/user/purchase-orders`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({
-                            user_email: email,
                             po_number: poNumber,
                             supplier: newPO.supplier,
                             status: newPO.status,
@@ -2455,10 +2490,11 @@
 
                 // Sync receive to backend
                 try {
-                    const email = this.getCurrentUserEmail();
-                    if (email) {
-                        fetch(`http://127.0.0.1:8000/api/v1/user/purchase-orders/${po.id}/receive?email=${encodeURIComponent(email)}`, {
-                            method: 'POST'
+                    const token = this.getAuthToken();
+                    if (token) {
+                        fetch(`${API_BASE_URL}/api/v1/user/purchase-orders/${po.id}/receive`, {
+                            method: 'POST',
+                            headers: this.getAuthHeaders()
                         }).catch(e => console.warn('PO receive backend sync error:', e));
                     }
                 } catch (e) {}
@@ -2621,7 +2657,6 @@
         },
 
         async runAIInventoryAnalysis(forceRefresh = false) {
-            const apiKey = this.getGeminiApiKey();
             const products = await this.getProducts();
             if (products.length === 0) {
                 return null;
@@ -2657,55 +2692,50 @@
                     : `${lowItems.length} products require restocking to prevent missed customer sales.`
             };
 
-            if (!apiKey) {
+            const token = this.getAuthToken();
+            if (!token) {
                 return fallback;
             }
 
-            const catalogSummary = products.map(p => 
-                `- ${p.name}: Stock ${p.stock_on_hand}, Reorder at ${p.reorder_point || 10}, Price Rs ${p.unit_price || 0}, Cost Rs ${p.unit_cost || 0}`
-            ).join('\n');
-
-            const promptText = `You are SmartStock AI retail intelligence engine for Indian retail & Kirana stores.
-Analyze this store catalog:
-${catalogSummary}
-
-Provide a JSON response only with keys:
-- stock_health_status: Short string (e.g. "Optimal", "Action Needed", "Critical Stockouts")
-- critical_risks: Array of concise strings describing items with urgent stockout risk
-- recommendations: Array of concise actionable reorder suggestions
-- summary: 1-2 friendly sentences explaining store health and expected customer demand.`;
-
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+                const res = await fetch(`${API_BASE_URL}/api/v1/ai/assistant`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: promptText }] }],
-                        generationConfig: { responseMimeType: "application/json" }
+                        prompt: "Provide store operations and inventory health summary.",
+                        context_type: "store_summary"
                     })
                 });
 
                 if (!res.ok) {
-                    throw new Error(`Gemini API returned ${res.status}`);
+                    throw new Error(`AI proxy returned ${res.status}`);
                 }
 
                 const data = await res.json();
-                const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!rawText) throw new Error("No candidate text");
+                if (data && data.status === 'ok') {
+                    const parsedData = {
+                        stock_health_status: (data.metrics?.out_of_stock > 0)
+                            ? "Critical Stockouts"
+                            : ((data.metrics?.low_stock > 0) ? "Action Needed" : "Optimal Health"),
+                        critical_risks: fallback.critical_risks,
+                        recommendations: fallback.recommendations,
+                        summary: data.analysis || fallback.summary
+                    };
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        timestamp: now,
+                        signature: signature,
+                        data: parsedData
+                    }));
 
-                const parsedData = JSON.parse(rawText);
-                localStorage.setItem(cacheKey, JSON.stringify({
-                    timestamp: now,
-                    signature: signature,
-                    data: parsedData
-                }));
-
-                this.showToast('AI Analysis generated via Gemini 2.5 Flash', 'success');
-                return parsedData;
+                    const srcLabel = data.source === 'gemini-2.5-flash' ? 'Gemini 2.5 Flash' : 'SmartStock AI';
+                    this.showToast(`AI Analysis generated via ${srcLabel}`, 'success');
+                    return parsedData;
+                }
             } catch (err) {
-                console.warn('Gemini API call failed, using intelligent local heuristic fallback:', err);
-                return fallback;
+                console.warn('Backend AI proxy failed, using intelligent local heuristic fallback:', err);
             }
+
+            return fallback;
         },
 
         calculateDayOfWeekDemand(salesList = null) {
@@ -2837,11 +2867,11 @@ Provide a JSON response only with keys:
                 <div class="flex items-center justify-between">
                     <span class="text-xs font-semibold text-on-surface">Store Health Status</span>
                     <span class="px-2.5 py-0.5 rounded-full ${badgeColor} text-[10px] font-bold uppercase tracking-wider">
-                        ${aiData.stock_health_status}
+                        ${this.escapeHtml(aiData.stock_health_status)}
                     </span>
                 </div>
                 <p class="text-xs text-on-surface leading-relaxed bg-surface-container-low p-2.5 rounded-xl border border-outline/10">
-                    ${aiData.summary}
+                    ${this.escapeHtml(aiData.summary)}
                 </p>
                 ${risksHtml}
                 ${recsHtml}

@@ -24,6 +24,7 @@ def get_db_connection(read_only: bool = True) -> sqlite3.Connection:
         conn = sqlite3.connect(str(DB_PATH), timeout=30.0)
     
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")
     return conn
 
 
@@ -165,6 +166,19 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
         if "idempotency_key" not in sales_cols:
             cursor.execute("ALTER TABLE app_sales ADD COLUMN idempotency_key TEXT;")
 
+        # 7. User Authentication Sessions Table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS app_sessions (
+                token TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                user_email TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                revoked INTEGER DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES app_users(id) ON DELETE CASCADE
+            );
+        """)
+
         # Indexes for fast lookup
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sales_store_item ON sales(store, item);")
@@ -173,7 +187,11 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_products_user ON app_products(user_email);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_po_user ON app_purchase_orders(user_email);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_sales_user ON app_sales(user_email);")
-        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_app_sales_idempotency ON app_sales(idempotency_key) WHERE idempotency_key IS NOT NULL;")
+        cursor.execute("DROP INDEX IF EXISTS idx_app_sales_idempotency;")
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_app_sales_user_idempotency ON app_sales(user_email, idempotency_key) WHERE idempotency_key IS NOT NULL;")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_sessions_token ON app_sessions(token);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_sessions_user ON app_sessions(user_id);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_sessions_expires ON app_sessions(expires_at);")
 
 
         # Seed default demo account if not exists

@@ -1,0 +1,124 @@
+# SmartStock — Autonomous Progress & Audit Log (Ralph Loop)
+Initialized: 2026-11-12
+Current State: Phase 1 (Security Hardening & Data Protection) — Verification & QA
+Working Branch: feature/phase1-security-hardening
+Baseline Recovery Branch: recovery-phase0-baseline (Commit c81a1fe)
+Baseline Tag: recovery-baseline-v0
+
+---
+
+## 1. Audit Checkpoints Completed
+
+[x] Git Protection & Recovery Baseline
+    - Identified working tree clean at commit c81a1fe.
+    - Created dedicated branch 'recovery-phase0-baseline' and pushed to remote GitHub.
+    - Created dedicated tag 'recovery-baseline-v0' and pushed to remote GitHub.
+    - Created verified hot backup of data/supply_chain.db -> data/supply_chain_backup_baseline.db.
+    - Authored RECOVERY.md documenting non-destructive rollback steps.
+
+[x] Codebase & Architecture Discovery
+    - Backend: FastAPI (app/main.py, app/db.py, app/services/*.py) running on port 8000.
+    - Dual Database:
+      * Analytical SQLite (data/supply_chain.db): 913,000 sales records, 500 SKUs (10 stores x 50 items).
+      * Merchant SQLite tables: app_users, app_products, app_purchase_orders, app_sales.
+      * Cloud Supabase (txpvoqdecsjpmklelxdb): complete schema with RLS, triggers, functions (supabase/complete_setup.sql).
+    - Frontend: Stitch Web SPA (stitch/index.html, stitch/smartstock-bridge.js, 7 screens in stitch/screens/).
+    - Mobile Wrappers:
+      * iOS WKWebView wrapper (SmartStock/ContentView.swift).
+      * Android Jetpack Compose WebView wrapper (SmartStockAndroid/).
+
+[x] Automated Test Verification
+    - Python Core Analytical Unit Tests: 37/37 PASSED (test_api, test_anomaly, test_forecasting, test_rules, test_safety_stock, test_segmentation, test_simulation).
+    - Python Retail Server Tests: 18/18 PASSED (test_retail_server.py).
+    - Node.js Retail Frontend Logic Tests: 17/17 PASSED (tests/retail_frontend.test.cjs).
+    - Playwright End-to-End Tests: 8/8 PASSED in 4.6s (tests/e2e/smartstock.spec.js).
+    - TOTAL VERIFIED TESTS: 80 tests passing (100% pass rate).
+
+[x] Academic AI/DS Methodology Audit
+    - DS-1 Demand Forecasting:
+      * Implemented models: Naive baseline, Seasonal Naive (7-day lag), Holt-Winters Exponential Smoothing (damped additive trend, multiplicative 7-day seasonality), and Random Forest Regressor (lag 1, 7, 14, 28 + rolling 7, 28 means/std).
+      * Evaluated metrics: Daily Holt-Winters RMSE 4.635 / MAE 3.682; RF RMSE 4.696 / MAE 3.736. 28.18% improvement over naive baseline.
+    - DS-2 Anomaly Detection:
+      * Implemented Z-score (threshold 3.0) and IQR (1.5 * IQR) evaluated by (store, item, weekday).
+      * Synthetic injection test: 9,129 spikes evaluated, achieved 99.8% recall, 57.87% precision, 0.0073 FPR.
+      * Winsorization to weekday median preserves model training integrity.
+    - AI-1 Dynamic Reorder Engine:
+      * Formal rule-based expert system: R1_EXPEDITE, R2_REORDER, R3_HOLD.
+      * Calculations: Service levels (A: 98%, B: 95%, C: 90%), Lead-time demand, classical and extended safety stock, ROP, Days of Cover.
+      * Continuous-review policy simulation: 54.03% reduction in stockout days compared to static policies.
+    - AI-2 Automated SKU Segmentation:
+      * ABC analysis: 80/15/5 cumulative volume Pareto breakdown.
+      * XYZ analysis: Demand coefficient of variation (CV) tertiles.
+      * 9-box matrix mapped to Strategic, Core, Tail tiers.
+      * K-Means clustering (K=2) achieved silhouette score 0.5847.
+
+[x] Dataset & Data Quality Audit
+    - Raw dataset: data/raw/train.csv (913,000 rows across 5 years: 2013-01-01 to 2017-12-31).
+    - Identified limitations: Kaggle dataset lacks cost prices, selling prices, physical barcodes, and true vendor lead times.
+    - Current workaround: Lead times are stochastically simulated (seed 42, mean 2-10 days, std 0.5-2.0); retail products are mapped to Kirana staples.
+
+[x] Security & Integrity Audit
+    - Critical: Multi-tenant endpoint authorization missing on /api/v1/user/* (queries accept caller-specified email without token validation).
+    - High: Password hashing uses fast SHA-256 with static hardcoded salt rather than bcrypt/argon2.
+    - High: Session tokens are deterministic date-based SHA-256 strings with no cryptographically random entropy.
+    - High: Clientside Gemini API calls expose user API key via localStorage.
+    - Medium: CORS set to wildcard in dev; API_KEY enforcement optional.
+
+[x] UI/UX Redesign Direction (Part 8)
+    - Conceived Two-Level Intelligence Architecture:
+      1. Business Intelligence View (for local retail shopkeepers / Kirana owners):
+         Plain language ("What should I buy?", "What is running out?", "Low stock alert", 1-tap reorder).
+      2. Technical Intelligence View (for University Faculty / Reviewers):
+         ML model metrics, Holt-Winters vs RF curves, RMSE/MAE tables, Z-score/IQR flags, K-Means clusters, ROP formulas.
+
+---
+
+## 2. Blockers & Access Restrictions
+- Supabase cloud project `txpvoqdecsjpmklelxdb` keys are not set in `.env` (file does not exist locally; runs in fallback SQLite mode).
+- No production database credentials or remote deployment keys are stored locally.
+
+---
+
+## 3. Phase 1: Security Hardening & Data Protection Checkpoints
+
+[x] SEC-01: Multi-Tenant Authorization Bypass Fixed
+    - Implemented strict Bearer authentication dependency `get_current_user` in `app/auth.py`.
+    - Refactored all `/api/v1/user/*` endpoints (`/products`, `/purchase-orders`, `/purchase-orders/{po_id}/receive`, `/sales`, `/sales/summary`) to enforce `Depends(get_current_user)`.
+    - Server now derives tenant identity strictly from authenticated session (`current_user["email"]`). Cross-tenant queries/mutations receive 403 Forbidden; unauthenticated requests receive 401 Unauthorized.
+
+[x] SEC-02: PBKDF2-HMAC-SHA256 Password Hashing & Login Migration
+    - Implemented `hash_password` and `verify_password` in `app/auth.py` using PBKDF2-HMAC-SHA256 (100,000 iterations) with unique 16-byte random cryptographic salt (`secrets.token_hex(16)`).
+    - Preserved legacy accounts with seamless zero-downtime login-time migration: verifies legacy SHA-256 hash and automatically upgrades `password_hash` to PBKDF2 upon successful login.
+    - Removed plaintext password storage from `smartstock_accounts_registry` in `stitch/smartstock-bridge.js`.
+
+[x] SEC-03: Cryptographically Secure Session Tokens & Revocation
+    - Added `app_sessions` table and indexes in `app/db.py`.
+    - Implemented `create_session` generating 256-bit random tokens (`secrets.token_hex(32)`) with 7-day expiration (`expires_at`).
+    - Added `POST /api/v1/auth/logout` endpoint and `revoke_session` to invalidate active tokens.
+    - Updated `get_current_user` with datetime-aware expiration validation and seamless migration for any active legacy tokens.
+
+[x] SEC-04: Server-Side Gemini AI Assistant Proxy
+    - Implemented authenticated `POST /api/v1/ai/assistant` in `app/main.py` reading `GEMINI_API_KEY` from server config (`app/config.py`).
+    - Scopes business context strictly to `current_user["email"]`'s products and sales.
+    - Preserves Gemini 2.5 Flash integration and intelligent local heuristic fallback.
+    - Updated `stitch/smartstock-bridge.js` (and mobile asset bundles `SmartStock/stitch/` and `SmartStockAndroid/app/src/main/assets/stitch/`) to proxy requests through `/api/v1/ai/assistant`, eliminating browser API key exposure.
+
+[x] SEC-05: CORS Restrictions
+    - Updated `app/config.py` `ALLOWED_ORIGINS` to remove wildcard `"*"` and default to explicit trusted localhost/Supabase origins, configurable via `ALLOWED_ORIGINS` env var.
+
+[x] Security, CodeRabbit Remediation & Regression Test Verification
+    - Executed independent CodeRabbit Security Reviewer subagent inspection.
+    - Remediated all Critical/Major findings discovered during review:
+      * Removed forgeable legacy deterministic token fallback in `app/auth.py`.
+      * Upgraded PBKDF2-HMAC-SHA256 to 600,000 iterations with automatic rehash and bounds check.
+      * Secured live Supabase routes (`/api/v1/products`, `/insights`, `/purchase-orders`, `/shop`) with `Depends(get_current_user)`.
+      * Fixed TOCTOU stock deduction and PO receiving race conditions via `BEGIN IMMEDIATE` and atomic conditional SQL.
+      * Scoped `idx_app_sales_user_idempotency` per `(user_email, idempotency_key)` and enabled `PRAGMA foreign_keys = ON`.
+      * Escaped Gemini AI outputs in `renderAIIntelligenceCard`, blocked client auth bypass on 401/403, and added CSV formula sanitization.
+      * Moved Gemini API key from query string `?key=` to `x-goog-api-key` header and separated `systemInstruction`.
+    - Created `tests/test_security_phase1.py` (17 dedicated security tests).
+    - Verified full Python test suite: 72/72 PASSED in 16.24s (85% coverage).
+    - Verified Node.js retail logic test suite: 17/17 PASSED in 96.76ms.
+    - Verified Playwright E2E suite: 8/8 PASSED in 6.8s.
+    - Total Verified Tests Passing: 97 tests (100% pass rate).
+

@@ -27,6 +27,15 @@ def retail_client(temp_db):
             (hash_pw("securepass123"),),
         )
 
+    # Create active test session for authenticated merchant
+    test_token = "tok_test_retail_merchant_session_12345678"
+    cursor.execute("DELETE FROM app_sessions WHERE token = ?", (test_token,))
+    cursor.execute(
+        """INSERT INTO app_sessions (token, user_id, user_email, created_at, expires_at, revoked)
+           VALUES (?, 'usr_test_retail', 'merchant@sharmakirana.in', datetime('now'), datetime('now', '+7 days'), 0)""",
+        (test_token,),
+    )
+
     # Insert controlled test products with explicit prices, costs, and thresholds
     cursor.execute("DELETE FROM app_products WHERE user_email = 'merchant@sharmakirana.in'")
     cursor.execute("DELETE FROM app_sales WHERE user_email = 'merchant@sharmakirana.in'")
@@ -69,6 +78,7 @@ def retail_client(temp_db):
     app.dependency_overrides[get_db] = override_read_db
 
     with TestClient(app) as tc:
+        tc.headers["Authorization"] = f"Bearer {test_token}"
         yield tc
 
     app.dependency_overrides.pop(get_write_db, None)
@@ -380,5 +390,10 @@ def test_auth_me_endpoint_with_token(retail_client: TestClient):
     assert resp_me.json()["email"] == "merchant@sharmakirana.in"
 
     # Missing credentials -> 401
-    resp_unauth = retail_client.get("/api/v1/auth/me")
-    assert resp_unauth.status_code == 401
+    auth_header = retail_client.headers.pop("Authorization", None)
+    try:
+        resp_unauth = retail_client.get("/api/v1/auth/me")
+        assert resp_unauth.status_code == 401
+    finally:
+        if auth_header:
+            retail_client.headers["Authorization"] = auth_header

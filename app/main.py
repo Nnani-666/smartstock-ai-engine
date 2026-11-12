@@ -2,11 +2,14 @@ from __future__ import annotations
 
 """FastAPI application for SmartStock and the Supply Chain Engine."""
 
+import hmac
 import json
 import logging
 import sqlite3
+import uuid
 from contextlib import asynccontextmanager
-from decimal import Decimal, ROUND_HALF_UP
+from datetime import datetime, timezone
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Any, Literal
 
 import joblib
@@ -14,18 +17,27 @@ import numpy as np
 import pandas as pd
 from fastapi import Depends, FastAPI, Header, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
+from app.auth import (
+    create_session,
+    get_current_user,
+    hash_password,
+    revoke_session,
+    verify_password,
+)
 from app.config import (
     ALLOWED_ORIGINS,
     API_KEY,
     API_TITLE,
     API_VERSION,
+    GEMINI_API_KEY,
     LAST_DATA_DATE,
     METRICS_PATH,
     MODEL_PATH,
     SEGMENTS_PATH,
 )
-from app.db import get_db
+from app.db import get_db, get_write_db
 from app.schemas import (
     AnomalyItem,
     DecisionBatchRequest,
@@ -108,7 +120,7 @@ app.add_middleware(
 
 def verify_api_key(x_api_key: str | None = Header(None)) -> None:
     """Dependency: enforce API key check if API_KEY environment variable is set."""
-    if API_KEY is not None and (not x_api_key or x_api_key != API_KEY):
+    if API_KEY is not None and (not x_api_key or not hmac.compare_digest(x_api_key, API_KEY)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API Key",
@@ -174,7 +186,7 @@ def list_skus(
         return rows
     except Exception as e:
         logger.error("DB error in /skus: %s", e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal database error while listing SKUs")
 
 
 @app.get("/skus/{store}/{item}", dependencies=[Depends(verify_api_key)], response_model=SkuResponse)
@@ -386,36 +398,36 @@ def get_supabase_service() -> SupabaseAppService:
     return _supabase_service
 
 
-@app.get("/api/v1/products")
+@app.get("/api/v1/products", dependencies=[Depends(get_current_user)])
 def api_list_products(status: str | None = None, limit: int = 50, offset: int = 0):
-    """Retrieve live products list from Supabase."""
+    """Retrieve live products list from Supabase (authenticated)."""
     try:
         return get_supabase_service().list_products(status=status, limit=limit, offset=offset)
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
-@app.get("/api/v1/insights")
+@app.get("/api/v1/insights", dependencies=[Depends(get_current_user)])
 def api_list_insights(active_only: bool = True):
-    """Retrieve live inventory insights from Supabase."""
+    """Retrieve live inventory insights from Supabase (authenticated)."""
     try:
         return get_supabase_service().list_insights(active_only=active_only)
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
-@app.get("/api/v1/purchase-orders")
+@app.get("/api/v1/purchase-orders", dependencies=[Depends(get_current_user)])
 def api_list_purchase_orders():
-    """Retrieve purchase orders from Supabase."""
+    """Retrieve purchase orders from Supabase (authenticated)."""
     try:
         return get_supabase_service().list_purchase_orders()
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
-@app.get("/api/v1/shop")
+@app.get("/api/v1/shop", dependencies=[Depends(get_current_user)])
 def api_get_shop(code: str = "STORE-402"):
-    """Retrieve current shop profile from Supabase."""
+    """Retrieve current shop profile from Supabase (authenticated)."""
     try:
         shop = get_supabase_service().get_shop_by_code(code)
     except ValueError as e:
@@ -425,21 +437,13 @@ def api_get_shop(code: str = "STORE-402"):
     return shop
 
 
-
 # ----------------------------------------------------------------------
 # USER AUTHENTICATION & MULTI-TENANT ISOLATED STORE REGISTER
 # ----------------------------------------------------------------------
 
-import hashlib
-import uuid
-from datetime import datetime
-from pydantic import BaseModel
-from app.db import get_write_db
+# Backwards compatibility alias for tests and legacy callers
+hash_pw = hash_password
 
-def hash_pw(password: str) -> str:
-    """Return SHA-256 hash of password with static salt."""
-    salt = "smartstock_secret_salt_2026"
-    return hashlib.sha256(f"{salt}_{password}".encode()).hexdigest()
 
 class UserRegisterRequest(BaseModel):
     email: str
@@ -448,50 +452,59 @@ class UserRegisterRequest(BaseModel):
     phone: str = ""
     manager: str = "Store Owner"
 
+
 class UserLoginRequest(BaseModel):
     email: str
     password: str
 
+
 class ProductCreateRequest(BaseModel):
-    user_email: str
-    name: str
+    user_email: str | None = None
+    name: str = Field(..., min_length=1, max_length=200)
     sku: str | None = None
     description: str = ""
-    unit_price: float = 0.0
-    unit_cost: float = 0.0
-    stock_on_hand: int = 0
-    safety_stock: int = 2
-    reorder_point: int = 5
-    lead_time_days: int = 3
+    unit_price: float = Field(0.0, ge=0)
+    unit_cost: float = Field(0.0, ge=0)
+    stock_on_hand: int = Field(0, ge=0)
+    safety_stock: int = Field(2, ge=0)
+    reorder_point: int = Field(5, ge=0)
+    lead_time_days: int = Field(3, ge=0)
     supplier: str = "Metro Wholesale"
 
+
 class POCreateRequest(BaseModel):
-    user_email: str
-    po_number: str
-    supplier: str
+    user_email: str | None = None
+    po_number: str = Field(..., min_length=1, max_length=100)
+    supplier: str = Field(..., min_length=1, max_length=200)
     status: str = "ordered"
-    total_amount: float
+    total_amount: float = Field(..., ge=0)
     items: list[dict[str, Any]]
 
+
 class SaleRecordRequest(BaseModel):
-    user_email: str
+    user_email: str | None = None
     product_id: str | None = None
     product_name: str | None = None
-    sale_amount: float | None = None
+    sale_amount: float | None = Field(None, ge=0)
     units: int = 1
-    unit_cost: float | None = None
+    unit_cost: float | None = Field(None, ge=0)
     timestamp: str | None = None
     idempotency_key: str | None = None
 
 
+class AIAssistantRequest(BaseModel):
+    prompt: str | None = Field(None, max_length=1000)
+    context_type: str = "store_summary"
+
+
 @app.post("/api/v1/auth/register")
 def register_user(req: UserRegisterRequest, db: sqlite3.Connection = Depends(get_write_db)):
-    """Register a new merchant account with isolated data namespace."""
+    """Register a new merchant account with PBKDF2 password security and isolated data namespace."""
     clean_email = req.email.strip().lower()
     if not clean_email or "@" not in clean_email:
         raise HTTPException(status_code=400, detail="Please enter a valid email address.")
-    if len(req.password) < 4:
-        raise HTTPException(status_code=400, detail="Password must be at least 4 characters.")
+    if len(req.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
 
     cursor = db.cursor()
     cursor.execute("SELECT id FROM app_users WHERE email = ?", (clean_email,))
@@ -499,8 +512,8 @@ def register_user(req: UserRegisterRequest, db: sqlite3.Connection = Depends(get
         raise HTTPException(status_code=400, detail="Email already registered. Please sign in.")
 
     user_id = str(uuid.uuid4())
-    pw_hash = hash_pw(req.password)
-    now_iso = datetime.utcnow().isoformat()
+    pw_hash = hash_password(req.password)
+    now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
     store = req.store_name.strip() or "My Store"
 
     cursor.execute(
@@ -510,7 +523,7 @@ def register_user(req: UserRegisterRequest, db: sqlite3.Connection = Depends(get
     )
     db.commit()
 
-    token = hashlib.sha256(f"{user_id}_{clean_email}_{datetime.utcnow().strftime('%Y-%m-%d')}".encode()).hexdigest()
+    token = create_session(user_id, clean_email, db)
 
     return {
         "status": "ok",
@@ -526,21 +539,28 @@ def register_user(req: UserRegisterRequest, db: sqlite3.Connection = Depends(get
 
 
 @app.post("/api/v1/auth/login")
-def login_user(req: UserLoginRequest, db: sqlite3.Connection = Depends(get_db)):
-    """Authenticate merchant user with strict password verification."""
+def login_user(req: UserLoginRequest, db: sqlite3.Connection = Depends(get_write_db)):
+    """Authenticate merchant user with strict password verification and zero-downtime PBKDF2 rehash."""
     clean_email = req.email.strip().lower()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM app_users WHERE email = ?", (clean_email,))
     row = cursor.fetchone()
     if not row:
-        raise HTTPException(status_code=401, detail="Account not found. Please register your store first.")
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
 
     user_dict = dict(row)
-    pw_hash = hash_pw(req.password)
-    if user_dict["password_hash"] != pw_hash:
-        raise HTTPException(status_code=401, detail="Incorrect password. Access denied.")
+    is_valid, needs_rehash = verify_password(req.password, user_dict["password_hash"])
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Invalid email or password.")
 
-    token = hashlib.sha256(f"{user_dict['id']}_{user_dict['email']}_{datetime.utcnow().strftime('%Y-%m-%d')}".encode()).hexdigest()
+    # Seamless login-time password migration: upgrade legacy hash to PBKDF2
+    if needs_rehash:
+        new_hash = hash_password(req.password)
+        cursor.execute("UPDATE app_users SET password_hash = ? WHERE id = ?", (new_hash, user_dict["id"]))
+        db.commit()
+        logger.info("Migrated password hash for %s to PBKDF2-HMAC-SHA256", clean_email)
+
+    token = create_session(user_dict["id"], user_dict["email"], db)
 
     return {
         "status": "ok",
@@ -555,47 +575,45 @@ def login_user(req: UserLoginRequest, db: sqlite3.Connection = Depends(get_db)):
     }
 
 
+@app.post("/api/v1/auth/logout")
+def logout_user(
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Revoke active session token upon user sign out."""
+    token = current_user.get("token")
+    if token:
+        revoke_session(token, db)
+    return {"status": "ok", "message": "Successfully signed out."}
+
+
 @app.get("/api/v1/auth/me")
 def get_auth_me(
-    authorization: str | None = Header(None),
-    email: str | None = Query(None),
-    db: sqlite3.Connection = Depends(get_db),
+    current_user: dict[str, Any] = Depends(get_current_user),
 ):
     """Retrieve profile of authenticated merchant user."""
-    clean_email = email.strip().lower() if email else None
-    if not clean_email and authorization and authorization.startswith("Bearer "):
-        token = authorization.split(" ")[1]
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM app_users")
-        for u in cursor.fetchall():
-            expected = hashlib.sha256(f"{u['id']}_{u['email']}_{datetime.utcnow().strftime('%Y-%m-%d')}".encode()).hexdigest()
-            if token == expected:
-                clean_email = u["email"]
-                break
-
-    if not clean_email:
-        raise HTTPException(status_code=401, detail="Missing or invalid authentication credentials")
-
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM app_users WHERE email = ?", (clean_email,))
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    user_dict = dict(row)
     return {
-        "id": user_dict["id"],
-        "email": user_dict["email"],
-        "store": user_dict["store_name"],
-        "phone": user_dict["phone"],
-        "manager": user_dict["manager"],
+        "id": current_user["id"],
+        "email": current_user["email"],
+        "store": current_user["store_name"],
+        "phone": current_user["phone"],
+        "manager": current_user["manager"],
     }
 
 
 @app.get("/api/v1/user/products")
-def get_user_products(email: str = Query(...), db: sqlite3.Connection = Depends(get_db)):
-    """List products belonging to the specified merchant."""
-    clean_email = email.strip().lower()
+def get_user_products(
+    email: str | None = Query(None),
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """List products belonging to the authenticated merchant catalog."""
+    clean_email = current_user["email"]
+    if email and email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot access another merchant's product catalog.",
+        )
     cursor = db.cursor()
     cursor.execute(
         "SELECT * FROM app_products WHERE user_email = ? ORDER BY created_at DESC",
@@ -606,13 +624,23 @@ def get_user_products(email: str = Query(...), db: sqlite3.Connection = Depends(
 
 
 @app.post("/api/v1/user/products")
-def add_user_product(req: ProductCreateRequest, db: sqlite3.Connection = Depends(get_write_db)):
-    """Add a product to the user's isolated catalog."""
-    clean_email = req.user_email.strip().lower()
+def add_user_product(
+    req: ProductCreateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Add a product to the authenticated user's isolated catalog."""
+    clean_email = current_user["email"]
+    if req.user_email and req.user_email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot create products in another merchant's catalog.",
+        )
+
     cursor = db.cursor()
     prod_id = str(uuid.uuid4())
     sku = req.sku or f"SKU-{str(uuid.uuid4())[:6].upper()}"
-    now_iso = datetime.utcnow().isoformat()
+    now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
     status_str = "out_of_stock" if req.stock_on_hand <= 0 else ("low_stock" if req.stock_on_hand <= req.reorder_point else "active")
 
     cursor.execute(
@@ -637,9 +665,18 @@ def add_user_product(req: ProductCreateRequest, db: sqlite3.Connection = Depends
 
 
 @app.get("/api/v1/user/purchase-orders")
-def get_user_pos(email: str = Query(...), db: sqlite3.Connection = Depends(get_db)):
-    """List purchase orders for a merchant."""
-    clean_email = email.strip().lower()
+def get_user_pos(
+    email: str | None = Query(None),
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """List purchase orders for the authenticated merchant."""
+    clean_email = current_user["email"]
+    if email and email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot view another merchant's purchase orders.",
+        )
     cursor = db.cursor()
     cursor.execute(
         "SELECT * FROM app_purchase_orders WHERE user_email = ? ORDER BY created_at DESC",
@@ -658,12 +695,22 @@ def get_user_pos(email: str = Query(...), db: sqlite3.Connection = Depends(get_d
 
 
 @app.post("/api/v1/user/purchase-orders")
-def create_user_po(req: POCreateRequest, db: sqlite3.Connection = Depends(get_write_db)):
-    """Create a new purchase order for the merchant."""
-    clean_email = req.user_email.strip().lower()
+def create_user_po(
+    req: POCreateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Create a new purchase order for the authenticated merchant."""
+    clean_email = current_user["email"]
+    if req.user_email and req.user_email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot create purchase orders for another merchant.",
+        )
+
     cursor = db.cursor()
     po_id = str(uuid.uuid4())
-    now_iso = datetime.utcnow().isoformat()
+    now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     cursor.execute(
         """INSERT INTO app_purchase_orders (id, user_email, po_number, supplier, status, total_amount, items_json, created_at)
@@ -684,70 +731,105 @@ def create_user_po(req: POCreateRequest, db: sqlite3.Connection = Depends(get_wr
 
 
 @app.post("/api/v1/user/purchase-orders/{po_id}/receive")
-def receive_user_po(po_id: str, email: str = Query(...), db: sqlite3.Connection = Depends(get_write_db)):
-    """Receive purchase order: increments stock_on_hand in user's inventory catalog."""
-    clean_email = email.strip().lower()
+def receive_user_po(
+    po_id: str,
+    email: str | None = Query(None),
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Receive purchase order: increments stock_on_hand in authenticated user's inventory."""
+    clean_email = current_user["email"]
+    if email and email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot inward another merchant's purchase order.",
+        )
+
     cursor = db.cursor()
-    cursor.execute(
-        "SELECT * FROM app_purchase_orders WHERE id = ? AND user_email = ?",
-        (po_id, clean_email),
-    )
-    row = cursor.fetchone()
-    if not row:
-        raise HTTPException(status_code=404, detail="Purchase order not found")
-
-    po_dict = dict(row)
-    if po_dict["status"] == "completed":
-        return {"status": "already_completed", "message": "PO already inwarded"}
-    if po_dict["status"] == "cancelled":
-        raise HTTPException(status_code=400, detail="Cannot receive a cancelled purchase order")
-
-    items = []
     try:
-        items = json.loads(po_dict["items_json"])
-    except Exception:
-        pass
+        cursor.execute("BEGIN IMMEDIATE")
+        cursor.execute(
+            "SELECT * FROM app_purchase_orders WHERE id = ? AND user_email = ?",
+            (po_id, clean_email),
+        )
+        row = cursor.fetchone()
+        if not row:
+            db.rollback()
+            raise HTTPException(status_code=404, detail="Purchase order not found")
 
-    # Increment stock in app_products for each valid item
-    for it in items:
-        units = int(it.get("units") or it.get("quantity") or 0)
-        if units <= 0:
-            continue
-        p_name = it.get("name") or it.get("item")
-        p_id = it.get("product_id")
-        if p_id:
-            cursor.execute(
-                """UPDATE app_products
-                   SET stock_on_hand = stock_on_hand + ?,
-                       status = CASE WHEN stock_on_hand + ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand + ? <= reorder_point THEN 'low_stock' ELSE 'active' END
-                   WHERE id = ? AND user_email = ?""",
-                (units, units, units, p_id, clean_email),
-            )
-        elif p_name:
-            cursor.execute(
-                """UPDATE app_products
-                   SET stock_on_hand = stock_on_hand + ?,
-                       status = CASE WHEN stock_on_hand + ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand + ? <= reorder_point THEN 'low_stock' ELSE 'active' END
-                   WHERE name = ? AND user_email = ?""",
-                (units, units, units, p_name, clean_email),
-            )
+        po_dict = dict(row)
+        if po_dict["status"] == "completed":
+            db.rollback()
+            return {"status": "already_completed", "message": "PO already inwarded"}
+        if po_dict["status"] == "cancelled":
+            db.rollback()
+            raise HTTPException(status_code=400, detail="Cannot receive a cancelled purchase order")
 
-    now_iso = datetime.utcnow().isoformat()
-    cursor.execute(
-        "UPDATE app_purchase_orders SET status = 'completed', inwarded_at = ? WHERE id = ?",
-        (now_iso, po_id),
-    )
-    db.commit()
+        now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+        cursor.execute(
+            """UPDATE app_purchase_orders
+               SET status = 'completed', inwarded_at = ?
+               WHERE id = ? AND user_email = ? AND status NOT IN ('completed', 'cancelled')""",
+            (now_iso, po_id, clean_email),
+        )
+        if cursor.rowcount != 1:
+            db.rollback()
+            return {"status": "already_completed", "message": "PO already inwarded"}
+
+        items = []
+        try:
+            items = json.loads(po_dict["items_json"])
+        except Exception:
+            pass
+
+        # Increment stock in app_products for each valid item
+        for it in items:
+            units = int(it.get("units") or it.get("quantity") or 0)
+            if units <= 0:
+                continue
+            p_name = it.get("name") or it.get("item")
+            p_id = it.get("product_id")
+            if p_id:
+                cursor.execute(
+                    """UPDATE app_products
+                       SET stock_on_hand = stock_on_hand + ?,
+                           status = CASE WHEN stock_on_hand + ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand + ? <= reorder_point THEN 'low_stock' ELSE 'active' END
+                       WHERE id = ? AND user_email = ?""",
+                    (units, units, units, p_id, clean_email),
+                )
+            elif p_name:
+                cursor.execute(
+                    """UPDATE app_products
+                       SET stock_on_hand = stock_on_hand + ?,
+                           status = CASE WHEN stock_on_hand + ? <= 0 THEN 'out_of_stock' WHEN stock_on_hand + ? <= reorder_point THEN 'low_stock' ELSE 'active' END
+                       WHERE name = ? AND user_email = ?""",
+                    (units, units, units, p_name, clean_email),
+                )
+
+        db.commit()
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error("Error inwarding PO %s: %s", po_id, e)
+        raise HTTPException(status_code=500, detail="Database error during PO receipt")
 
     return {"status": "ok", "po_id": po_id, "inwarded_at": now_iso}
 
 
 @app.post("/api/v1/user/sales")
-def record_user_sale(req: SaleRecordRequest, db: sqlite3.Connection = Depends(get_write_db)):
+def record_user_sale(
+    req: SaleRecordRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
     """Record a sale with atomic stock verification, Decimal pricing, and unit_cost."""
-    clean_email = req.user_email.strip().lower()
-    if not clean_email or "@" not in clean_email:
-        raise HTTPException(status_code=400, detail="Valid user email required")
+    clean_email = current_user["email"]
+    if req.user_email and req.user_email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot record sales for another merchant.",
+        )
     if req.units <= 0:
         raise HTTPException(status_code=400, detail="Sale units must be greater than zero")
 
@@ -776,7 +858,7 @@ def record_user_sale(req: SaleRecordRequest, db: sqlite3.Connection = Depends(ge
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid timestamp format. ISO-8601 required.")
     else:
-        sale_timestamp = datetime.utcnow().isoformat()
+        sale_timestamp = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     # Look up product in user's catalog
     if req.product_id:
@@ -799,7 +881,7 @@ def record_user_sale(req: SaleRecordRequest, db: sqlite3.Connection = Depends(ge
     prod = dict(prod_row)
     current_stock = int(prod["stock_on_hand"])
 
-    # Strict overselling check: reject entire sale when quantity exceeds stock
+    # Strict overselling pre-check
     if current_stock < req.units:
         raise HTTPException(
             status_code=400,
@@ -818,15 +900,30 @@ def record_user_sale(req: SaleRecordRequest, db: sqlite3.Connection = Depends(ge
     prod_name = prod["name"]
 
     try:
-        # Atomic stock deduction
-        new_stock = current_stock - req.units
-        rop = int(prod["reorder_point"]) if prod["reorder_point"] is not None else 0
-        new_status = "out_of_stock" if new_stock <= 0 else ("low_stock" if new_stock <= rop else "active")
+        cursor.execute("BEGIN IMMEDIATE")
+        # Atomic conditional stock deduction (prevents TOCTOU race conditions)
+        cursor.execute(
+            """UPDATE app_products
+               SET stock_on_hand = stock_on_hand - ?,
+                   status = CASE WHEN stock_on_hand - ? <= 0 THEN 'out_of_stock'
+                                 WHEN stock_on_hand - ? <= reorder_point THEN 'low_stock'
+                                 ELSE 'active' END
+               WHERE id = ? AND user_email = ? AND stock_on_hand >= ?""",
+            (req.units, req.units, req.units, prod["id"], clean_email, req.units),
+        )
+        if cursor.rowcount != 1:
+            db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail="Insufficient stock on hand: concurrent inventory update prevented overselling.",
+            )
 
         cursor.execute(
-            "UPDATE app_products SET stock_on_hand = ?, status = ? WHERE id = ? AND user_email = ?",
-            (new_stock, new_status, prod["id"], clean_email),
+            "SELECT stock_on_hand FROM app_products WHERE id = ? AND user_email = ?",
+            (prod["id"], clean_email),
         )
+        updated_row = cursor.fetchone()
+        new_stock = int(updated_row["stock_on_hand"]) if updated_row else 0
 
         # Insert sale transaction
         cursor.execute(
@@ -835,6 +932,8 @@ def record_user_sale(req: SaleRecordRequest, db: sqlite3.Connection = Depends(ge
             (sale_id, clean_email, prod["id"], prod_name, final_amount, req.units, final_cost, sale_timestamp, req.idempotency_key),
         )
         db.commit()
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         logger.error("Transaction failed during sale recording: %s", e)
@@ -853,13 +952,19 @@ def record_user_sale(req: SaleRecordRequest, db: sqlite3.Connection = Depends(ge
 
 @app.get("/api/v1/user/sales")
 def get_user_sales(
-    email: str = Query(...),
+    email: str | None = Query(None),
     start_date: str | None = Query(None),
     end_date: str | None = Query(None),
+    current_user: dict[str, Any] = Depends(get_current_user),
     db: sqlite3.Connection = Depends(get_db),
 ):
-    """List sales for a merchant without arbitrary truncation."""
-    clean_email = email.strip().lower()
+    """List sales for the authenticated merchant without arbitrary truncation."""
+    clean_email = current_user["email"]
+    if email and email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot view another merchant's sales.",
+        )
     cursor = db.cursor()
     query = "SELECT * FROM app_sales WHERE user_email = ?"
     params = [clean_email]
@@ -879,19 +984,26 @@ def get_user_sales(
 
 @app.get("/api/v1/user/sales/summary")
 def get_sales_summary(
-    email: str = Query(...),
+    email: str | None = Query(None),
     date: str | None = Query(None),
+    current_user: dict[str, Any] = Depends(get_current_user),
     db: sqlite3.Connection = Depends(get_db),
 ):
-    """Return aggregated daily/period sales summary including revenue, units, and gross profit."""
-    clean_email = email.strip().lower()
+    """Return aggregated daily/period sales summary for authenticated merchant including revenue and profit."""
+    clean_email = current_user["email"]
+    if email and email.strip().lower() != clean_email:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: You cannot view another merchant's sales summary.",
+        )
     cursor = db.cursor()
     query = "SELECT * FROM app_sales WHERE user_email = ?"
     params = [clean_email]
 
     if date:
-        query += " AND timestamp LIKE ?"
-        params.append(f"{date}%")
+        escaped_date = date.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        query += " AND timestamp LIKE ? ESCAPE '\\'"
+        params.append(f"{escaped_date}%")
 
     cursor.execute(query, params)
     rows = cursor.fetchall()
@@ -936,3 +1048,114 @@ def get_sales_summary(
         "gross_margin_pct": margin_pct,
         "cost_available": cost_available,
     }
+
+
+@app.post("/api/v1/ai/assistant")
+def ai_assistant_endpoint(
+    req: AIAssistantRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """Secure server-side AI assistant proxy.
+
+    Reads GEMINI_API_KEY securely from server environment.
+    Scopes context strictly to the authenticated merchant's data.
+    Provides intelligent local heuristic fallback if Gemini API is unreachable or key is unset.
+    """
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+
+    # Query only the authenticated merchant's products
+    cursor.execute("SELECT * FROM app_products WHERE user_email = ?", (clean_email,))
+    products = [dict(r) for r in cursor.fetchall()]
+
+    # Query only the authenticated merchant's sales
+    cursor.execute("SELECT * FROM app_sales WHERE user_email = ? ORDER BY timestamp DESC LIMIT 50", (clean_email,))
+    sales = [dict(r) for r in cursor.fetchall()]
+
+    total_prods = len(products)
+    out_of_stock = sum(1 for p in products if p.get("stock_on_hand", 0) <= 0)
+    low_stock = sum(1 for p in products if 0 < p.get("stock_on_hand", 0) <= p.get("reorder_point", 5))
+    total_sales_amt = sum(float(s.get("sale_amount", 0)) for s in sales)
+    store_name = current_user.get("store_name", "My Store")
+
+    def build_local_fallback() -> dict[str, Any]:
+        advice_points = []
+        if out_of_stock > 0:
+            advice_points.append(f"Immediate Action: {out_of_stock} product(s) are completely out of stock. Place replenishment orders.")
+        if low_stock > 0:
+            advice_points.append(f"Replenishment Warning: {low_stock} product(s) have reached reorder thresholds.")
+        if not advice_points:
+            advice_points.append("All inventory levels are currently in a healthy operational state.")
+        if total_sales_amt > 0:
+            advice_points.append(f"Recent revenue recorded: ₹{total_sales_amt:,.2f} across {len(sales)} transaction(s).")
+        return {
+            "status": "ok",
+            "source": "local_heuristic",
+            "store_name": store_name,
+            "analysis": " • ".join(advice_points),
+            "metrics": {
+                "total_products": total_prods,
+                "out_of_stock": out_of_stock,
+                "low_stock": low_stock,
+                "recent_sales_amount": total_sales_amt,
+            },
+        }
+
+    gemini_key = GEMINI_API_KEY
+    if not gemini_key:
+        return build_local_fallback()
+
+    try:
+        import httpx
+        system_context = (
+            f"You are the AI retail advisor for store '{store_name}'. "
+            f"Active catalog: {total_prods} products. "
+            f"Out of stock: {out_of_stock}. Low stock: {low_stock}. "
+            f"Recent sales revenue: ₹{total_sales_amt:,.2f}. "
+            "Provide 2-3 concise, actionable bullet points for the storekeeper in plain business language."
+        )
+        user_prompt = req.prompt or "Provide a 3-bullet store operations and inventory health summary."
+
+        with httpx.Client(timeout=10.0) as client:
+            resp = client.post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+                headers={"x-goog-api-key": gemini_key, "Content-Type": "application/json"},
+                json={
+                    "systemInstruction": {
+                        "parts": [{"text": system_context}]
+                    },
+                    "contents": [
+                        {
+                            "role": "user",
+                            "parts": [{"text": user_prompt}],
+                        }
+                    ],
+                },
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                text = (
+                    data.get("candidates", [{}])[0]
+                    .get("content", {})
+                    .get("parts", [{}])[0]
+                    .get("text", "")
+                )
+                if text:
+                    return {
+                        "status": "ok",
+                        "source": "gemini-2.5-flash",
+                        "store_name": store_name,
+                        "analysis": text.strip(),
+                        "metrics": {
+                            "total_products": total_prods,
+                            "out_of_stock": out_of_stock,
+                            "low_stock": low_stock,
+                            "recent_sales_amount": total_sales_amt,
+                        },
+                    }
+    except Exception as exc:
+        logger.warning("Gemini server proxy call failed (%s); using local heuristic fallback", type(exc).__name__)
+
+    return build_local_fallback()
+
