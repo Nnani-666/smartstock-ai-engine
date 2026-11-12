@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Spin Product</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@500&family=Tinos&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #e2e4e8;
+      --card: #ffffff;
+      --ink: #111111;
+      --mute: #7b7e84;
+      --chip: #eceef1;
+      --line: #b9bcc2;
+      --notch-btn: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px));
+      --notch-info: polygon(0 0, 130px 0, 140px 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 290px) calc(100% - 8px), calc(100% - 300px) 100%, 10px 100%, 10px 120px, 0 112px);
+      --notch-buy: polygon(0 8px, 265px 8px, 275px 0, 100% 0, 100% calc(100% - 8px), 300px calc(100% - 8px), 290px 100%, 10px 100%, 10px calc(100% - 40px), 0 calc(100% - 48px));
+      --ease-cb: cubic-bezier(.65, 0, .25, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      font-family: "IBM Plex Mono", monospace;
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    /* Fixed 1500x1000 Artboard */
+    #art {
+      position: absolute;
+      width: 1500px;
+      height: 1000px;
+      transform-origin: 0 0;
+      top: 0;
+      left: 0;
+      pointer-events: auto;
+    }
+
+    /* Header */
+    #logo {
+      position: absolute;
+      left: 28px;
+      top: 18px;
+      font-family: 'Inter Tight', sans-serif;
+      font-weight: 500;
+      font-size: 27px;
+      letter-spacing: -0.01em;
+      line-height: 1;
+    }
+    #crumb {
+      position: absolute;
+      left: 28px;
+      top: 54px;
+      font-size: 11px;
+      letter-spacing: 0.03em;
+      color: var(--mute);
+    }
+
+    .pill {
+      height: 35px;
+      padding: 0 17px;
+      background: var(--card);
+      border-radius: 4px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      clip-path: var(--notch-btn);
+      transition: background 0.15s;
+    }
+    .pill:hover { background: #f6f6f7; }
+
+    #nav {
+      position: absolute;
+      left: 50%;
+      top: 16px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      z-index: 20;
+    }
+    #acct {
+      position: absolute;
+      right: 28px;
+      top: 16px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      z-index: 20;
+    }
+    .search-btn {
+      width: 35px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+    }
+    #count {
+      display: inline-block;
+      transition: transform 0.5s cubic-bezier(.3, 1.8, .5, 1);
+    }
+    #count.bump {
+      transform: translateY(-6px) scale(1.4);
+    }
+
+    /* Turntable Stage */
+    #stage {
+      position: absolute;
+      left: 480px;
+      top: 70px;
+      width: 540px;
+      height: 960px;
+      cursor: grab;
+      touch-action: none;
+      z-index: 5;
+    }
+    #stage.grabbing { cursor: grabbing; }
+
+    #vid, #cv {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+    }
+    #cv { z-index: 2; }
+    #vid { z-index: 1; }
+
+    /* Degree Indicator */
+    #deg {
+      position: absolute;
+      left: 50%;
+      bottom: 62px;
+      transform: translateX(-50%);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--mute);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 10;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .deg-bar {
+      position: relative;
+      width: 120px;
+      height: 1px;
+      background: var(--line);
+    }
+    .deg-dot {
+      position: absolute;
+      top: -3px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ink);
+      transform: translateX(-50%);
+    }
+    #deg-val { color: var(--ink); font-weight: 500; }
+
+    /* Connector Lines SVG */
+    #connectors {
+      position: absolute;
+      inset: 0;
+      width: 1500px;
+      height: 1000px;
+      pointer-events: none;
+      z-index: 8;
+    }
+    .connector-path {
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 1;
+      transition: stroke-dashoffset 0.35s ease-out;
+    }
+    .connector-path.active {
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.7s var(--ease-cb);
+    }
+
+    /* Hotspot Pins & Callouts */
+    #hotspots {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 12;
+    }
+    .hs-wrap {
+      position: absolute;
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+    }
+    .hs {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      line-height: 1;
+      font-weight: 500;
+      cursor: pointer;
+      transform: scale(0);
+      transition: transform 0.35s cubic-bezier(.3, 1.6, .5, 1);
+    }
+    .hs.visible { transform: scale(1); }
+
+    .hs .ping {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      animation: hs-ping 2.2s infinite;
+      pointer-events: none;
+    }
+    @keyframes hs-ping {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+
+    .tip {
+      position: absolute;
+      top: 50%;
+      width: 210px;
+      padding: 12px 14px;
+      background: var(--card);
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--ink);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+      pointer-events: none;
+      clip-path: inset(0 100% 0 0);
+      transition: clip-path 0.45s var(--ease-cb);
+      z-index: 20;
+    }
+    .hs-wrap.left .tip {
+      right: calc(100% + 12px);
+      transform: translateY(-50%);
+    }
+    .hs-wrap.right .tip {
+      left: calc(100% + 12px);
+      transform: translateY(-50%);
+    }
+    .hs-wrap:hover .tip {
+      clip-path: inset(0);
+    }
+    .tip-title {
+      font-weight: 500;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      display: block;
+      letter-spacing: 0.04em;
+    }
+
+    /* Notched White Cards */
+    .card {
+      position: absolute;
+      background: var(--card);
+      z-index: 10;
+    }
+
+    /* Info Card */
+    #info {
+      left: 18px;
+      top: 300px;
+      width: 420px;
+      padding: 36px 28px 26px 38px;
+      clip-path: var(--notch-info);
+    }
+    .info-name {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+    .info-price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+      font-size: 13px;
+    }
+    .tag-preorder {
+      font-size: 11px;
+      background: var(--chip);
+      padding: 2px 4px;
+      letter-spacing: 0.04em;
+    }
+
+    /* Accordion */
+    .acc-wrap {
+      margin-top: 22px;
+      border-top: 1px solid var(--chip);
+    }
+    .acc-row {
+      border-bottom: 1px solid var(--chip);
+    }
+    .acc-btn {
+      width: 100%;
+      padding: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      text-align: left;
+    }
+    .acc-content {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.45s var(--ease-cb);
+    }
+    .acc-content > div {
+      overflow: hidden;
+    }
+    .acc-row.open .acc-content {
+      grid-template-rows: 1fr;
+    }
+    .acc-body {
+      font-family: 'Tinos', serif;
+      font-size: 15.5px;
+      line-height: 1.38;
+      color: var(--ink);
+      padding: 4px 0 12px;
+    }
+
+    /* Buy Card */
+    #buy {
+      left: 1105px;
+      top: 385px;
+      width: 375px;
+      padding: 30px 26px 26px;
+      clip-path: var(--notch-buy);
+    }
+    .size-label {
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .size-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    .size-btn {
+      height: 36px;
+      font-size: 13px;
+      background: var(--chip);
+      display: grid;
+      place-items: center;
+      position: relative;
+      z-index: 2;
+      transition: color 0.25s;
+    }
+    .size-btn.active {
+      color: #ffffff;
+    }
+    #hl {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: var(--ink);
+      z-index: 1;
+      pointer-events: none;
+      transition: left 0.45s var(--ease-cb), width 0.45s var(--ease-cb);
+    }
+
+    .size-note {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      color: var(--mute);
+      margin-top: 12px;
+      letter-spacing: 0.03em;
+    }
+    .size-note u {
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 22px;
+    }
+    .save-btn {
+      width: 62px;
+      height: 36px;
+      background: var(--ink);
+      color: #ffffff;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      transition: background 0.2s;
+    }
+    .save-btn.saved {
+      background: #3a3d44;
+    }
+    .preorder-btn {
+      flex: 1;
+      height: 36px;
+      background: var(--ink);
+      color: #ffffff;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      overflow: hidden;
+      position: relative;
+    }
+    .preorder-slider {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      transition: transform 0.45s var(--ease-cb);
+    }
+    .preorder-slider > span {
+      height: 36px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .preorder-btn.added .preorder-slider {
+      transform: translateY(-36px);
+    }
+
+    .instalments-note {
+      font-size: 10.5px;
+      color: var(--mute);
+      margin-top: 14px;
+      letter-spacing: 0.03em;
+    }
+    .instalments-note span {
+      text-decoration: underline;
+      color: var(--ink);
+      cursor: pointer;
+    }
+
+    /* Looks Thumbnails */
+    #looks {
+      position: absolute;
+      left: 38px;
+      top: 790px;
+      display: flex;
+      gap: 12px;
+      z-index: 10;
+    }
+    .look-btn {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      background: #000;
+      padding: 0;
+      cursor: pointer;
+      filter: grayscale(1);
+      opacity: 0.7;
+      transition: opacity 0.2s, filter 0.2s;
+    }
+    .look-btn canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .look-btn.active {
+      filter: grayscale(0);
+      opacity: 1;
+    }
+    .look-brackets {
+      position: absolute;
+      inset: -4px;
+      pointer-events: none;
+      display: none;
+    }
+    .look-btn.active .look-brackets {
+      display: block;
+    }
+    .bracket {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      border-color: var(--ink);
+      border-style: solid;
+    }
+    .bracket.tl { top: 0; left: 0; border-width: 1.5px 0 0 1.5px; }
+    .bracket.tr { top: 0; right: 0; border-width: 1.5px 1.5px 0 0; }
+    .bracket.bl { bottom: 0; left: 0; border-width: 0 0 1.5px 1.5px; }
+    .bracket.br { bottom: 0; right: 0; border-width: 0 1.5px 1.5px 0; }
+
+    /* Flying Card Animation */
+    .flying-card {
+      position: absolute;
+      width: 60px;
+      height: 80px;
+      background: #ffffff;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+      border-radius: 4px;
+      z-index: 500;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .flying-card canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="art">
+
+    <!-- Header -->
+    <div id="logo">OKTA/9</div>
+    <div id="crumb">HOME &gt; SHOP &gt; COATS &amp; JACKETS</div>
+
+    <nav id="nav">
+      <button class="pill">Shop</button>
+      <button class="pill">Collections</button>
+      <button class="pill">Explore</button>
+    </nav>
+
+    <div id="acct">
+      <button class="pill search-btn" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6">
+          <circle cx="10" cy="10" r="7"/>
+          <line x1="15.5" y1="15.5" x2="21" y2="21"/>
+        </svg>
+      </button>
+      <button class="pill">Log in</button>
+      <button class="pill" id="bag-btn">Bag/<b id="count">0</b></button>
+    </div>
+
+    <!-- Turntable Stage -->
+    <div id="stage">
+      <video id="vid" muted playsinline preload="auto" crossorigin="anonymous" src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20261107_112151_ae5c9a8f-07da-4b83-8dd8-47c762a5dfc0.mp4"></video>
+      <canvas id="cv" width="1080" height="1920"></canvas>
+
+      <!-- Hotspot Pins on Stage -->
+      <div id="hotspots">
+        <!-- Pin 1: Two-way zip (.47, .22) -->
+        <div class="hs-wrap right" style="left: 47%; top: 22%;">
+          <div class="hs" id="hs-0">
+            <span>+</span>
+            <div class="ping"></div>
+          </div>
+          <div class="tip">
+            <span class="tip-title">Two-way zip</span>
+            Silver two-way zip with a sculpted pull, up to a tall stand collar.
+          </div>
+        </div>
+
+        <!-- Pin 2: Contour print (.38, .285) -->
+        <div class="hs-wrap left" style="left: 38%; top: 28.5%;">
+          <div class="hs" id="hs-1">
+            <span>+</span>
+            <div class="ping"></div>
+          </div>
+          <div class="tip">
+            <span class="tip-title">Contour print</span>
+            A topographic map printed edge to edge, so every panel shows a different ridge.
+          </div>
+        </div>
+
+        <!-- Pin 3: Hand-warmer pockets (.63, .385) -->
+        <div class="hs-wrap right" style="left: 63%; top: 38.5%;">
+          <div class="hs" id="hs-2">
+            <span>+</span>
+            <div class="ping"></div>
+          </div>
+          <div class="tip">
+            <span class="tip-title">Hand-warmer pockets</span>
+            Deep fleece-lined pockets set high for hands-in-pockets wear.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connector Lines SVG -->
+    <svg id="connectors" viewBox="0 0 1500 1000" pathLength="1">
+      <path class="connector-path" id="conn-left" d="M438 395H562L592 362H618" pathLength="1"/>
+      <path class="connector-path" id="conn-right" d="M1105 600H962L937 478H900" pathLength="1"/>
+    </svg>
+
+    <!-- Degree Drag Indicator -->
+    <div id="deg">
+      <span>DRAG TO ROTATE</span>
+      <div class="deg-bar">
+        <div class="deg-dot" id="deg-dot" style="left: 0%;"></div>
+      </div>
+      <span id="deg-val">000°</span>
+    </div>
+
+    <!-- Notched Info Card (Left) -->
+    <section id="info" class="card">
+      <h1 class="info-name">The contour lines<br>metallic puffer</h1>
+      <div class="info-price-row">
+        <span>€ 1.120</span>
+        <span class="tag-preorder">PRE-ORDER</span>
+      </div>
+
+      <!-- Accordion -->
+      <div class="acc-wrap">
+        <div class="acc-row open" id="acc-0">
+          <button class="acc-btn" onclick="toggleAcc(0)">
+            <span>Description</span>
+            <span class="acc-sign">[−]</span>
+          </button>
+          <div class="acc-content">
+            <div>
+              <p class="acc-body">Oversized puffer jacket in a liquid-silver ripstop, printed all over with a topographic contour map. Stand collar, two-way zip and deep hand-warmer pockets. Boxy, cropped fit.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="acc-row" id="acc-1">
+          <button class="acc-btn" onclick="toggleAcc(1)">
+            <span>Materials</span>
+            <span class="acc-sign">[+]</span>
+          </button>
+          <div class="acc-content">
+            <div>
+              <p class="acc-body">Shell: 100% recycled nylon with a metallic coating. Fill: 80/20 recycled down. Lining: 100% recycled polyester.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="acc-row" id="acc-2">
+          <button class="acc-btn" onclick="toggleAcc(2)">
+            <span>Size guide</span>
+            <span class="acc-sign">[+]</span>
+          </button>
+          <div class="acc-content">
+            <div>
+              <p class="acc-body">XS/S: chest 124 cm. M/L: chest 132 cm. XL/2XL: chest 140 cm. Cut wide; take your usual size for the intended volume.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="acc-row" id="acc-3">
+          <button class="acc-btn" onclick="toggleAcc(3)">
+            <span>Packaging</span>
+            <span class="acc-sign">[+]</span>
+          </button>
+          <div class="acc-content">
+            <div>
+              <p class="acc-body">Folded into a reusable drawstring sack and shipped in a recycled card box. No plastic.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="acc-row" id="acc-4">
+          <button class="acc-btn" onclick="toggleAcc(4)">
+            <span>Shipping &amp; returns</span>
+            <span class="acc-sign">[+]</span>
+          </button>
+          <div class="acc-content">
+            <div>
+              <p class="acc-body">Pre-orders ship in 4–6 weeks. Free returns within 30 days of delivery.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notched Buy Card (Right) -->
+    <section id="buy" class="card">
+      <div class="size-label">SIZE</div>
+      <div class="size-grid" id="size-grid">
+        <div id="hl"></div>
+        <button class="size-btn" onclick="selectSize(0, this)">XS/S</button>
+        <button class="size-btn active" onclick="selectSize(1, this)">M/L</button>
+        <button class="size-btn" onclick="selectSize(2, this)">XL/2XL</button>
+      </div>
+
+      <p class="size-note">Model is 172 cm &amp; wears size M/L. <u onclick="toggleAcc(2)">Size guide</u></p>
+
+      <div class="action-row">
+        <button class="save-btn" id="save-btn" onclick="toggleSave()">SAVE</button>
+        <button class="preorder-btn" id="preorder-btn" onclick="handlePreorder()">
+          <div class="preorder-slider">
+            <span>PRE-ORDER</span>
+            <span>Added to bag</span>
+          </div>
+        </button>
+      </div>
+
+      <p class="instalments-note">Pay in 3 instalments at checkout. <span>Learn more</span></p>
+    </section>
+
+    <!-- Looks Thumbnails -->
+    <div id="looks">
+      <button class="look-btn active" id="look-front" onclick="spinTo(0)" aria-label="Front View">
+        <canvas id="thumb-front" width="96" height="96"></canvas>
+        <div class="look-brackets">
+          <span class="bracket tl"></span><span class="bracket tr"></span>
+          <span class="bracket bl"></span><span class="bracket br"></span>
+        </div>
+      </button>
+
+      <button class="look-btn" id="look-back" onclick="spinTo(0.5)" aria-label="Back View">
+        <canvas id="thumb-back" width="96" height="96"></canvas>
+        <div class="look-brackets">
+          <span class="bracket tl"></span><span class="bracket tr"></span>
+          <span class="bracket bl"></span><span class="bracket br"></span>
+        </div>
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    (function () {
+      const art = document.getElementById('art');
+      const vid = document.getElementById('vid');
+      const cv = document.getElementById('cv');
+      const ctx = cv.getContext('2d');
+      const stage = document.getElementById('stage');
+      const degDot = document.getElementById('deg-dot');
+      const degVal = document.getElementById('deg-val');
+      const connLeft = document.getElementById('conn-left');
+      const connRight = document.getElementById('conn-right');
+      const hsPins = [document.getElementById('hs-0'), document.getElementById('hs-1'), document.getElementById('hs-2')];
+      const lookFront = document.getElementById('look-front');
+      const lookBack = document.getElementById('look-back');
+      const thumbFront = document.getElementById('thumb-front');
+      const thumbBack = document.getElementById('thumb-back');
+      const countEl = document.getElementById('count');
+      const hl = document.getElementById('hl');
+
+      let K = 1;
+      function fitArtboard() {
+        K = Math.min(window.innerWidth / 1500, window.innerHeight / 1000);
+        art.style.left = `${window.innerWidth / 2}px`;
+        art.style.top = `${window.innerHeight / 2}px`;
+        art.style.transform = `scale(${K}) translate(-750px, -500px)`;
+      }
+      window.addEventListener('resize', fitArtboard);
+      fitArtboard();
+
+      // Size Highlight Position
+      function updateHl(btn) {
+        if (!btn) return;
+        hl.style.left = `${btn.offsetLeft}px`;
+        hl.style.width = `${btn.offsetWidth}px`;
+      }
+      window.selectSize = function (idx, el) {
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        updateHl(el);
+      };
+      setTimeout(() => {
+        const defaultBtn = document.querySelectorAll('.size-btn')[1];
+        if (defaultBtn) updateHl(defaultBtn);
+      }, 50);
+
+      // Accordion
+      window.toggleAcc = function (idx) {
+        const rows = document.querySelectorAll('.acc-row');
+        rows.forEach((r, i) => {
+          const sign = r.querySelector('.acc-sign');
+          if (i === idx) {
+            const isOpen = r.classList.contains('open');
+            if (isOpen) {
+              r.classList.remove('open');
+              sign.textContent = '[+]';
+            } else {
+              r.classList.add('open');
+              sign.textContent = '[−]';
+            }
+          } else {
+            r.classList.remove('open');
+            sign.textContent = '[+]';
+          }
+        });
+      };
+
+      // Save Button
+      window.toggleSave = function () {
+        const sBtn = document.getElementById('save-btn');
+        const isSaved = sBtn.classList.toggle('saved');
+        sBtn.textContent = isSaved ? 'SAVED' : 'SAVE';
+      };
+
+      // Turntable State
+      let NF = 240;
+      const frames = []; // Array of ImageBitmaps or Canvases
+      let ang = 0;
+      let vel = 0;
+      let isDragging = false;
+      let lastX = 0;
+      let lastTime = 0;
+      let v = 0;
+      let idle = 0;
+      let tween = null;
+      let isCached = false;
+
+      // Extract Clip Background Color from pixel (6, 6)
+      function extractBgColor(source) {
+        try {
+          const off = document.createElement('canvas');
+          off.width = 30;
+          off.height = 30;
+          const octx = off.getContext('2d');
+          octx.drawImage(source, 0, 0, 30, 30);
+          const p = octx.getImageData(6, 6, 1, 1).data;
+          const bgRgb = `rgb(${p[0]},${p[1]},${p[2]})`;
+          document.documentElement.style.setProperty('--bg', bgRgb);
+        } catch (e) {}
+      }
+
+      // Draw Look Thumbnails
+      function drawThumb(canvas, sourceImg) {
+        if (!sourceImg) return;
+        const tctx = canvas.getContext('2d');
+        const sw = sourceImg.videoWidth || sourceImg.width || 732;
+        const sh = sourceImg.videoHeight || sourceImg.height || 1296;
+        const cropW = sw * 0.62;
+        const cropX = (sw - cropW) / 2;
+        const cropY = sh * 0.07;
+        tctx.clearRect(0, 0, 96, 96);
+        tctx.drawImage(sourceImg, cropX, cropY, cropW, cropW, 0, 0, 96, 96);
+      }
+
+      // Render the current frame onto the canvas
+      let isDrawing = false;
+      function show(a) {
+        const norm = ((a % 1) + 1) % 1;
+        const targetIdx = Math.min(NF - 1, Math.max(0, Math.round(norm * (NF - 1))));
+
+        if (frames[targetIdx]) {
+          // If cached frame exists, draw instantly!
+          ctx.clearRect(0, 0, 1080, 1920);
+          ctx.drawImage(frames[targetIdx], 0, 0, 1080, 1920);
+        } else if (vid.readyState >= 2 && vid.duration) {
+          // Fallback: direct live scrub from video
+          const targetTime = norm * vid.duration;
+          if (Math.abs(vid.currentTime - targetTime) > 0.04) {
+            vid.currentTime = targetTime;
+          }
+          ctx.clearRect(0, 0, 1080, 1920);
+          ctx.drawImage(vid, 0, 0, 1080, 1920);
+        }
+      }
+
+      // Live updates during video seeking
+      vid.addEventListener('seeked', () => {
+        if (!isCached) {
+          ctx.clearRect(0, 0, 1080, 1920);
+          ctx.drawImage(vid, 0, 0, 1080, 1920);
+        }
+      });
+      vid.addEventListener('timeupdate', () => {
+        if (!isCached && isDragging) {
+          ctx.clearRect(0, 0, 1080, 1920);
+          ctx.drawImage(vid, 0, 0, 1080, 1920);
+        }
+      });
+
+      // Frame Caching Routine
+      vid.addEventListener('loadeddata', () => {
+        NF = Math.max(120, Math.round(vid.duration * 24));
+        extractBgColor(vid);
+
+        // Initial front frame & thumbnail
+        ctx.drawImage(vid, 0, 0, 1080, 1920);
+        drawThumb(thumbFront, vid);
+
+        // Pre-create frame capture offscreen canvas
+        const offW = Math.min(720, vid.videoWidth || 720);
+        const offH = Math.round(offW * (vid.videoHeight / vid.videoWidth || 1296 / 732));
+        const off = document.createElement('canvas');
+        off.width = offW;
+        off.height = offH;
+        const octx = off.getContext('2d');
+
+        // Play at high speed (4x) to build complete 360° buffer in ~2.5 seconds
+        vid.playbackRate = 4.0;
+        vid.currentTime = 0;
+        
+        const playPromise = vid.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(() => {
+            // Autoplay restriction fallback
+          });
+        }
+
+        if ('requestVideoFrameCallback' in vid) {
+          function onFrame(now, meta) {
+            const fIdx = Math.min(NF - 1, Math.max(0, Math.round(meta.mediaTime * 24)));
+            if (!frames[fIdx]) {
+              const frameCvs = document.createElement('canvas');
+              frameCvs.width = offW;
+              frameCvs.height = offH;
+              frameCvs.getContext('2d').drawImage(vid, 0, 0, offW, offH);
+              frames[fIdx] = frameCvs;
+            }
+
+            if (!vid.ended && meta.mediaTime < vid.duration - 0.05) {
+              vid.requestVideoFrameCallback(onFrame);
+            } else {
+              finishCaching();
+            }
+          }
+          vid.requestVideoFrameCallback(onFrame);
+        }
+
+        // Safety fallback timer if video callback stalls
+        setTimeout(finishCaching, 3500);
+      });
+
+      function finishCaching() {
+        if (isCached) return;
+        isCached = true;
+
+        // Fill any frame gaps
+        let lastValid = null;
+        for (let i = 0; i < NF; i++) {
+          if (frames[i]) lastValid = frames[i];
+          else if (lastValid) frames[i] = lastValid;
+        }
+
+        // Drop redundant last frame
+        if (frames.length >= NF) frames.pop();
+        NF = frames.length;
+
+        // Render thumbnails
+        if (frames[0]) drawThumb(thumbFront, frames[0]);
+        const mid = Math.floor(NF / 2);
+        if (frames[mid]) drawThumb(thumbBack, frames[mid]);
+
+        // Pause video & hide
+        vid.pause();
+        vid.style.display = 'none';
+
+        // Draw current angle
+        show(ang);
+      }
+
+      // Tweening helper
+      window.spinTo = function (target) {
+        const cur = ((ang % 1) + 1) % 1;
+        let delta = target - cur;
+        if (delta > 0.5) delta -= 1;
+        if (delta < -0.5) delta += 1;
+
+        const startAng = ang;
+        const endAng = ang + delta;
+        const dur = 900 + Math.abs(delta) * 900;
+        const startTime = performance.now();
+
+        tween = {
+          startAng,
+          endAng,
+          dur,
+          startTime
+        };
+
+        if (Math.abs(target) < 0.1) {
+          lookFront.classList.add('active');
+          lookBack.classList.remove('active');
+        } else {
+          lookBack.classList.add('active');
+          lookFront.classList.remove('active');
+        }
+      };
+
+      // Pointer Dragging
+      stage.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        tween = null;
+        stage.classList.add('grabbing');
+        lastX = e.clientX;
+        lastTime = performance.now();
+        v = 0;
+        idle = 0;
+        try { stage.setPointerCapture(e.pointerId); } catch(err) {}
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        idle = 0;
+        if (!isDragging) return;
+        const now = performance.now();
+        const dt = Math.max(8, now - lastTime);
+        const dx = e.clientX - lastX;
+        lastX = e.clientX;
+        lastTime = now;
+
+        const dAng = -dx / K / 900;
+        ang += dAng;
+
+        v = (dAng / dt) * 1000 * 0.6 + v * 0.4;
+        show(ang);
+      });
+
+      function stopDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        stage.classList.remove('grabbing');
+        vel = Math.max(-2.5, Math.min(2.5, v));
+      }
+      window.addEventListener('pointerup', stopDrag);
+      window.addEventListener('pointercancel', stopDrag);
+
+      // Main Physics & Animation Loop
+      let prevLoopTime = performance.now();
+      function loop(now) {
+        const dt = Math.min(0.064, (now - prevLoopTime) / 1000);
+        prevLoopTime = now;
+
+        if (tween) {
+          const progress = Math.min(1, (now - tween.startTime) / tween.dur);
+          // easeInOutCubic
+          const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+          ang = tween.startAng + (tween.endAng - tween.startAng) * ease;
+          show(ang);
+          if (progress >= 1) tween = null;
+        } else if (!isDragging) {
+          idle += dt * 1000;
+          const targetSpeed = idle > 3000 ? 0.045 : 0;
+          const rate = idle > 3000 ? dt * 0.8 : dt * 2.2;
+          vel += (targetSpeed - vel) * Math.min(1, rate);
+          ang += vel * dt;
+          if (Math.abs(vel) > 0.0001 || idle > 3000) {
+            show(ang);
+          }
+        }
+
+        // Degree Readout
+        const normAng = ((ang % 1) + 1) % 1;
+        const deg = Math.round(normAng * 360) % 360;
+        degDot.style.left = `${normAng * 100}%`;
+        degVal.textContent = `${String(deg).padStart(3, '0')}°`;
+
+        // Front-Facing Hotspots & Connectors Condition
+        // Within ±3.5% of turn (0.035 or 0.965), not dragging, not tweening, |vel| < 0.02
+        const isFacingFront = (normAng < 0.035 || normAng > 0.965) && !isDragging && !tween && Math.abs(vel) < 0.02;
+
+        if (isFacingFront) {
+          connLeft.classList.add('active');
+          connRight.classList.add('active');
+          hsPins.forEach((p, idx) => {
+            setTimeout(() => {
+              if (isFacingFront) p.classList.add('visible');
+            }, idx * 80);
+          });
+        } else {
+          connLeft.classList.remove('active');
+          connRight.classList.remove('active');
+          hsPins.forEach(p => p.classList.remove('visible'));
+        }
+
+        requestAnimationFrame(loop);
+      }
+      requestAnimationFrame(loop);
+
+      // Add to Bag / Pre-Order Arc Animation
+      window.handlePreorder = function () {
+        const pBtn = document.getElementById('preorder-btn');
+        pBtn.classList.add('added');
+        setTimeout(() => pBtn.classList.remove('added'), 1800);
+
+        // Flying card arc to Bag
+        const bagBtn = document.getElementById('bag-btn');
+        const bRect = bagBtn.getBoundingClientRect();
+        const pRect = pBtn.getBoundingClientRect();
+
+        const card = document.createElement('div');
+        card.className = 'flying-card';
+
+        const cvs = document.createElement('canvas');
+        cvs.width = 96;
+        cvs.height = 96;
+        drawThumb(cvs, frames[0] || vid);
+        card.appendChild(cvs);
+        document.body.appendChild(card);
+
+        // Coordinates in viewport px
+        const startX = pRect.left + pRect.width / 2 - 30;
+        const startY = pRect.top + pRect.height / 2 - 40;
+        const midX = (startX + bRect.left) / 2 + 30;
+        const midY = Math.min(startY, bRect.top) - 80;
+        const endX = bRect.left + bRect.width / 2 - 15;
+        const endY = bRect.top + bRect.height / 2 - 20;
+
+        card.animate([
+          { transform: `translate(${startX}px, ${startY}px) scale(1) rotate(0deg)`, opacity: 1 },
+          { transform: `translate(${midX}px, ${midY}px) scale(0.8) rotate(-8deg)`, opacity: 0.9, offset: 0.5 },
+          { transform: `translate(${endX}px, ${endY}px) scale(0.18) rotate(-14deg)`, opacity: 0 }
+        ], {
+          duration: 900,
+          easing: 'cubic-bezier(.5, 0, .3, 1)',
+          fill: 'forwards'
+        });
+
+        setTimeout(() => {
+          card.remove();
+          const cur = parseInt(countEl.textContent || '0', 10);
+          countEl.textContent = cur + 1;
+          countEl.classList.add('bump');
+          setTimeout(() => countEl.classList.remove('bump'), 500);
+        }, 900);
+      };
+
+      // Export debug hook
+      window.__turntable = {
+        getAng: () => ang,
+        setAng: (a) => { ang = a; show(a); },
+        spinTo: window.spinTo
+      };
+
+    })();
+  </script>
+</body>
+</html>

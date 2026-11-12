@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartStock — Project Review Documentation (Intelligent Data Analytics & Python)</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX for Beautiful Math -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Mermaid.js for Rendering Flowcharts Directly -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #0f172a;
+      --primary-accent: #2563eb;
+      --secondary: #475569;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-accent: #cbd5e1;
+      --text: #1e293b;
+      --text-muted: #64748b;
+      --success-bg: #dcfce7;
+      --success-text: #15803d;
+      --code-bg: #f1f5f9;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      padding: 40px 20px;
+    }
+
+    .report-container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 60px 50px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Print Controls */
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .print-btn {
+      background: var(--primary-accent);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .print-btn:hover { background: #1d4ed8; }
+
+    /* Headers */
+    .doc-header {
+      text-align: center;
+      padding-bottom: 30px;
+      margin-bottom: 40px;
+      border-bottom: 2px solid var(--border);
+    }
+    .doc-dept {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--primary-accent);
+      margin-bottom: 8px;
+    }
+    .doc-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+    .doc-sub {
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+
+    /* Section Cards */
+    .section-card {
+      margin-bottom: 40px;
+      page-break-inside: avoid;
+    }
+    .section-num {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #334155;
+      margin: 20px 0 10px;
+    }
+
+    p { margin-bottom: 14px; font-size: 15px; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    th {
+      background-color: #f8fafc;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    tr:nth-child(even) { background-color: #fafbfc; }
+
+    /* Badges */
+    .badge-pass {
+      background: var(--success-bg);
+      color: var(--success-text);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+      display: inline-block;
+    }
+    .badge-info {
+      background: #e0f2fe;
+      color: #0369a1;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 12px;
+      display: inline-block;
+    }
+
+    /* Flowcharts */
+    .mermaid-container {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 20px 0;
+      display: flex;
+      justify-content: center;
+      overflow-x: auto;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      background: #eff6ff;
+      border-left: 4px solid var(--primary-accent);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    .callout b { color: #1e40af; }
+
+    /* Code blocks */
+    code, .mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+    }
+
+    ul, ol {
+      margin-left: 24px;
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+    li { margin-bottom: 6px; }
+
+    /* Print Viewport Rules */
+    @media print {
+      body { background: #fff; padding: 0; }
+      .report-container {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .action-bar { display: none; }
+      .section-card { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="report-container">
+    
+    <!-- Top Action Bar -->
+    <div class="action-bar">
+      <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">
+        📌 Ready for Review • Double-click to open in Browser • Press <b>Cmd+P</b> to Save as PDF
+      </span>
+      <button class="print-btn" onclick="window.print()">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+          <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+        </svg>
+        Save as PDF / Print
+      </button>
+    </div>
+
+    <!-- Header Section -->
+    <div class="doc-header">
+      <p class="doc-dept">Department of Computer Science & Engineering</p>
+      <h1 class="doc-title">SmartStock — Supply Chain Demand &amp; Inventory Optimization Engine</h1>
+      <p class="doc-sub">Course Project Review: <b>Intelligent Data Analytics &amp; Python for Data Science</b></p>
+    </div>
+
+    <!-- Slide 1: Team & Project Info -->
+    <div class="section-card">
+      <span class="section-num">Section 1</span>
+      <h2>1. Title &amp; Team Details</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Project Title</th>
+            <th>Domain Specialization</th>
+            <th>Evaluation Stage</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>SmartStock Optimization Engine</b></td>
+            <td>Intelligent Data Analytics &amp; Python</td>
+            <td><span class="badge-info">Milestone Review 1</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Team Members:</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Sl. No.</th>
+            <th>Team Member Name</th>
+            <th>USN</th>
+            <th>Project Responsibility</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><code>[Student Name 1]</code></td>
+            <td><code>[USN 1]</code></td>
+            <td>DS-1 Time-Series Forecasting &amp; ML Architecture</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td><code>[Student Name 2]</code></td>
+            <td><code>[USN 2]</code></td>
+            <td>DS-2 Anomaly Detection &amp; Data Cleaning Pipeline</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td><code>[Student Name 3]</code></td>
+            <td><code>[USN 3]</code></td>
+            <td>AI-2 SKU Clustering &amp; ABC/XYZ Segmentation</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td><code>[Student Name 4]</code></td>
+            <td><code>[USN 4]</code></td>
+            <td>AI-1 Inventory Decision Rules &amp; FastAPI Backend</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Slide 2: Problem Statement -->
+    <div class="section-card">
+      <span class="section-num">Section 2</span>
+      <h2>2. Introduction: What is the Problem?</h2>
+      <p>Modern retail businesses struggle with <b>inventory misalignment</b> caused by volatile customer shopping habits and supplier delivery unpredictability:</p>
+      <ul>
+        <li><b>Stockouts:</b> Running out of merchandise leads to immediate lost sales, broken customer trust, and market share loss to competitors.</li>
+        <li><b>Overstocking:</b> Holding excessive merchandise ties up working capital, fills expensive warehouse racks, and increases inventory spoilage or obsolescence.</li>
+        <li><b>The Bullwhip Effect:</b> Minor changes in customer checkout registers cause violent, magnified demand swings upstream at regional distributors and factory lines.</li>
+      </ul>
+      <div class="callout">
+        <b>Core Limitation of Existing Systems:</b> Most small-to-medium retail operations rely on <b>static reorder thresholds</b> (e.g., ordering 20 units whenever stock drops below 10) or manual manager intuition, failing to handle weekend traffic surges or variable supplier delays.
+      </div>
+    </div>
+
+    <!-- Slide 3: Formal Definition -->
+    <div class="section-card">
+      <span class="section-num">Section 3</span>
+      <h2>3. Why is it a Problem? (Mathematical Formulation)</h2>
+      <p>Given $S = 10$ retail stores and $I = 50$ items, we manage $N = 500$ daily time-series $\{y_{s,i,t}\}$ across $T = 1,826$ days. Daily sales $D_t \sim (\mu_d, \sigma_d)$ and replenishment lead time $L \sim (\mu_L, \sigma_L)$ are non-deterministic stochastic variables.</p>
+      <p>The total operating penalty that our optimization engine minimizes is:</p>
+      <div style="text-align: center; margin: 18px 0; font-size: 16px;">
+        $$\text{Total Cost} = \sum_{t=1}^T \Big( C_{\text{lost}} \cdot \max(0, D_t - I_t) + C_{\text{hold}} \cdot \max(0, I_t - D_t) \Big)$$
+      </div>
+      <p>Where $I_t$ is stock on hand at day $t$, $C_{\text{lost}}$ is stockout cost, and $C_{\text{hold}}$ is inventory holding cost.</p>
+    </div>
+
+    <!-- Slide 4: Proposed Solution -->
+    <div class="section-card">
+      <span class="section-num">Section 4</span>
+      <h2>4. Proposed Solution: The 4-Pillar SmartStock Engine</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Name</th>
+            <th>Applied Technology</th>
+            <th>Primary Objective</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>DS-2</b></td>
+            <td>Statistical Anomaly Filter</td>
+            <td>Weekday Group Z-Score + Tukey IQR Fences</td>
+            <td>Eliminates promotion spikes and data errors without temporal leakage</td>
+          </tr>
+          <tr>
+            <td><b>AI-2</b></td>
+            <td>Unsupervised SKU Segmentation</td>
+            <td>K-Means Clustering + ABC/XYZ Matrix</td>
+            <td>Classifies 500 SKUs into Strategic, Core, and Tail management tiers</td>
+          </tr>
+          <tr>
+            <td><b>DS-1</b></td>
+            <td>Time-Series Demand Forecaster</td>
+            <td>Damped Holt-Winters &amp; Lag Random Forest</td>
+            <td>Predicts multi-step daily and weekly demand across rolling horizons</td>
+          </tr>
+          <tr>
+            <td><b>AI-1</b></td>
+            <td>Dynamic Inventory Decision Engine</td>
+            <td>Extended King's Safety Stock Formula</td>
+            <td>Calculates dynamic ROP and issues automated order recommendations</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Slide 5 & 6: Dataset & EDA -->
+    <div class="section-card">
+      <span class="section-num">Section 5 &amp; 6</span>
+      <h2>5 &amp; 6. Dataset Description &amp; Exploratory Data Analysis (EDA)</h2>
+      <ul>
+        <li><b>Kaggle Benchmark:</b> <i>Store Item Demand Forecasting Challenge</i> (Slug: <code>demand-forecasting-kernels-only</code>).</li>
+        <li><b>Timeline:</b> 5 continuous years: <b>2013-01-01 to 2017-12-31</b> (1,826 days).</li>
+        <li><b>Scale:</b> 10 stores &times; 50 merchandise items = <b>500 distinct SKU time-series</b>.</li>
+        <li><b>Total Observations:</b> Exactly <b>913,000 daily sales records</b> (100% verified, 0 nulls).</li>
+        <li><b>Lead Time Simulation:</b> Uniform draws with fixed seed 42 ($\mu_L \in [2, 10]$ days, $\sigma_L \in [0.5, 2.0]$ days).</li>
+      </ul>
+
+      <h3>Statistical Profile of Daily Demand:</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Metric</th>
+            <th>Value</th>
+            <th>Analytical Interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mean Daily Sales ($\mu$)</td>
+            <td><b>52.25 units</b></td>
+            <td>Average daily demand across all 500 items and 10 stores</td>
+          </tr>
+          <tr>
+            <td>Standard Deviation ($\sigma$)</td>
+            <td><b>28.80 units</b></td>
+            <td>High demand variance requiring adaptive safety stock buffers</td>
+          </tr>
+          <tr>
+            <td>Recorded Range</td>
+            <td><b>0 to 231 units</b></td>
+            <td>Encompasses stockout closures (0) and large promotional surges (231)</td>
+          </tr>
+          <tr>
+            <td>Weekly Periodicity</td>
+            <td><b>Peak: Sat / Sun (+38%)</b></td>
+            <td>Massive weekend customer volume surge vs mid-week baseline</td>
+          </tr>
+          <tr>
+            <td>Annual Macro-Trend</td>
+            <td><b>+6.2% YoY Growth</b></td>
+            <td>Clear upward trend with summer peak (June–August) and winter trough</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Slide 7: Related Works -->
+    <div class="section-card">
+      <span class="section-num">Section 7</span>
+      <h2>7. Related Latest Works in the Domain</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Existing Approach</th>
+            <th>Key Weaknesses in Supply Chain Operations</th>
+            <th>How SmartStock Solves It</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Classical ARIMA / SARIMAX</b></td>
+            <td>Requires fitting 500 individual models; cannot learn cross-SKU patterns; high CPU time during re-training.</td>
+            <td>Uses a <b>single global Random Forest model</b> with cross-series lag features + closed-form Holt-Winters.</td>
+          </tr>
+          <tr>
+            <td><b>Deep Learning (LSTM / Transformers)</b></td>
+            <td>Heavy GPU hardware required; high latency; "black-box" predictions make reorder decisions un-auditable.</td>
+            <td>Executes on <b>free-tier CPU infrastructure</b> under 15ms latency with mathematical safety stock explainability.</td>
+          </tr>
+          <tr>
+            <td><b>Static EOQ &amp; Fixed Reorder Points</b></td>
+            <td>Assumes deterministic demand and static delivery times; causes catastrophic stockouts during spikes.</td>
+            <td>Implements <b>King's Formula Dynamic ROP</b> dynamically expanding safety stock during volatile lead times.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Slide 8: Preprocessing & Data Cleaning -->
+    <div class="section-card">
+      <span class="section-num">Section 8</span>
+      <h2>8. Preprocessing &amp; Data Preparation Pipeline</h2>
+      <p>To eliminate training data contamination without lookahead leakage, all anomaly group statistics are fit strictly on training records ($t \le \text{2017-10-01}$):</p>
+      
+      <ol>
+        <li><b>Weekday-Group Z-Score:</b>
+          $$Z = \frac{y_t - \mu_{s,i,w}}{\sigma_{s,i,w}} \quad (\text{Flagged if } |Z| > 3.0)$$
+        </li>
+        <li><b>Tukey Interquartile Range (IQR):</b>
+          $$\text{IQR} = Q_3 - Q_1, \quad \text{Fences} = [Q_1 - 1.5\cdot\text{IQR}, \; Q_3 + 1.5\cdot\text{IQR}]$$
+        </li>
+        <li><b>Cleaned Series Median Imputation:</b>
+          If flagged as an anomaly, the noisy value is replaced with the robust group median ($M_{s,i,w}$), preserving trend without spike bias.
+        </li>
+      </ol>
+    </div>
+
+    <!-- Slide 9: AI Problem Solving & Algorithms -->
+    <div class="section-card">
+      <span class="section-num">Section 9</span>
+      <h2>9. AI Problem Solving: Algorithms &amp; Mathematics</h2>
+
+      <h3>A. Damped Holt-Winters Exponential Smoothing (DS-1)</h3>
+      <p>Forecasts demand using additive level ($\ell_t$), damped trend ($b_t$), and multiplicative weekly seasonality ($s_t$):</p>
+      $$\hat{y}_{t+h} = \left(\ell_t + \sum_{j=1}^h \phi^j b_t\right) s_{t+h-m} \quad (\text{where } m=7, \; \phi \approx 0.98)$$
+
+      <h3>B. Extended King's Safety Stock &amp; Dynamic Reorder Point (AI-1)</h3>
+      <p>Calculates exact buffer inventory accounting for simultaneous demand and delivery variance:</p>
+      $$\mathbf{SS} = Z_\alpha \sqrt{\mu_L \cdot \sigma_d^2 + \mu_d^2 \cdot \sigma_L^2}$$
+      $$\mathbf{ROP} = (\mu_d \times \mu_L) + SS$$
+      <p>Where service factors $Z_\alpha$ are tied to SKU classification tiers: Class A = 98% ($Z=2.054$), Class B = 95% ($Z=1.645$), Class C = 90% ($Z=1.282$).</p>
+    </div>
+
+    <!-- Slide 10: System Flowchart -->
+    <div class="section-card">
+      <span class="section-num">Section 10</span>
+      <h2>10. Complete System Architecture &amp; Flowchart</h2>
+      
+      <div class="mermaid-container">
+        <div class="mermaid">
+flowchart TD
+    A["Raw Sales Ingestion (913,000 Records)"] --> B["DS-2: Anomaly Detection (Z-Score + IQR)"]
+    B --> C["AI-2: SKU Clustering & ABC/XYZ Segmentation"]
+    B --> D["DS-1: Multi-Model Time-Series Forecasting"]
+    C --> E["AI-1: Dynamic Safety Stock & Decision Engine"]
+    D --> E
+    E --> F["FastAPI Asynchronous Backend Engine"]
+    F --> G["Interactive Merchant POS & Analytics Dashboard"]
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 11: Progress So Far & Results -->
+    <div class="section-card">
+      <span class="section-num">Section 11</span>
+      <h2>11. Progress So Far: Quantitative Results vs. Acceptance Targets</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Module / Dimension</th>
+            <th>Evaluated Metric</th>
+            <th>Measured Value</th>
+            <th>Acceptance Target</th>
+            <th>Evaluation Verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>DS-2 Anomaly Detection</b></td>
+            <td>Spike Injection Recall</td>
+            <td><b>99.8% (0.998)</b></td>
+            <td>&ge; 90.0%</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><b>AI-2 SKU Segmentation</b></td>
+            <td>K-Means Silhouette Score</td>
+            <td><b>0.5847 (k=2)</b></td>
+            <td>&ge; 0.50</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><b>DS-1 Forecasting (RMSE)</b></td>
+            <td>Error Reduction vs Naive</td>
+            <td><b>+28.18%</b> (4.635 vs 6.454)</td>
+            <td>&ge; 15.0%</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><b>DS-1 Forecasting (MAE)</b></td>
+            <td>Error Reduction vs Naive</td>
+            <td><b>+28.18%</b> (3.682 vs 5.127)</td>
+            <td>&ge; 15.0%</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><b>AI-1 Inventory Simulation</b></td>
+            <td>Stockout Days Reduction</td>
+            <td><b>+54.03%</b> (621 vs 1,351 days)</td>
+            <td>&ge; 20.0%</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><b>AI-1 Customer Service Level</b></td>
+            <td>Overall Store Fill Rate</td>
+            <td><b>99.18%</b></td>
+            <td>&ge; 95.0%</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><b>Backend API Performance</b></td>
+            <td>Single-SKU p95 Latency</td>
+            <td><b>14.2 ms</b></td>
+            <td>&le; 500 ms</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+          <tr>
+            <td><b>Automated Test Suite</b></td>
+            <td>Pytest Coverage Enforcement</td>
+            <td><b>100% Pass (82% Coverage)</b></td>
+            <td>&ge; 80.0%</td>
+            <td><span class="badge-pass">PASS</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Technology Stack Footer -->
+    <div class="section-card">
+      <h2>12. Full Python Technology Stack</h2>
+      <p><b>Core:</b> Python 3.11 &bull; <b>Data &amp; Math:</b> <code>pandas</code>, <code>numpy</code>, <code>scipy</code>, <code>statsmodels</code> &bull; <b>Machine Learning:</b> <code>scikit-learn</code>, <code>joblib</code> &bull; <b>API:</b> <code>FastAPI</code>, <code>Uvicorn</code>, <code>Pydantic</code> &bull; <b>Databases:</b> <code>sqlite3</code> (Analytical), <code>Supabase</code> (Cloud)</p>
+    </div>
+
+  </div>
+
+  <script>
+    // Initialize Mermaid Diagrams
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+
+    // Initialize KaTeX Auto-render
+    document.addEventListener("DOMContentLoaded", function() {
+      renderMathInElement(document.body, {
+        delimiters: [
+          {left: '$$', right: '$$', display: true},
+          {left: '$', right: '$', display: false}
+        ],
+        throwOnError : false
+      });
+    });
+  </script>
+</body>
+</html>

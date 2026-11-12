@@ -1,4 +1,4 @@
-.PHONY: install ingest anomaly segment train evaluate simulate all test lint run
+.PHONY: install ingest anomaly segment train evaluate simulate all test test-frontend test-e2e lint run
 
 VENV = .venv
 PYTHON = PYTHONPATH=. $(VENV)/bin/python
@@ -34,6 +34,12 @@ all: ingest anomaly segment train evaluate simulate
 
 test:
 	$(PYTEST) --cov=app --cov-report=term-missing --cov-fail-under=80
+
+test-frontend:
+	npm run test:unit
+
+test-e2e:
+	npm run test:e2e
 
 lint:
 	$(RUFF) check .
