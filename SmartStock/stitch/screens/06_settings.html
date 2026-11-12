@@ -2,352 +2,254 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
-  <title>SmartStock - Store Profile & Settings</title>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@400..700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartStock — Store Settings &amp; Preferences</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script id="tailwind-config">
+  <script>
     tailwind.config = {
       darkMode: "class",
       theme: {
         extend: {
           colors: {
-            "surface-variant": "#dfe4df",
-            "surface": "#f6faf5",
-            "on-surface": "#181d1a",
-            "on-surface-variant": "#414845",
+            surface: "#faf8f5",
+            "on-surface": "#161d1a",
+            "on-surface-variant": "#525c57",
+            outline: "#76807b",
+            primary: "#0f382b",
+            "primary-fixed": "#cbe8dc",
+            "on-primary-fixed": "#0a2a20",
             "on-primary": "#ffffff",
-            "primary": "#0b3127",
-            "primary-container": "#24483d",
-            "primary-fixed": "#c3ebdc",
-            "on-primary-fixed": "#002018",
-            "secondary": "#904c31",
-            "secondary-container": "#fea685",
-            "on-secondary": "#ffffff",
-            "surface-container": "#ebefea",
-            "surface-container-high": "#e5e9e4",
-            "surface-container-low": "#f0f5f0",
             "surface-container-lowest": "#ffffff",
-            "outline": "#717975",
-            "error": "#ba1a1a",
-            "error-container": "#ffdad6",
-            "on-error-container": "#93000a"
-          },
-          fontFamily: {
-            sans: ["Hanken Grotesk", "-apple-system", "sans-serif"],
-            mono: ["JetBrains Mono", "monospace"]
+            "surface-container-low": "#f2efe9",
+            "surface-container": "#ece8e0",
+            "surface-container-high": "#e4dfd5",
+            secondary: "#a84a28",
+            "on-secondary": "#ffffff",
+            error: "#b3261e",
+            "error-container": "#fce8e6",
+            "on-error-container": "#7c1812"
           }
         }
       }
     };
   </script>
-  <style>
-    body {
-      overscroll-behavior: none;
-      -webkit-tap-highlight-color: transparent;
-      font-family: 'Hanken Grotesk', -apple-system, sans-serif;
-    }
-    ::-webkit-scrollbar { display: none; }
-    #side-drawer.open { transform: translateX(0); }
-    #drawer-backdrop.open { opacity: 1; pointer-events: auto; }
-  </style>
+  <link rel="stylesheet" href="../editorial-theme.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('smartstock_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../smartstock-bridge.js"></script>
+  <script src="../editorial-shell.js"></script>
 </head>
-<body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen">
+<body class="min-h-screen antialiased">
 
-  <!-- Side Drawer Backdrop -->
-  <div class="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50 opacity-0 pointer-events-none transition-opacity duration-300" id="drawer-backdrop" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')"></div>
+  <div class="ed-layout">
+    <main class="ed-main-shell px-4 md:px-7">
+      <div class="max-w-5xl w-full mx-auto py-6 space-y-6">
 
-  <!-- Side Drawer Menu -->
-  <aside class="fixed top-0 left-0 bottom-0 w-[84%] max-w-[320px] bg-surface-container-lowest z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-[0_20px_40px_-8px_rgba(41,46,43,0.18)] pt-safe pb-safe" id="side-drawer">
-  <div class="p-space-md flex items-center justify-between">
-    <div class="flex items-center gap-space-xs">
-      <img alt="SmartStock Logo" class="h-8 w-8 rounded-lg shadow-xs object-cover" src="../assets/smartstock-logo.svg">
-      <span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">SmartStock</span>
-    </div>
-    <button class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full cursor-pointer" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')">
-      <span class="material-symbols-outlined text-[22px]">close</span>
-    </button>
-  </div>
-  <div class="px-space-md py-space-xs">
-    <div onclick="SmartStock.openStoreSwitcherModal()" class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between cursor-pointer active:scale-98 transition-all">
-      <div class="flex items-center gap-space-sm">
-        <span class="material-symbols-outlined text-secondary text-[20px]">storefront</span>
-        <div>
-          <p class="drawer-store-name font-label-md text-label-md text-on-surface font-semibold">My Store</p>
-          <p class="font-label-sm text-label-sm text-on-surface-variant font-code-sm">Merchant Register • Active</p>
-        </div>
-      </div>
-      <span class="material-symbols-outlined text-outline text-[18px]">unfold_more</span>
-    </div>
-  </div>
-  <div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="overview" href="02_overview.html">
-      <span class="material-symbols-outlined text-[20px]">dashboard</span>
-      <span class="font-label-lg text-label-lg">Overview</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="inventory" href="03_inventory.html">
-      <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-      <span class="font-label-lg text-label-lg">Inventory</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="sales" href="#" onclick="SmartStock.openSalesModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">point_of_sale</span>
-      <span class="font-label-lg text-label-lg">Sales Register</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="orders" href="05_purchase_orders.html">
-      <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-      <span class="font-label-lg text-label-lg">Orders Ledger</span>
-    </a>
-    <a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="ai-insights-&-replenishment" href="05_replenishment.html">
-      <div class="flex items-center gap-space-md">
-        <span class="material-symbols-outlined text-secondary text-[20px]">auto_awesome</span>
-        <span class="font-label-lg text-label-lg">AI Replenishment</span>
-      </div>
-      <span class="bg-secondary text-on-secondary font-label-sm text-label-sm px-2 py-0.5 rounded-full">AI</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="forecasts" href="04_forecasts.html">
-      <span class="material-symbols-outlined text-[20px]">query_stats</span>
-      <span class="font-label-lg text-label-lg">Demand Forecasts</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="suppliers" href="#" onclick="SmartStock.openSuppliersModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">local_shipping</span>
-      <span class="font-label-lg text-label-lg">Suppliers Directory</span>
-    </a>
-  </div>
-  <div class="p-space-md bg-surface-container-low/60 space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="settings" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">settings</span>
-      <span class="font-label-md text-label-md">Settings</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="help-&-support" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">help_outline</span>
-      <span class="font-label-md text-label-md">Help &amp; Support</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-error hover:opacity-80 transition-opacity cursor-pointer" data-path="login" href="01_signin.html" onclick="SmartStock.signOut(); return false;">
-      <span class="material-symbols-outlined text-[20px]">logout</span>
-      <span class="font-label-md text-label-md font-semibold">Sign Out</span>
-    </a>
-  </div>
-</aside>
+        <!-- Header -->
+        <section class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b ed-rule">
+          <div>
+            <span class="ed-kicker">Store Account &amp; System Preferences</span>
+            <h2 class="font-editorial text-2xl sm:text-3xl font-semibold mt-0.5" style="color:var(--text-primary);">Settings &amp; Merchant Profile</h2>
+          </div>
+          <button type="button" onclick="SmartStock.openStoreSwitcherModal()" class="ed-btn-secondary text-xs">
+            <span class="material-symbols-outlined text-[17px]">swap_horiz</span>
+            <span>Switch Store Register</span>
+          </button>
+        </section>
 
-  <!-- Fixed Top Header -->
-  <header class="fixed top-0 w-full z-40 bg-surface/90 backdrop-blur-xl border-b border-outline/10 shadow-xs" style="padding-top: env(safe-area-inset-top, 44px);">
-    <div class="h-14 px-4 flex items-center justify-between">
-      <div class="flex items-center gap-2">
-        <button class="w-10 h-10 flex items-center justify-center text-primary rounded-lg active:bg-surface-variant/40" onclick="document.getElementById('side-drawer').classList.add('open');document.getElementById('drawer-backdrop').classList.add('open')">
-          <span class="material-symbols-outlined text-[24px]">menu</span>
-        </button>
-        <div>
-          <h1 class="font-bold text-base text-primary leading-tight">Store Profile</h1>
-          <p class="text-[11px] text-on-surface-variant font-medium">Account & Preferences</p>
-        </div>
-      </div>
-      <div class="flex items-center gap-2">
-        <a href="02_overview.html" class="h-8 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary flex items-center gap-1">
-          <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-          <span>Home</span>
-        </a>
-      </div>
-    </div>
-  </header>
+        <!-- Two-Column Settings Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
-  <!-- Main Content Container with safe area compensation -->
-  <main class="flex-1 w-full max-w-lg mx-auto px-4 pb-28 space-y-4" style="padding-top: calc(env(safe-area-inset-top, 44px) + 68px);">
+          <!-- Left 6 Cols: Identity & Store Location -->
+          <div class="lg:col-span-6 space-y-5">
+            <section class="ed-sheet p-5 space-y-4">
+              <div class="flex items-start gap-4">
+                <div id="profile-avatar" class="w-14 h-14 rounded-xl font-bold text-2xl flex items-center justify-center shrink-0 select-none" style="background:var(--accent-primary); color:var(--accent-primary-ink);">S</div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between gap-2">
+                    <h3 id="profile-store-name" class="font-editorial text-xl font-semibold truncate" style="color:var(--text-primary);">My Store</h3>
+                    <span class="ed-badge ed-badge-success">Active</span>
+                  </div>
+                  <p id="profile-manager-title" class="text-xs font-semibold mt-0.5" style="color:var(--accent-secondary);">Store Owner</p>
+                  <div class="mt-2 space-y-1 text-xs" style="color:var(--text-secondary);">
+                    <div class="flex items-center gap-1.5 truncate">
+                      <span class="material-symbols-outlined text-[15px]" style="color:var(--accent-primary);">mail</span>
+                      <span id="profile-email" class="truncate font-medium">owner@store.in</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 truncate">
+                      <span class="material-symbols-outlined text-[15px]" style="color:var(--accent-primary);">phone</span>
+                      <span id="profile-phone" class="font-medium">Not added</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-    <!-- 1. Humane Store Identity Card -->
-    <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline/10 relative">
-      <div class="flex items-start gap-4">
-        <!-- Store Monogram Avatar (Clean & Human) -->
-        <div id="profile-avatar" class="w-16 h-16 rounded-2xl bg-primary text-on-primary font-bold text-2xl flex items-center justify-center shadow-xs shrink-0 select-none">
-          S
-        </div>
+              <div class="grid grid-cols-2 gap-2.5 pt-3 border-t ed-rule text-center">
+                <div class="ed-well p-3">
+                  <span class="block text-[11px]" style="color:var(--text-secondary);">Products in Catalog</span>
+                  <strong id="profile-product-count" class="font-tabular text-lg font-bold" style="color:var(--accent-primary);">0</strong>
+                </div>
+                <div class="ed-well p-3">
+                  <span class="block text-[11px]" style="color:var(--text-secondary);">Inventory Asset Value</span>
+                  <strong id="profile-total-value" class="font-tabular text-lg font-bold" style="color:var(--text-primary);">₹0</strong>
+                </div>
+              </div>
 
-        <!-- Details -->
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center justify-between gap-2">
-            <h2 id="profile-store-name" class="font-bold text-lg text-on-surface truncate">My Store</h2>
-            <span class="px-2 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed text-[11px] font-bold shrink-0">
-              Active
-            </span>
+              <button type="button" onclick="SmartStock.openEditProfileModal()" class="ed-btn-secondary w-full text-xs">
+                <span class="material-symbols-outlined text-[16px]">edit</span>
+                <span>Edit Store Details</span>
+              </button>
+            </section>
+
+            <section class="ed-sheet p-5 space-y-3">
+              <h3 class="font-editorial text-lg font-semibold" style="color:var(--text-primary);">Store Registry Details</h3>
+              <div class="space-y-2 text-xs">
+                <div class="ed-well px-3.5 py-2.5 flex items-center justify-between">
+                  <span style="color:var(--text-secondary);">Currency</span>
+                  <strong style="color:var(--text-primary);">Indian Rupee (₹ INR)</strong>
+                </div>
+                <div class="ed-well px-3.5 py-2.5 flex items-center justify-between">
+                  <span style="color:var(--text-secondary);">City / State</span>
+                  <strong id="pref-city" style="color:var(--text-primary);">India</strong>
+                </div>
+                <div class="ed-well px-3.5 py-2.5 flex items-center justify-between">
+                  <span style="color:var(--text-secondary);">GST / Tax ID</span>
+                  <strong id="pref-gst" style="color:var(--text-secondary);">Optional (Not added)</strong>
+                </div>
+              </div>
+            </section>
           </div>
 
-          <p id="profile-manager-title" class="text-xs text-secondary font-semibold mt-0.5">Store Owner</p>
-          
-          <div class="mt-2 space-y-1 text-xs text-on-surface-variant">
-            <div class="flex items-center gap-1.5 truncate">
-              <span class="material-symbols-outlined text-[15px] text-primary shrink-0">mail</span>
-              <span id="profile-email" class="truncate font-medium">owner@store.com</span>
-            </div>
-            <div class="flex items-center gap-1.5 truncate">
-              <span class="material-symbols-outlined text-[15px] text-primary shrink-0">phone</span>
-              <span id="profile-phone" class="font-medium">Not added</span>
-            </div>
+          <!-- Right 6 Cols: Theme, Intelligence Level, Alerts, Backups & Sign Out -->
+          <div class="lg:col-span-6 space-y-5">
+            <section class="ed-sheet p-5 space-y-3.5">
+              <h3 class="font-editorial text-lg font-semibold" style="color:var(--text-primary);">Appearance &amp; Intelligence Mode</h3>
+
+              <div class="ed-well p-3.5 flex items-center justify-between gap-3">
+                <div>
+                  <p class="font-semibold text-xs" style="color:var(--text-primary);">Editorial Theme</p>
+                  <p class="text-[11px]" style="color:var(--text-secondary);">Warm Parchment (Light) or Forest Obsidian (Dark)</p>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" id="set-theme-light" onclick="SmartStockEditorial.applyTheme('light'); syncPrefCards();" class="px-3 py-1.5 rounded text-xs font-semibold border ed-rule cursor-pointer">Light</button>
+                  <button type="button" id="set-theme-dark" onclick="SmartStockEditorial.applyTheme('dark'); syncPrefCards();" class="px-3 py-1.5 rounded text-xs font-semibold border ed-rule cursor-pointer">Dark</button>
+                </div>
+              </div>
+
+              <div class="ed-well p-3.5 flex items-center justify-between gap-3">
+                <div>
+                  <p class="font-semibold text-xs" style="color:var(--text-primary);">Intelligence View Depth</p>
+                  <p class="text-[11px]" style="color:var(--text-secondary);">Business (plain advice) vs Academic (ML metrics &amp; math)</p>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button type="button" id="set-intel-biz" onclick="SmartStockEditorial.setIntelligenceMode('business'); syncPrefCards();" class="px-3 py-1.5 rounded text-xs font-semibold border ed-rule cursor-pointer">Business</button>
+                  <button type="button" id="set-intel-tech" onclick="SmartStockEditorial.setIntelligenceMode('technical'); syncPrefCards();" class="px-3 py-1.5 rounded text-xs font-semibold border ed-rule cursor-pointer">Academic</button>
+                </div>
+              </div>
+            </section>
+
+            <section class="ed-sheet p-5 space-y-3">
+              <h3 class="font-editorial text-lg font-semibold" style="color:var(--text-primary);">Inventory Alert Preferences</h3>
+
+              <div class="ed-well p-3.5 flex items-center justify-between">
+                <div>
+                  <p class="font-semibold text-xs" style="color:var(--text-primary);">Default Low-Stock Alert Level</p>
+                  <p class="text-[11px]" style="color:var(--text-secondary);">Alert threshold when adding new items</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button type="button" onclick="SmartStock.adjustAlertThreshold(-1)" class="ed-btn-secondary w-8 h-8 p-0">-</button>
+                  <span id="alert-threshold-display" class="w-8 text-center font-tabular font-bold text-sm" style="color:var(--accent-primary);">5</span>
+                  <button type="button" onclick="SmartStock.adjustAlertThreshold(1)" class="ed-btn-secondary w-8 h-8 p-0">+</button>
+                </div>
+              </div>
+
+              <div class="ed-well p-3.5 flex items-center justify-between">
+                <div>
+                  <p class="font-semibold text-xs" style="color:var(--text-primary);">Barcode Scan Sound</p>
+                  <p class="text-[11px]" style="color:var(--text-secondary);">Play confirmation tone on scan</p>
+                </div>
+                <input type="checkbox" id="pref-sound" checked onchange="SmartStock.toggleScanSound(this.checked)" class="w-5 h-5 accent-emerald-800 rounded cursor-pointer">
+              </div>
+
+              <div class="ed-well p-3.5 flex items-center justify-between">
+                <div>
+                  <p class="font-semibold text-xs" style="color:var(--text-primary);">Low Stock Notification Banner</p>
+                  <p class="text-[11px]" style="color:var(--text-secondary);">Surface urgent reorder alerts on dashboard</p>
+                </div>
+                <input type="checkbox" id="pref-banner" checked onchange="SmartStock.toggleStockBanner(this.checked)" class="w-5 h-5 accent-emerald-800 rounded cursor-pointer">
+              </div>
+            </section>
+
+            <section class="ed-sheet p-5 space-y-2.5">
+              <h3 class="font-editorial text-lg font-semibold" style="color:var(--text-primary);">Data, Sample Catalog &amp; Session</h3>
+
+              <button type="button" onclick="SmartStock.exportCurrentInventory()" class="ed-btn-secondary w-full justify-start text-xs">
+                <span class="material-symbols-outlined text-[17px]">download</span>
+                <span>Download Catalog Backup (CSV)</span>
+              </button>
+              <button type="button" onclick="SmartStock.openImportModal()" class="ed-btn-secondary w-full justify-start text-xs">
+                <span class="material-symbols-outlined text-[17px]">upload_file</span>
+                <span>Import Inventory Spreadsheet (CSV)</span>
+              </button>
+              <button type="button" onclick="SmartStock.loadSampleKiranaData()" class="ed-btn-secondary w-full justify-start text-xs">
+                <span class="material-symbols-outlined text-[17px]" style="color:var(--accent-secondary);">bolt</span>
+                <span>Load Sample Grocery Catalog (Atta, Dal, Oil)</span>
+              </button>
+              <button type="button" onclick="SmartStock.resetStore()" class="ed-btn-secondary w-full justify-start text-xs" style="color:var(--status-danger);">
+                <span class="material-symbols-outlined text-[17px]">delete_sweep</span>
+                <span>Reset Inventory to 0 Items</span>
+              </button>
+
+              <div class="pt-2 border-t ed-rule">
+                <button type="button" onclick="SmartStock.signOut()" class="w-full h-10 rounded-lg font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer" style="background:var(--status-danger); color:#fff;">
+                  <span class="material-symbols-outlined text-[17px]">logout</span>
+                  <span>Sign Out of SmartStock</span>
+                </button>
+              </div>
+            </section>
           </div>
+
         </div>
+
       </div>
+    </main>
+  </div>
 
-      <!-- Quick Metrics Ribbon -->
-      <div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-outline/10 text-center">
-        <div class="bg-surface-container-low p-2.5 rounded-xl">
-          <span class="block text-[11px] text-on-surface-variant font-medium">Products in Stock</span>
-          <span id="profile-product-count" class="font-bold text-base text-primary">0</span>
-        </div>
-        <div class="bg-surface-container-low p-2.5 rounded-xl">
-          <span class="block text-[11px] text-on-surface-variant font-medium">Total Inventory Value</span>
-          <span id="profile-total-value" class="font-bold text-base text-on-surface">₹0</span>
-        </div>
-      </div>
+  <script>
+    SmartStockEditorial.renderShell({
+      pageId: 'settings',
+      title: 'Settings & Profile',
+      subtitle: 'Store identity, appearance theme, alert rules, and catalog backups'
+    });
 
-      <!-- Edit Button -->
-      <div class="mt-3 pt-2">
-        <button onclick="SmartStock.openEditProfileModal()" class="w-full h-10 rounded-xl bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-primary flex items-center justify-center gap-1.5 active:scale-[0.99] transition-all">
-          <span class="material-symbols-outlined text-[16px]">edit</span>
-          <span>Edit Store Details</span>
-        </button>
-      </div>
-    </div>
+    function syncPrefCards() {
+      const theme = SmartStockEditorial.getTheme();
+      const intel = SmartStockEditorial.getIntelligenceMode();
+      [
+        ['set-theme-light', theme === 'light'],
+        ['set-theme-dark', theme === 'dark'],
+        ['set-intel-biz', intel === 'business'],
+        ['set-intel-tech', intel === 'technical']
+      ].forEach(function(pair) {
+        const el = document.getElementById(pair[0]);
+        if (!el) return;
+        el.style.backgroundColor = pair[1] ? 'var(--accent-primary)' : 'var(--bg-surface)';
+        el.style.color = pair[1] ? 'var(--accent-primary-ink)' : 'var(--text-secondary)';
+      });
+    }
 
-    <!-- 2. Store Information & Location -->
-    <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline/10 space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="material-symbols-outlined text-primary text-[20px]">storefront</span>
-          <h3 class="font-bold text-sm text-on-surface">Store Information</h3>
-        </div>
-      </div>
-
-      <div class="space-y-2 text-xs">
-        <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-          <span class="text-on-surface-variant font-medium">Currency</span>
-          <span class="font-bold text-on-surface">Indian Rupee (₹ INR)</span>
-        </div>
-        <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-          <span class="text-on-surface-variant font-medium">City / State</span>
-          <span id="pref-city" class="font-semibold text-on-surface">India</span>
-        </div>
-        <div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-          <span class="text-on-surface-variant font-medium">GST / Tax ID</span>
-          <span id="pref-gst" class="font-semibold text-on-surface-variant">Optional (Not added)</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. Practical Stock Preferences (Human & Clear) -->
-    <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline/10 space-y-3">
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary text-[20px]">notifications_active</span>
-        <h3 class="font-bold text-sm text-on-surface">Inventory Alert Preferences</h3>
-      </div>
-
-      <!-- Low Stock Threshold Stepper -->
-      <div class="p-3 bg-surface-container-low rounded-xl flex items-center justify-between">
-        <div>
-          <p class="font-semibold text-xs text-on-surface">Low Stock Alert Level</p>
-          <p class="text-[11px] text-on-surface-variant">Alert me when any product drops to this quantity</p>
-        </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <button onclick="SmartStock.adjustAlertThreshold(-1)" class="w-8 h-8 rounded-lg bg-surface-container-lowest text-primary font-bold text-base flex items-center justify-center border border-outline/15 active:scale-95 shadow-xs">-</button>
-          <span id="alert-threshold-display" class="w-8 text-center font-bold text-sm text-primary">5</span>
-          <button onclick="SmartStock.adjustAlertThreshold(1)" class="w-8 h-8 rounded-lg bg-surface-container-lowest text-primary font-bold text-base flex items-center justify-center border border-outline/15 active:scale-95 shadow-xs">+</button>
-        </div>
-      </div>
-
-      <!-- Toggles -->
-      <div class="p-3 bg-surface-container-low rounded-xl flex items-center justify-between">
-        <div>
-          <p class="font-semibold text-xs text-on-surface">Barcode Scan Sound</p>
-          <p class="text-[11px] text-on-surface-variant">Play a soft beep confirmation when scanning</p>
-        </div>
-        <input type="checkbox" id="pref-sound" checked onchange="SmartStock.toggleScanSound(this.checked)" class="w-5 h-5 accent-[#0b3127] rounded cursor-pointer">
-      </div>
-
-      <div class="p-3 bg-surface-container-low rounded-xl flex items-center justify-between">
-        <div>
-          <p class="font-semibold text-xs text-on-surface">Low Stock Notification Banner</p>
-          <p class="text-[11px] text-on-surface-variant">Highlight items needing reorder on dashboard</p>
-        </div>
-        <input type="checkbox" id="pref-banner" checked onchange="SmartStock.toggleStockBanner(this.checked)" class="w-5 h-5 accent-[#0b3127] rounded cursor-pointer">
-      </div>
-    </div>
-
-    <!-- 4. Data Management & Backups -->
-    <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline/10 space-y-3">
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary text-[20px]">database</span>
-        <h3 class="font-bold text-sm text-on-surface">Data &amp; Backups</h3>
-      </div>
-      <p class="text-[11px] text-on-surface-variant">Export your products to Excel or import inventory from a spreadsheet anytime.</p>
-
-      <div class="space-y-2 pt-1">
-        <button onclick="SmartStock.exportCSV()" class="w-full h-11 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary flex items-center justify-center gap-2 active:scale-[0.99] transition-all border border-outline/10">
-          <span class="material-symbols-outlined text-[18px]">download</span>
-          <span>Download Products as Excel/CSV</span>
-        </button>
-
-        <button onclick="SmartStock.openImportModal()" class="w-full h-11 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-primary flex items-center justify-center gap-2 active:scale-[0.99] transition-all border border-outline/10">
-          <span class="material-symbols-outlined text-[18px]">upload_file</span>
-          <span>Import Inventory File (CSV)</span>
-        </button>
-
-        <button onclick="SmartStock.loadSampleKiranaData()" class="w-full h-11 rounded-xl bg-surface-container text-on-surface hover:bg-surface-container-high text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.99] transition-all">
-          <span class="material-symbols-outlined text-[18px] text-secondary">bolt</span>
-          <span>Load Sample Grocery Items (Atta, Dal, Oil)</span>
-        </button>
-
-        <button onclick="SmartStock.resetStore()" class="w-full h-11 rounded-xl bg-error-container/40 text-on-error-container hover:bg-error-container/60 text-xs font-semibold flex items-center justify-center gap-2 active:scale-[0.99] transition-all">
-          <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
-          <span>Reset Inventory to 0 (Clear All Items)</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- 5. Account & Sign Out -->
-    <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-outline/10 space-y-3">
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-primary text-[20px]">lock</span>
-        <h3 class="font-bold text-sm text-on-surface">Account</h3>
-      </div>
-
-      <button onclick="SmartStock.signOut()" class="w-full h-11 rounded-xl bg-error text-white text-xs font-bold flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.99] transition-all shadow-xs">
-        <span class="material-symbols-outlined text-[18px]">logout</span>
-        <span>Sign Out of SmartStock</span>
-      </button>
-
-      <div class="text-center pt-2">
-        <p class="text-[11px] text-on-surface-variant font-medium">SmartStock Retail Engine • Version 1.0</p>
-        <p class="text-[10px] text-outline mt-0.5">Simple, fast inventory management for retail shops</p>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Bottom Navigation Bar -->
-  <nav class="fixed bottom-0 w-full z-40 pb-safe bg-surface/90 backdrop-blur-xl border-t border-outline/10 shadow-lg">
-    <div class="flex justify-around items-center h-16 px-space-xs">
-      <a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant hover:text-primary transition-colors" data-path="overview" href="02_overview.html">
-        <span class="material-symbols-outlined text-[22px]">dashboard</span>
-        <span class="font-label-sm text-label-sm">Overview</span>
-      </a>
-      <a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant hover:text-primary transition-colors" data-path="inventory" href="03_inventory.html">
-        <span class="material-symbols-outlined text-[22px]">inventory_2</span>
-        <span class="font-label-sm text-label-sm">Stock</span>
-      </a>
-      <a class="flex flex-col items-center justify-center min-w-[48px] h-11 px-2 -mt-4 text-on-primary" data-path="scan-barcode" href="03_inventory.html">
-        <div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(36,72,61,0.28)] active:scale-95 transition-transform">
-          <span class="material-symbols-outlined text-[24px]">barcode_scanner</span>
-        </div>
-      </a>
-      <a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="orders" href="05_purchase_orders.html"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-sm text-label-sm">Orders</span></a>
-      <a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant hover:text-primary transition-colors" data-path="ai-insights-&-replenishment" href="05_replenishment.html">
-        <span class="material-symbols-outlined text-[22px]">auto_awesome</span>
-        <span class="font-label-sm text-label-sm">AI Replenish</span>
-      </a>
-    </div>
-  </nav>
-
+    window.addEventListener('smartstock:themechange', syncPrefCards);
+    window.addEventListener('smartstock:intelchange', syncPrefCards);
+    window.SmartStockPageRender = function() {
+      syncPrefCards();
+    };
+  </script>
 </body>
 </html>

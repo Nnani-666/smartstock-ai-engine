@@ -75,59 +75,169 @@ test.describe('SmartStock Kirana Retail Web App - End-to-End Suite', () => {
   });
 
   test.describe('Authenticated Merchant Session', () => {
+    const SCREENSHOT_DIR = '/Users/snnaniswarnababu/.gemini/antigravity/brain/bb8639e7-c0b2-4c49-b156-0cc805557c57/phase2_screenshots';
+
     test.beforeEach(async ({ page }) => {
-      // Seed authenticated merchant session
+      // Seed authenticated merchant session & sample catalog products for realistic screenshots & flows
       await page.addInitScript(() => {
+        const email = 'owner@sharmakirana.in';
         localStorage.setItem(
           'smartstock_user',
           JSON.stringify({
-            email: 'owner@sharmakirana.in',
+            email,
             store: 'Sharma Kirana Store',
             shop_id: 'b3bccd6d-875b-46e6-ade5-d9e8069b8b08',
           })
         );
+        localStorage.setItem('smartstock_last_active_store', 'Sharma Kirana Store');
+        const safeEmail = email.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const prodKey = `smartstock_local_products_${safeEmail}`;
+        if (!localStorage.getItem(prodKey)) {
+          localStorage.setItem(
+            prodKey,
+            JSON.stringify([
+              { id: 'sku-1', sku: 'AT-01', name: 'Aashirvaad Atta 5kg', category_name: 'Staples', unit_price: 265, unit_cost: 225, stock_on_hand: 18, reorder_point: 10, status: 'active' },
+              { id: 'sku-2', sku: 'TD-02', name: 'Toor Dal Premium 1kg', category_name: 'Pulses', unit_price: 168, unit_cost: 138, stock_on_hand: 4, reorder_point: 12, status: 'low_stock' },
+              { id: 'sku-3', sku: 'MO-03', name: 'Fortune Mustard Oil 1L', category_name: 'Oils', unit_price: 175, unit_cost: 148, stock_on_hand: 0, reorder_point: 8, status: 'out_of_stock' },
+              { id: 'sku-4', sku: 'CH-04', name: 'Tata Tea Gold 250g', category_name: 'Beverages', unit_price: 145, unit_cost: 118, stock_on_hand: 24, reorder_point: 8, status: 'active' },
+            ])
+          );
+        }
       });
     });
 
-    test('5. Overview Dashboard: Loads store overview and side navigation drawer', async ({ page }) => {
-      await page.goto('/screens/02_overview.html');
+    test('5. Overview Dashboard: Loads editorial briefing, side drawer, theme & intelligence toggles', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      const errors = [];
+      page.on('pageerror', (err) => errors.push(err.message));
 
-      // Verify dashboard rendered
+      await page.goto('/screens/02_overview.html');
       await expect(page.locator('#side-drawer')).toBeAttached();
       await expect(page.locator('.drawer-store-name').first()).toHaveText('Sharma Kirana Store');
-      
-      // Verify navigation items exist in side drawer
       await expect(page.locator('#side-drawer a[data-path="overview"]')).toBeVisible();
       await expect(page.locator('#side-drawer a[data-path="inventory"]')).toBeVisible();
       await expect(page.locator('#side-drawer a[data-path="orders"]')).toBeVisible();
+
+      // Light mode desktop screenshot
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/overview_desktop_light.png` });
+
+      // Switch to Academic Technical Mode & Dark Mode
+      await page.click('button[data-intel-choice="technical"]');
+      await expect(page.locator('body')).toHaveAttribute('data-intel', 'technical');
+      await expect(page.locator('.tech-only').first()).toBeVisible();
+
+      await page.click('button[aria-label="Toggle Light or Dark theme"]');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      await page.waitForTimeout(250);
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/overview_desktop_dark.png` });
+
+      // Reset to light/business cleanly and verify mobile viewport has no horizontal overflow
+      await page.click('button[aria-label="Toggle Light or Dark theme"]');
+      await page.click('button[data-intel-choice="business"]');
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.waitForTimeout(200);
+      const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      expect(hasOverflow).toBe(false);
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/overview_mobile_light.png` });
+      expect(errors).toEqual([]);
     });
 
-    test('6. Inventory Screen: Displays Kirana product catalog and stock levels', async ({ page }) => {
+    test('6. Inventory Workbench & Inspector: Displays catalog, filters & inspector panel', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto('/screens/03_inventory.html');
+      await expect(page.locator('#inventory-list')).toBeVisible();
+      await expect(page.locator('#sku-inspector')).toBeVisible();
+      await expect(page.locator('#inventory-list')).toContainText('Aashirvaad Atta 5kg');
 
-      // Verify inventory view loaded
-      await expect(page.locator('body')).toBeVisible();
-      
-      // Check that stock items or search elements are present
-      const bodyText = await page.textContent('body');
-      expect(bodyText.length).toBeGreaterThan(100);
+      await page.click('.filter-pill[data-filter="low"]');
+      await expect(page.locator('#inventory-list .inventory-card[data-status="low"]')).toBeVisible();
+      await page.click('.filter-pill[data-filter="all"]');
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/inventory_desktop_light.png` });
     });
 
-    test('7. Demand Forecasts: Loads AI demand predictions and reorder suggestions', async ({ page }) => {
+    test('7. Sales & POS Terminal: Add items to bill and complete stock-safe checkout', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto('/screens/07_sales.html');
+      await expect(page.locator('#pos-product-grid')).toContainText('Aashirvaad Atta 5kg');
+
+      await page.click('#pos-product-grid button:has-text("Aashirvaad Atta 5kg")');
+      await expect(page.locator('#pos-cart-total')).toContainText('265');
+      await page.click('#pos-checkout-btn');
+      await expect(page.locator('#pos-receipt-box')).toBeVisible();
+      await expect(page.locator('#pos-sales-tbody')).toContainText('Aashirvaad Atta 5kg');
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/sales_pos_desktop_light.png` });
+    });
+
+    test('8. Forecasts Workbench: Horizon & Granularity switch renders SVG curve', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto('/screens/04_forecasts.html');
-
-      // Verify AI Forecasts loaded
-      await expect(page.locator('body')).toBeVisible();
-      const bodyText = await page.textContent('body');
-      expect(bodyText.length).toBeGreaterThan(100);
+      await expect(page.locator('#forecast-horizon-bar')).toBeVisible();
+      await page.click('.horizon-btn[data-days="28"]');
+      await page.click('#fc-gran-weekly');
+      await expect(page.locator('#fc-main-svg')).toBeVisible();
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/forecasts_desktop_light.png` });
     });
 
-    test('8. Purchase Orders & Settings screens render without errors', async ({ page }) => {
+    test('9. Replenishment & Purchase Orders: Triage lanes and PO lifecycle actions work', async ({ page }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.goto('/screens/05_replenishment.html');
+      await expect(page.locator('#ai-replenishment-container')).toBeVisible();
+      await expect(page.locator('#replenish-bottom-bar')).toBeVisible();
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/replenishment_desktop_light.png` });
+
       await page.goto('/screens/05_purchase_orders.html');
-      await expect(page.locator('body')).toBeVisible();
+      await expect(page.locator('#po-main')).toBeVisible();
+      await page.click('#po-draft-banner button:has-text("Issue Draft PO Now")');
+      await expect(page.locator('#po-ledger-container')).toContainText('Metro');
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/orders_desktop_light.png` });
+    });
+
+    test('10. Anomalies, Segmentation, Assistant, Analytics & Suppliers load cleanly in Light & Dark', async ({ page }) => {
+      const errors = [];
+      page.on('pageerror', (err) => errors.push(err.message));
+      await page.setViewportSize({ width: 1440, height: 900 });
+
+      await page.goto('/screens/08_anomalies.html');
+      await expect(page.locator('#anom-tbody')).toBeVisible();
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/anomalies_desktop_light.png` });
+
+      await page.goto('/screens/09_segmentation.html');
+      await expect(page.locator('#cell-AX')).toBeVisible();
+      await page.click('#cell-AX');
+      await expect(page.locator('#seg-table-title')).toContainText('AX');
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/segmentation_desktop_dark_check.png` });
+
+      await page.goto('/screens/10_assistant.html');
+      await page.click('button:has-text("What items should I reorder urgently today?")');
+      await expect(page.locator('#ast-messages')).toContainText('Toor Dal');
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/assistant_desktop_light.png` });
+
+      await page.goto('/screens/11_analytics.html');
+      await expect(page.locator('#an-model-tbody')).toContainText('LightGBM');
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/analytics_desktop_light.png` });
+
+      await page.goto('/screens/12_suppliers.html');
+      await expect(page.locator('#sup-grid')).toBeVisible();
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/suppliers_desktop_light.png` });
 
       await page.goto('/screens/06_settings.html');
-      await expect(page.locator('body')).toBeVisible();
+      await expect(page.locator('#profile-store-name')).toHaveText('Sharma Kirana Store');
+      await page.click('#set-theme-dark');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      await page.waitForTimeout(150);
+      await page.screenshot({ path: `${SCREENSHOT_DIR}/settings_desktop_dark.png` });
+
+      // Clean unauthenticated context for true Sign In mobile screenshot
+      const cleanCtx = await page.context().browser().newContext({ viewport: { width: 390, height: 844 } });
+      const signInPage = await cleanCtx.newPage();
+      await signInPage.goto('http://127.0.0.1:3000/screens/01_signin.html');
+      const overflowSignin = await signInPage.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+      expect(overflowSignin).toBe(false);
+      await signInPage.screenshot({ path: `${SCREENSHOT_DIR}/signin_mobile_light.png` });
+      await cleanCtx.close();
+
+      expect(errors).toEqual([]);
     });
   });
 });

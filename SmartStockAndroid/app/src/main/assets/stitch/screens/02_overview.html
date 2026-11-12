@@ -1,247 +1,330 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f6faf5;}body{overscroll-behavior:none;color:#181d1a;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}#side-drawer.open{transform:translateX(0);}#drawer-backdrop.open{opacity:1;pointer-events:auto;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-variant": "#dfe4df", "tertiary-fixed": "#dae5da", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", "on-tertiary-container": "#a6b1a7", "surface": "#f6faf5", "on-secondary-container": "#783920", "tertiary-fixed-dim": "#bec9bf", "on-surface": "#181d1a", "on-primary-fixed-variant": "#294d42", "on-surface-variant": "#414845", "on-primary": "#ffffff", "inverse-primary": "#a8cfc0", "surface-bright": "#f6faf5", "on-secondary-fixed": "#380d00", "primary-fixed": "#c3ebdc", "inverse-surface": "#2d322e", "on-error-container": "#93000a", "background": "#f6faf5", "primary-fixed-dim": "#a8cfc0", "secondary-fixed-dim": "#ffb59a", "surface-dim": "#d7dbd6", "outline": "#717975", "tertiary-container": "#3a443c", "secondary-container": "#fea685", "on-background": "#181d1a", "surface-container": "#ebefea", "on-primary-container": "#90b6a8", "surface-container-high": "#e5e9e4", "secondary-fixed": "#ffdbcf", "error": "#ba1a1a", "on-primary-fixed": "#002018", "tertiary": "#242e27", "secondary": "#904c31", "surface-container-highest": "#dfe4df", "on-tertiary-fixed": "#141e17", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#73351c", "inverse-on-surface": "#edf2ed", "primary": "#0b3127", "primary-container": "#24483d", "on-tertiary-fixed-variant": "#3f4941", "surface-container-low": "#f0f5f0", "outline-variant": "#c1c8c4", "surface-tint": "#416559", "surface-container-lowest": "#ffffff", "on-error": "#ffffff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1rem", "gutter-desktop": "1.5rem", "margin-desktop": "2rem", "gutter": "1rem", "space-xs": "0.25rem", "space-md": "1rem", "space-2xl": "3rem", "space-lg": "1.5rem", "space-xl": "2rem", "margin-mobile": "1rem", "gutter-mobile": "0.75rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-lg-mobile": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "display-lg": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "headline-lg": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "display-lg-mobile": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "code-md": ["JetBrains Mono"], "body-md": ["Hanken Grotesk"], "label-sm": ["Hanken Grotesk"], "code-sm": ["JetBrains Mono"], "body-lg": ["Hanken Grotesk"], "body-sm": ["Hanken Grotesk"], "label-lg": ["Hanken Grotesk"], "headline-sm": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "label-md": ["Hanken Grotesk"], "headline-md": ["-apple-system", "BlinkMacSystemFont", "sans-serif"] }, "fontSize": { "headline-lg-mobile": ["22px", {"lineHeight": "30px", "fontWeight": "600"}], "display-lg": ["36px", {"lineHeight": "44px", "fontWeight": "600"}], "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}], "display-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}], "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}], "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}], "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}], "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}], "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}], "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "600"}], "headline-sm": ["18px", {"lineHeight": "26px", "fontWeight": "500"}], "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}], "headline-md": ["22px", {"lineHeight": "30px", "fontWeight": "500"}] } } } };</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartStock — Store Morning Briefing</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            surface: "#faf8f5",
+            "on-surface": "#161d1a",
+            "on-surface-variant": "#525c57",
+            outline: "#76807b",
+            primary: "#0f382b",
+            "primary-container": "#174c3b",
+            "primary-fixed": "#cbe8dc",
+            "primary-fixed-variant": "#0f382b",
+            "on-primary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2efe9",
+            "surface-container": "#ece8e0",
+            "surface-container-high": "#e4dfd5",
+            secondary: "#a84a28",
+            "secondary-container": "#cf6c47",
+            "on-secondary": "#ffffff",
+            "secondary-fixed": "#fbe5dc",
+            "on-secondary-fixed": "#511d0a",
+            "on-secondary-fixed-variant": "#7d3318",
+            error: "#b3261e"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="../editorial-theme.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('smartstock_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../smartstock-bridge.js"></script>
+  <script src="../editorial-shell.js"></script>
+</head>
+<body class="min-h-screen antialiased">
 
-</head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><div class="fixed inset-0 bg-inverse-surface/40 backdrop-blur-[2px] z-50 opacity-0 pointer-events-none transition-opacity duration-300" id="drawer-backdrop" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')"></div><aside class="fixed top-0 left-0 bottom-0 w-[84%] max-w-[320px] bg-surface-container-lowest z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-[0_20px_40px_-8px_rgba(41,46,43,0.18)] pt-safe pb-safe" id="side-drawer">
-  <div class="p-space-md flex items-center justify-between">
-    <div class="flex items-center gap-space-xs">
-      <img alt="SmartStock Logo" class="h-8 w-8 rounded-lg shadow-xs object-cover" src="../assets/smartstock-logo.svg">
-      <span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">SmartStock</span>
-    </div>
-    <button class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full cursor-pointer" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')">
-      <span class="material-symbols-outlined text-[22px]">close</span>
-    </button>
-  </div>
-  <div class="px-space-md py-space-xs">
-    <div onclick="SmartStock.openStoreSwitcherModal()" class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between cursor-pointer active:scale-98 transition-all">
-      <div class="flex items-center gap-space-sm">
-        <span class="material-symbols-outlined text-secondary text-[20px]">storefront</span>
-        <div>
-          <p class="drawer-store-name font-label-md text-label-md text-on-surface font-semibold">My Store</p>
-          <p class="font-label-sm text-label-sm text-on-surface-variant font-code-sm">Merchant Register • Active</p>
-        </div>
+  <div class="ed-layout">
+    <main class="ed-main-shell px-4 md:px-7">
+      <div class="max-w-7xl w-full mx-auto py-6 space-y-6">
+
+        <!-- Masthead Briefing Banner & Register Actions -->
+        <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b ed-rule">
+          <div class="space-y-1.5 min-w-0">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="ed-kicker">Morning Register Briefing</span>
+              <span class="bg-primary/10 inline-flex items-center px-2 py-0.5 rounded-full">
+                <span class="font-code-sm font-tabular text-[10.5px] font-semibold" style="color:var(--accent-primary);">0.0% Initial</span>
+              </span>
+            </div>
+            <h2 class="font-headline-lg font-editorial text-2xl sm:text-3xl font-semibold leading-tight" style="color:var(--text-primary);">
+              Welcome, Store Register
+            </h2>
+            <p class="text-[13.5px]" style="color:var(--text-secondary);">
+              Store register initialized. Loading live catalog summary...
+            </p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button type="button" onclick="SmartStock.openDateSwitcherModal()" class="ed-btn-secondary">
+              <span class="material-symbols-outlined text-[17px]">calendar_month</span>
+              <span id="overview-date-range-label">This Month</span>
+            </button>
+            <a href="07_sales.html" class="ed-btn-primary">
+              <span class="material-symbols-outlined text-[17px]">point_of_sale</span>
+              <span>New Sale (POS)</span>
+            </a>
+            <button type="button" onclick="SmartStock.openAddProductModal()" class="ed-btn-secondary">
+              <span class="material-symbols-outlined text-[17px]">add_circle</span>
+              <span>Add Item</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Asymmetric Hero Section: 7 cols Financial Sheet + 5 cols Attention Digest -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+
+          <!-- Left 7 Cols: Editorial Financial & Asset Masthead -->
+          <div class="lg:col-span-7 ed-sheet p-5 sm:p-6 flex flex-col justify-between gap-5">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <span class="ed-kicker block mb-1">Period Gross Revenue</span>
+                <div class="flex flex-wrap items-baseline gap-3">
+                  <p class="font-headline-md font-editorial text-4xl sm:text-[42px] font-semibold leading-none tracking-tight" style="color:var(--text-primary);">₹0.00</p>
+                  <span class="bg-primary-fixed/50 inline-flex items-center font-tabular text-[11px] font-bold px-2 py-0.5 rounded-full" style="color:var(--accent-primary);">
+                    <span class="material-symbols-outlined text-[13px] mr-0.5">remove</span>0.0%
+                  </span>
+                </div>
+              </div>
+              <button type="button" onclick="SmartStock.openSalesModal()" class="ed-btn-secondary text-xs py-1.5 px-3">
+                <span class="material-symbols-outlined text-[16px]">receipt</span>
+                <span>Quick Bill</span>
+              </button>
+            </div>
+
+            <!-- 3 Inline Sub-Figures Separated by Hairlines -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t ed-rule">
+              <div>
+                <span class="ed-kicker block mb-1">Inventory Valuation</span>
+                <p class="font-headline-md font-tabular text-xl font-semibold" style="color:var(--text-primary);">₹0.00</p>
+                <p class="text-[12px] mt-0.5" style="color:var(--text-secondary);">
+                  <span class="font-semibold text-on-surface">0</span> active SKUs
+                </p>
+              </div>
+
+              <div class="sm:border-l sm:pl-4 ed-rule">
+                <span class="ed-kicker block mb-1">Estimated Gross Profit</span>
+                <p id="overview-gross-profit" class="font-headline-md font-tabular text-xl font-semibold" style="color:var(--accent-primary);">Unavailable</p>
+                <p class="text-[12px] mt-0.5" style="color:var(--text-secondary);">
+                  Margin: <span class="text-secondary font-semibold">Unavailable</span>
+                </p>
+              </div>
+
+              <div class="sm:border-l sm:pl-4 ed-rule">
+                <span class="ed-kicker block mb-1">Purchase Pipeline</span>
+                <p id="overview-po-count" class="font-tabular text-xl font-semibold" style="color:var(--text-primary);">0 Open</p>
+                <p id="overview-po-sub" class="text-[12px] mt-0.5" style="color:var(--text-secondary);">Draft &amp; In-Transit orders</p>
+              </div>
+            </div>
+
+            <!-- Two-Level Intelligence Interpretation Strip -->
+            <div class="ed-well px-3.5 py-2.5 flex items-start gap-2.5">
+              <span class="material-symbols-outlined text-[18px] mt-0.5 shrink-0" style="color:var(--accent-primary);">insights</span>
+              <p class="biz-only text-[12.5px] leading-relaxed" style="color:var(--text-secondary);">
+                <strong style="color:var(--text-primary);">Shopkeeper Takeaway:</strong> Keep cash flowing by prioritizing low-stock fast movers before ordering surplus slow items.
+              </p>
+              <p class="tech-only text-[12px] leading-relaxed font-tabular" style="color:var(--text-secondary);">
+                <strong style="color:var(--text-primary);">Telemetry Scope:</strong> Revenue &amp; COGS computed from tenant <code>app_sales</code> (<code>unit_cost</code> snapshot); baseline ML (s, S) simulation achieves 54.03% stockout reduction on 500 benchmark SKUs.
+              </p>
+            </div>
+          </div>
+
+          <!-- Right 5 Cols: Urgent Attention & Quick Triage Well -->
+          <div class="lg:col-span-5 ed-sheet p-5 sm:p-6 flex flex-col justify-between gap-4" style="border-left: 3px solid var(--accent-secondary);">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="ed-kicker" style="color:var(--accent-secondary);">Needs Attention Today</span>
+                <span class="ed-badge ed-badge-warning">
+                  <span class="w-1.5 h-1.5 rounded-full" style="background:currentColor;"></span>
+                  Priority Triage
+                </span>
+              </div>
+
+              <div class="bg-secondary-fixed/30 p-4 rounded-lg border ed-rule flex items-center justify-between gap-3">
+                <div>
+                  <div class="flex items-baseline gap-2">
+                    <p class="font-headline-md font-tabular text-3xl font-bold" style="color:var(--accent-secondary);">0</p>
+                    <span class="text-sm font-semibold" style="color:var(--text-primary);">Products Below ROP</span>
+                  </div>
+                  <p class="font-label-sm text-xs mt-0.5" style="color:var(--text-secondary);">0 critical stockouts</p>
+                </div>
+                <span class="material-symbols-outlined text-[32px]" style="color:var(--accent-secondary);">crisis_alert</span>
+              </div>
+
+              <div id="overview-health-mix" class="grid grid-cols-3 gap-2 pt-1 text-center">
+                <div class="ed-well py-2 px-1.5">
+                  <span id="ov-count-healthy" class="font-tabular text-base font-bold block" style="color:var(--status-success);">0</span>
+                  <span class="text-[10.5px]" style="color:var(--text-secondary);">Healthy</span>
+                </div>
+                <div class="ed-well py-2 px-1.5">
+                  <span id="ov-count-low" class="font-tabular text-base font-bold block" style="color:var(--status-warning);">0</span>
+                  <span class="text-[10.5px]" style="color:var(--text-secondary);">Low Stock</span>
+                </div>
+                <div class="ed-well py-2 px-1.5">
+                  <span id="ov-count-out" class="font-tabular text-base font-bold block" style="color:var(--status-danger);">0</span>
+                  <span class="text-[10.5px]" style="color:var(--text-secondary);">Out of Stock</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t ed-rule">
+              <a href="05_replenishment.html" class="ed-btn-primary text-xs py-2">
+                <span class="material-symbols-outlined text-[16px]">auto_awesome</span>
+                <span>Replenish Plan</span>
+              </a>
+              <a href="03_inventory.html" class="ed-btn-secondary text-xs py-2">
+                <span class="material-symbols-outlined text-[16px]">inventory_2</span>
+                <span>Inspect Catalog</span>
+              </a>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- Primary 7:5 Operational Workspace -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          <!-- Left 7 Cols: Actionable Next Steps & Demand Velocity Chart -->
+          <div class="lg:col-span-7 space-y-6">
+            <div class="flex flex-col space-y-space-xs">
+              <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[20px]" style="color:var(--accent-secondary);">auto_awesome</span>
+                  <h3 class="font-editorial text-xl font-semibold" style="color:var(--text-primary);">Actionable Next Steps</h3>
+                </div>
+                <span class="bg-surface-container px-2 py-0.5 font-tabular text-[11px] font-semibold rounded-full" style="color:var(--text-secondary);">0 AI triggers</span>
+              </div>
+
+              <!-- Dynamic Reorder Cards Injected by SmartStock Bridge -->
+              <div class="space-y-space-xs space-y-3">
+                <div class="ed-sheet p-6 text-center space-y-3">
+                  <div class="w-11 h-11 rounded-lg flex items-center justify-center mx-auto" style="background:var(--accent-primary-soft); color:var(--accent-primary);">
+                    <span class="material-symbols-outlined text-[24px]">storefront</span>
+                  </div>
+                  <h4 class="font-semibold text-base" style="color:var(--text-primary);">Store Register Initialized (0 Items)</h4>
+                  <p class="text-xs max-w-sm mx-auto" style="color:var(--text-secondary);">
+                    Add products manually, import a CSV catalog, or load the Kirana sample dataset in Settings.
+                  </p>
+                  <div class="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <button type="button" onclick="SmartStock.openAddProductModal()" class="ed-btn-primary text-xs">
+                      <span class="material-symbols-outlined text-[15px]">add_circle</span>
+                      <span>+ Add Product</span>
+                    </button>
+                    <button type="button" onclick="SmartStock.openImportModal()" class="ed-btn-secondary text-xs">
+                      <span class="material-symbols-outlined text-[15px]">upload_file</span>
+                      <span>Import CSV</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Demand Velocity Trend Canvas -->
+            <div class="ed-sheet p-5 space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="font-editorial text-xl font-semibold" style="color:var(--text-primary);">Demand Velocity</h3>
+                  <p class="biz-only text-xs" style="color:var(--text-secondary);">Weekly store unit movement vs expected demand trajectory</p>
+                  <p class="tech-only text-xs font-tabular" style="color:var(--text-secondary);">Actual sales vs predictive baseline series • Link to full LightGBM curve in Forecasts</p>
+                </div>
+                <a href="04_forecasts.html" class="text-xs font-semibold flex items-center gap-1 hover:underline" style="color:var(--accent-primary);">
+                  <span>Open Forecast Workbench</span>
+                  <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+                </a>
+              </div>
+              <div id="demand-velocity-container" class="w-full relative"></div>
+            </div>
+          </div>
+
+          <!-- Right 5 Cols: Gemini Intelligence & Live Storefloor Ledger -->
+          <div class="lg:col-span-5 space-y-6">
+            <div class="ed-sheet p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-[19px]" style="color:var(--accent-primary);">smart_toy</span>
+                  <h3 class="font-editorial text-lg font-semibold" style="color:var(--text-primary);">Store Advisor Digest</h3>
+                </div>
+                <a href="10_assistant.html" class="text-xs font-semibold hover:underline" style="color:var(--accent-secondary);">Open Full Chat →</a>
+              </div>
+              <div id="ai-intelligence-container" class="space-y-2"></div>
+            </div>
+
+            <div class="ed-sheet p-5 space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b ed-rule">
+                <div>
+                  <h3 class="font-editorial text-lg font-semibold" style="color:var(--text-primary);">Live Register Feed</h3>
+                  <p class="text-[11.5px]" style="color:var(--text-secondary);">Latest POS checkouts &amp; inward receipts</p>
+                </div>
+                <a href="07_sales.html" class="text-xs font-semibold hover:underline" style="color:var(--accent-primary);">Full Ledger</a>
+              </div>
+              <div id="floor-activity-container"></div>
+            </div>
+          </div>
+
+        </section>
+
       </div>
-      <span class="material-symbols-outlined text-outline text-[18px]">unfold_more</span>
-    </div>
+    </main>
   </div>
-  <div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="overview" href="02_overview.html">
-      <span class="material-symbols-outlined text-[20px]">dashboard</span>
-      <span class="font-label-lg text-label-lg">Overview</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="inventory" href="03_inventory.html">
-      <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-      <span class="font-label-lg text-label-lg">Inventory</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="sales" href="#" onclick="SmartStock.openSalesModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">point_of_sale</span>
-      <span class="font-label-lg text-label-lg">Sales Register</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="orders" href="05_purchase_orders.html">
-      <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-      <span class="font-label-lg text-label-lg">Orders Ledger</span>
-    </a>
-    <a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="ai-insights-&-replenishment" href="05_replenishment.html">
-      <div class="flex items-center gap-space-md">
-        <span class="material-symbols-outlined text-secondary text-[20px]">auto_awesome</span>
-        <span class="font-label-lg text-label-lg">AI Replenishment</span>
-      </div>
-      <span class="bg-secondary text-on-secondary font-label-sm text-label-sm px-2 py-0.5 rounded-full">AI</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="forecasts" href="04_forecasts.html">
-      <span class="material-symbols-outlined text-[20px]">query_stats</span>
-      <span class="font-label-lg text-label-lg">Demand Forecasts</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="suppliers" href="#" onclick="SmartStock.openSuppliersModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">local_shipping</span>
-      <span class="font-label-lg text-label-lg">Suppliers Directory</span>
-    </a>
-  </div>
-  <div class="p-space-md bg-surface-container-low/60 space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="settings" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">settings</span>
-      <span class="font-label-md text-label-md">Settings</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="help-&-support" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">help_outline</span>
-      <span class="font-label-md text-label-md">Help &amp; Support</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-error hover:opacity-80 transition-opacity cursor-pointer" data-path="login" href="01_signin.html" onclick="SmartStock.signOut(); return false;">
-      <span class="material-symbols-outlined text-[20px]">logout</span>
-      <span class="font-label-md text-label-md font-semibold">Sign Out</span>
-    </a>
-  </div>
-</aside><header class="fixed top-0 w-full z-40 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] pt-safe"><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-xs"><button class="w-11 h-11 flex items-center justify-center text-primary rounded-lg active:bg-surface-variant/40" onclick="document.getElementById('side-drawer').classList.add('open');document.getElementById('drawer-backdrop').classList.add('open')"><span class="material-symbols-outlined text-[24px]">menu</span></button><img alt="SmartStock Logo" class="h-8 w-8 rounded-lg shadow-xs object-cover" src="../assets/smartstock-logo.svg"><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold hidden min-[360px]:inline">SmartStock</span></div><div class="flex items-center gap-space-xs"><button onclick="SmartStock.openStoreSwitcherModal()" class="h-9 px-3 bg-surface-container-lowest shadow-xs rounded-full flex items-center gap-1.5 active:scale-95 transition-all"><span class="w-2 h-2 rounded-full bg-surface-tint"></span><span class="font-label-sm text-label-sm text-on-surface font-semibold max-w-[140px] truncate store-pill-name">My Store</span><span class="material-symbols-outlined text-[16px] text-outline">expand_more</span></button><button onclick="SmartStock.openNotificationsModal()" class="relative w-11 h-11 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-on-secondary font-code-sm text-[10px] leading-4 flex items-center justify-center font-bold header-notif-badge">1</span></button><a aria-label="User Profile and Settings" class="w-11 h-11 flex items-center justify-center active:scale-95 transition-transform" href="06_settings.html"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(41,46,43,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2oQa0rK-iaQ1bYCN9Pl2yH1csvapSNVt7-BmWvqXFRMZUiNPvmd7BSG1rGOlergv8pNCWzOioaGcj3P9MnYocAloiiT9mYXnQiZePZlCBQfd9_84JPpVdUZachLZ_eVzaW7QMLJ8ToWCW6mYqkVBk_eT2Ei-9vSk6zhC0LQPIR9nsui2hepL_tlUR05TqLiFekmXRyNLs4UuPjrYAJMtjJPzBCu_1IQRE9yq7WIld5OUvo7lSeZ0"></a></div></div><div class="px-space-md pb-space-xs flex items-center justify-between"><h1 class="font-headline-md text-headline-md text-primary font-bold">Overview</h1><span class="font-code-sm text-code-sm text-on-surface-variant tracking-wider uppercase">Merchant Mode</span></div></header><main class="flex flex-col relative w-full pb-28 bg-surface px-space-md" style="padding-top: calc(env(safe-area-inset-top, 48px) + 106px);"><div class="flex flex-col w-full space-y-space-md">
-<!-- Greeting & Date Switcher -->
-<div class="flex flex-col gap-space-xs">
-<div class="flex items-center justify-between">
-<div class="flex items-center gap-space-xs">
-<span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
-<span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-code-sm">Store Register #01</span>
-</div>
-<button id="overview-date-dropdown-btn" onclick="SmartStock.openDateSwitcherModal()" class="flex items-center gap-1.5 px-space-sm py-1 bg-surface-container rounded-full text-on-surface-variant hover:text-on-surface transition-colors shadow-sm active:scale-95 cursor-pointer">
-<span class="material-symbols-outlined text-[16px] text-secondary">calendar_today</span>
-<span id="overview-date-range-label" class="font-label-sm text-label-sm font-code-sm">Oct 24 • Last 30 Days</span>
-<span class="material-symbols-outlined text-[14px]">expand_more</span>
-</button>
-</div>
-<div class="flex items-baseline justify-between pt-1">
-<div>
-<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tight font-headline-lg">Welcome</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Store register initialized. 0 items recorded in catalog.</p>
-</div>
-<div class="hidden min-[380px]:flex items-center px-2 py-1 bg-primary/10 rounded-full">
-<span class="font-code-sm text-code-sm text-primary font-semibold">0.0% Initial</span>
-</div>
-</div>
-</div>
-<!-- Key Performance Metrics 2x2 Grid -->
-<div class="grid grid-cols-2 gap-space-xs">
-<!-- Revenue Card -->
-<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-sm">
-<div class="flex items-center justify-between">
-<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Revenue (30d)</span>
-<span class="material-symbols-outlined text-primary-fixed-variant text-[18px]">payments</span>
-</div>
-<div>
-<p class="font-headline-md text-headline-md text-primary tracking-tight">₹0.00</p>
-<div class="flex items-center gap-1 mt-1">
-<span class="inline-flex items-center text-primary font-code-sm text-code-sm font-bold bg-primary-fixed/50 px-1.5 py-0.5 rounded">
-<span class="material-symbols-outlined text-[13px] mr-0.5">remove</span>0.0%
-          </span>
-<span class="font-label-sm text-label-sm text-on-surface-variant truncate">vs last mo</span>
-</div>
-</div>
-</div>
-<!-- Inventory Value Card -->
-<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-sm">
-<div class="flex items-center justify-between">
-<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Inventory</span>
-<span class="material-symbols-outlined text-outline text-[18px]">warehouse</span>
-</div>
-<div>
-<p class="font-headline-md text-headline-md text-primary tracking-tight">₹0.00</p>
-<p class="font-code-sm text-code-sm text-on-surface-variant mt-1 flex items-center gap-1">
-<span class="font-semibold text-on-surface">0</span> active SKUs
-        </p>
-</div>
-</div>
-<!-- Replenishment Needed (Urgent Soft Terracotta) -->
-<div class="bg-secondary-fixed/30 p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-sm relative overflow-hidden">
-<div class="absolute -right-3 -bottom-3 text-secondary/10 pointer-events-none">
-<span class="material-symbols-outlined text-[72px]">crisis_alert</span>
-</div>
-<div class="flex items-center justify-between">
-<span class="font-label-sm text-label-sm text-on-secondary-fixed-variant font-bold uppercase tracking-wider">Restock Need</span>
-<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
-</div>
-<div>
-<div class="flex items-baseline gap-1.5">
-<p class="font-headline-md text-headline-md text-on-secondary-fixed font-bold">0</p>
-<span class="font-label-md text-label-md text-on-secondary-fixed-variant font-medium">Products</span>
-</div>
-<p class="font-label-sm text-label-sm text-on-secondary-fixed-variant mt-0.5 line-clamp-1">0 critical stockouts</p>
-</div>
-</div>
-<!-- Slow-moving / Excess -->
-<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between space-y-space-sm">
-<div class="flex items-center justify-between">
-<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Slow-Moving</span>
-<span class="material-symbols-outlined text-outline text-[18px]">hourglass_empty</span>
-</div>
-<div>
-<div class="flex items-baseline gap-1.5">
-<p class="font-headline-md text-headline-md text-primary tracking-tight">0</p>
-<span class="font-label-md text-label-md text-on-surface-variant">Products</span>
-</div>
-<p class="font-code-sm text-code-sm text-on-surface-variant mt-0.5">
-          Tied-up: <span class="font-semibold text-secondary">₹0.00</span>
-</p>
-</div>
-</div>
-</div>
 
-<!-- Gemini AI Store Intelligence Card -->
-<div id="ai-intelligence-container" class="space-y-space-xs"></div>
+  <script>
+    SmartStockEditorial.renderShell({
+      pageId: 'overview',
+      title: 'Store Briefing',
+      subtitle: 'Daily Kirana operations, risk triage, and demand velocity'
+    });
 
-<!-- Actionable Next Steps (Hero Decision Engine) -->
-<div class="flex flex-col space-y-space-xs">
-<div class="flex items-center justify-between px-0.5">
-<div class="flex items-center gap-1.5">
-<span class="material-symbols-outlined text-secondary text-[20px]">auto_awesome</span>
-<h3 class="font-headline-sm text-headline-sm text-primary">Actionable Next Steps</h3>
-</div>
-<span class="font-code-sm text-code-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full font-medium">0 AI triggers</span>
-</div>
-<!-- Stack of Prioritized Cards -->
-<div class="space-y-space-xs">
-<div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm border border-outline/10 text-center space-y-3">
-  <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-    <span class="material-symbols-outlined text-[28px]">storefront</span>
-  </div>
-  <h4 class="font-bold text-base text-on-surface">Store Register Initialized (0 Items)</h4>
-  <p class="text-xs text-on-surface-variant max-w-xs mx-auto">
-    Your store catalog currently has 0 items. Enter items manually or import a spreadsheet to begin tracking stock and AI alerts.
-  </p>
-  <div class="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
-    <button onclick="SmartStock.openAddProductModal()" class="w-full sm:w-auto px-4 py-2.5 bg-primary text-on-primary rounded-xl font-semibold text-xs shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-      <span class="material-symbols-outlined text-[16px]">add_circle</span>
-      <span>+ Add Product</span>
-    </button>
-    <button onclick="SmartStock.openImportModal()" class="w-full sm:w-auto px-4 py-2.5 bg-surface-container text-on-surface rounded-xl font-semibold text-xs hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-      <span class="material-symbols-outlined text-[16px]">upload_file</span>
-      <span>Import File (CSV)</span>
-    </button>
-  </div>
-</div>
-</div>
-</div>
-<!-- Weekly Demand Trend (Inline SVG Chart) -->
-<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-space-sm">
-<div class="flex items-center justify-between">
-<div>
-<h3 class="font-headline-sm text-headline-sm text-primary">Demand Velocity</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Weekly units: Actual vs. Predictive ML</p>
-</div>
-<div class="flex items-center gap-space-sm">
-<div class="flex items-center gap-1">
-<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Actual</span>
-</div>
-<div class="flex items-center gap-1">
-<span class="w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
-<span class="font-label-sm text-label-sm text-on-surface-variant">Predicted</span>
-</div>
-</div>
-</div>
-<!-- Chart Visual Canvas -->
-<div id="demand-velocity-container" class="w-full relative py-2">
-  <div class="w-full relative py-8 text-center text-xs text-on-surface-variant">
-    <span class="material-symbols-outlined text-[28px] text-outline mb-1 block">monitoring</span>
-    <h4 class="font-bold text-sm text-on-surface mb-0.5">No Demand Velocity Data</h4>
-    <p class="max-w-xs mx-auto">Sales velocity and predictive trends will generate automatically as sales transactions are recorded.</p>
-  </div>
-</div>
-</div>
-<!-- Recent Storefloor Activity Feed -->
-<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm space-y-space-sm">
-<div class="flex items-center justify-between">
-<h3 class="font-headline-sm text-headline-sm text-primary">Floor Activity</h3>
-<span class="font-label-sm text-label-sm text-outline">Live Register Log</span>
-</div>
-<div id="floor-activity-container" class="py-2">
-  <div class="py-4 text-center text-xs text-on-surface-variant">
-    <span class="material-symbols-outlined text-[22px] text-outline mb-1 block">receipt_long</span>
-    <p>No transactions yet. Recent sales and inward stock will display here.</p>
-  </div>
-</div>
-</div>
-<!-- End of Section Warm Prompt -->
-<div class="text-center py-space-xs text-on-surface-variant font-code-sm text-code-sm flex items-center justify-center gap-1.5">
-<span class="material-symbols-outlined text-[14px] text-surface-tint">check_circle</span>
-Terminal ready • SmartStock Supply Chain Engine
-</div>
-</div></main><nav class="fixed bottom-0 w-full z-40 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(41,46,43,0.06)]" data-active-classes="text-primary font-bold"><div class="flex justify-around items-center h-16 px-space-xs"><a aria-current="page" class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 transition-colors text-primary font-bold" data-path="overview" href="02_overview.html"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm">Overview</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="inventory" href="03_inventory.html"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-sm text-label-sm">Stock</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-11 px-2 -mt-4 text-on-primary" data-path="scan-barcode" href="03_inventory.html"><div class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(36,72,61,0.28)] active:scale-95 transition-transform"><span class="material-symbols-outlined text-[24px]">barcode_scanner</span></div></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="orders" href="05_purchase_orders.html"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-sm text-label-sm">Orders</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="ai-insights-&amp;-replenishment" href="05_replenishment.html"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm">AI Replenish</span></a></div></nav>
+    window.SmartStockPageRender = function(products) {
+      const list = Array.isArray(products) ? products : [];
+      let healthy = 0, low = 0, out = 0;
+      list.forEach(function(p) {
+        const st = Number(p.stock_on_hand) || 0;
+        const rop = Number(p.reorder_point ?? 10);
+        if (st <= 0) out++;
+        else if (st <= rop) low++;
+        else healthy++;
+      });
 
-</body></html>
+      const hEl = document.getElementById('ov-count-healthy');
+      const lEl = document.getElementById('ov-count-low');
+      const oEl = document.getElementById('ov-count-out');
+      if (hEl) hEl.textContent = String(healthy);
+      if (lEl) lEl.textContent = String(low);
+      if (oEl) oEl.textContent = String(out);
+
+      if (window.SmartStock && typeof window.SmartStock.getPurchaseOrders === 'function') {
+        const pos = window.SmartStock.getPurchaseOrders() || [];
+        const openPOs = pos.filter(function(po) {
+          return po.status === 'draft' || po.status === 'pending' || po.status === 'ordered' || po.status === 'in_transit';
+        });
+        const poCountEl = document.getElementById('overview-po-count');
+        const poSubEl = document.getElementById('overview-po-sub');
+        if (poCountEl) poCountEl.textContent = `${openPOs.length} Open`;
+        if (poSubEl) {
+          const totalSpend = openPOs.reduce(function(acc, po) { return acc + (Number(po.total_amount ?? po.total_cost) || 0); }, 0);
+          poSubEl.textContent = openPOs.length > 0
+            ? `${SmartStock.formatINR(totalSpend)} committed`
+            : 'No pending inward deliveries';
+        }
+      }
+    };
+  </script>
+</body>
+</html>

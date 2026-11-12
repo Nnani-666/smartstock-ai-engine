@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartStock — SKU Segmentation Studio</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            surface: "#faf8f5",
+            "on-surface": "#161d1a",
+            "on-surface-variant": "#525c57",
+            outline: "#76807b",
+            primary: "#0f382b",
+            "on-primary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2efe9",
+            "surface-container": "#ece8e0",
+            "surface-container-high": "#e4dfd5",
+            secondary: "#a84a28",
+            "on-secondary": "#ffffff",
+            "secondary-fixed": "#fbe5dc",
+            "on-secondary-fixed": "#511d0a",
+            error: "#b3261e"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="../editorial-theme.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('smartstock_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../smartstock-bridge.js"></script>
+  <script src="../editorial-shell.js"></script>
+</head>
+<body class="min-h-screen antialiased">
+
+  <div class="ed-layout">
+    <main class="ed-main-shell px-4 md:px-7">
+      <div class="max-w-7xl w-full mx-auto py-6 space-y-6">
+
+        <!-- Masthead -->
+        <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b ed-rule">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="ed-kicker">Portfolio Classification Studio</span>
+              <span id="seg-source-badge" class="ed-badge ed-badge-neutral">Checking /segments...</span>
+            </div>
+            <h2 class="font-editorial text-2xl sm:text-3xl font-semibold mt-1" style="color:var(--text-primary);">ABC–XYZ Matrix &amp; K-Means Clusters</h2>
+            <p class="biz-only text-xs sm:text-sm mt-0.5" style="color:var(--text-secondary);">See which items bring the highest reliable profit so you can protect top sellers and reduce money stuck in slow stock.</p>
+            <p class="tech-only text-xs font-tabular mt-0.5" style="color:var(--text-secondary);">500 Retail SKUs • Pareto Revenue (ABC) × Coefficient of Variation (XYZ) + 2D K-Means (Silhouette = 0.5847)</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button type="button" onclick="selectedCell=null; loadSegmentation();" class="ed-btn-secondary text-xs">
+              <span class="material-symbols-outlined text-[16px]">filter_alt_off</span>
+              <span>Reset Cell Filter</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Primary Studio Grid: Interactive 9-Box ABC-XYZ Matrix + K-Means Cluster Scatter -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+          <!-- Left 6 Cols: Interactive 3x3 ABC-XYZ Matrix -->
+          <div class="lg:col-span-6 ed-sheet p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-editorial text-xl font-semibold" style="color:var(--text-primary);">Interactive 3×3 ABC–XYZ Grid</h3>
+                <p class="text-xs" style="color:var(--text-secondary);">Click any cell to filter matching SKUs below.</p>
+              </div>
+              <span class="ed-badge ed-badge-neutral font-tabular" id="seg-total-skus">500 SKUs</span>
+            </div>
+
+            <div class="grid grid-cols-4 gap-2 text-center text-xs items-stretch">
+              <div></div>
+              <div class="ed-kicker py-1">X (Steady)</div>
+              <div class="ed-kicker py-1">Y (Moderate)</div>
+              <div class="ed-kicker py-1">Z (Erratic)</div>
+
+              <!-- Row A -->
+              <div class="flex flex-col justify-center ed-kicker pr-1">A (Top Value)</div>
+              <button type="button" onclick="selectMatrixCell('AX')" id="cell-AX" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+              <button type="button" onclick="selectMatrixCell('AY')" id="cell-AY" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+              <button type="button" onclick="selectMatrixCell('AZ')" id="cell-AZ" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+
+              <!-- Row B -->
+              <div class="flex flex-col justify-center ed-kicker pr-1">B (Mid Value)</div>
+              <button type="button" onclick="selectMatrixCell('BX')" id="cell-BX" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+              <button type="button" onclick="selectMatrixCell('BY')" id="cell-BY" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+              <button type="button" onclick="selectMatrixCell('BZ')" id="cell-BZ" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+
+              <!-- Row C -->
+              <div class="flex flex-col justify-center ed-kicker pr-1">C (Tail Value)</div>
+              <button type="button" onclick="selectMatrixCell('CX')" id="cell-CX" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+              <button type="button" onclick="selectMatrixCell('CY')" id="cell-CY" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+              <button type="button" onclick="selectMatrixCell('CZ')" id="cell-CZ" class="seg-cell p-3 rounded-lg border ed-rule cursor-pointer transition-all text-left"></button>
+            </div>
+
+            <div class="ed-well p-3 text-xs" id="seg-cell-advice" style="color:var(--text-secondary);">
+              Tap any cell (e.g. AX or CZ) to inspect replenishment rules for that segment.
+            </div>
+          </div>
+
+          <!-- Right 6 Cols: 2D K-Means Scatter & Academic Silhouette KPI -->
+          <div class="lg:col-span-6 ed-sheet p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-editorial text-xl font-semibold" style="color:var(--text-primary);">K-Means Demand Clusters</h3>
+                <p class="biz-only text-xs" style="color:var(--text-secondary);">Natural groupings of products by sales volume and demand predictability</p>
+                <p class="tech-only text-xs font-tabular" style="color:var(--text-secondary);">Mean Daily Sales vs CV • Silhouette Score: <strong id="seg-sil">0.5847</strong></p>
+              </div>
+              <span class="ed-badge ed-badge-success tech-only font-tabular">Sil 0.5847</span>
+            </div>
+
+            <div class="rounded-lg border ed-rule p-3" style="background:var(--bg-subtle);">
+              <svg id="seg-scatter-svg" viewBox="0 0 460 220" class="w-full h-56"></svg>
+            </div>
+
+            <div id="seg-cluster-legend" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs"></div>
+          </div>
+
+        </section>
+
+        <!-- Filtered SKU Drill-Down Table -->
+        <section class="ed-sheet p-5 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b ed-rule">
+            <div>
+              <h3 class="font-editorial text-xl font-semibold" style="color:var(--text-primary);" id="seg-table-title">Classified SKUs (Sample View)</h3>
+              <p class="text-xs" style="color:var(--text-secondary);">Filtered rows from benchmark <code>/skus</code> registry</p>
+            </div>
+            <span class="font-tabular text-xs" id="seg-row-count" style="color:var(--text-secondary);">0 rows</span>
+          </div>
+
+          <div class="overflow-x-auto max-h-[340px]">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b ed-rule ed-kicker text-[10px]">
+                  <th class="py-2 pr-3">Store × Item</th>
+                  <th class="py-2 pr-3">Segment</th>
+                  <th class="py-2 pr-3">Cluster</th>
+                  <th class="py-2 pr-3 text-right">Avg Daily</th>
+                  <th class="py-2 pr-3 text-right tech-only">CV</th>
+                  <th class="py-2 text-right">Policy Tier</th>
+                </tr>
+              </thead>
+              <tbody id="seg-tbody" class="divide-y" style="border-color:var(--border-hairline);"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    SmartStockEditorial.renderShell({
+      pageId: 'segmentation',
+      title: 'SKU Segmentation',
+      subtitle: 'ABC-XYZ strategic grid and K-Means demand cluster explorer'
+    });
+
+    let selectedCell = null;
+    const CELL_GUIDANCE = {
+      AX: { title: 'AX • Core Cash Cow', biz: 'Best sellers with steady demand — keep automatic weekly reorders & high safety buffer.', tech: 'High revenue Pareto Class A + low CV (X). Tight Continuous Review (s, S) with 98% CSO.' },
+      AY: { title: 'AY • High Value Moderate', biz: 'Top earners with seasonal swings — monitor weekend forecasts closely.', tech: 'Pareto A + medium variability Y. Dynamic ML forecast driven safety stock.' },
+      AZ: { title: 'AZ • Volatile High Value', biz: 'Expensive or erratic top movers — order carefully in smaller frequent batches.', tech: 'Pareto A + high CV Z. Elevated safety stock risk; track anomalies weekly.' },
+      BX: { title: 'BX • Steady Mid-Tier', biz: 'Predictable everyday staples — automate reorder points cleanly.', tech: 'Pareto B + steady X. Low forecasting RMSE; standard EOQ batches.' },
+      BY: { title: 'BY • Balanced Essentials', biz: 'Moderate turnover and moderate swings — review every 2 weeks.', tech: 'Pareto B + medium Y. Periodic review policy optimal.' },
+      BZ: { title: 'BZ • Sporadic Mid-Tier', biz: 'Unpredictable sales patterns — keep modest shelf buffer only.', tech: 'Pareto B + irregular Z. Watch holding cost vs stockout cost ratio.' },
+      CX: { title: 'CX • Long-Tail Steady', biz: 'Low value but steady demand — bulk order less frequently.', tech: 'Pareto C + low CV X. Minimize ordering overhead with larger intervals.' },
+      CY: { title: 'CY • Long-Tail Variable', biz: 'Small sellers with modest swings — avoid overstocking shelf space.', tech: 'Pareto C + Y. Cap maximum order-up-to level S.' },
+      CZ: { title: 'CZ • Dead/Erratic Risk', biz: 'Slow & unpredictable — order only when customer requests or bundle.', tech: 'Pareto C + high Z. Candidate for rationalizing SKUs or strict MTO.' }
+    };
+
+    const CLUSTER_COLORS = ['#0f382b', '#a84a28', '#2a7b63', '#b8860b'];
+
+    function fallbackSegmentationData() {
+      const cells = { AX: 48, AY: 36, AZ: 16, BX: 62, BY: 58, BZ: 30, CX: 74, CY: 88, CZ: 88 };
+      const skus = [];
+      const order = ['AX', 'AY', 'AZ', 'BX', 'BY', 'BZ', 'CX', 'CY', 'CZ'];
+      for (let i = 0; i < 45; i++) {
+        const seg = order[i % order.length];
+        const cl = i % 4;
+        const avg = seg[0] === 'A' ? 52 - (i % 18) : (seg[0] === 'B' ? 28 - (i % 10) : 11 - (i % 6));
+        const cv = seg[1] === 'X' ? 0.24 : (seg[1] === 'Y' ? 0.42 : 0.68);
+        skus.push({
+          store: (i % 10) + 1,
+          item: i + 1,
+          abc: seg[0],
+          xyz: seg[1],
+          cluster: cl,
+          mean_sales: avg,
+          cv: cv,
+          tier: seg[0] === 'A' ? 'R1_EXPEDITE' : (seg[0] === 'B' ? 'R2_REORDER' : 'R3_HOLD')
+        });
+      }
+      return { cells, skus, silhouette: 0.5847, live: false };
+    }
+
+    function selectMatrixCell(code) {
+      selectedCell = selectedCell === code ? null : code;
+      loadSegmentation();
+    }
+
+    async function loadSegmentation() {
+      const [summaryRes, skusRes] = await Promise.all([
+        SmartStock.fetchBackendSegmentsSummary(),
+        SmartStock.fetchBackendSkus(selectedCell ? { abc: selectedCell[0], xyz: selectedCell[1], limit: 100 } : { limit: 60 })
+      ]);
+
+      const fb = fallbackSegmentationData();
+      const live = Boolean(summaryRes || (Array.isArray(skusRes) && skusRes.length > 0));
+      const badge = document.getElementById('seg-source-badge');
+      if (badge) {
+        badge.className = live ? 'ed-badge ed-badge-success' : 'ed-badge ed-badge-warning';
+        badge.textContent = live ? 'Live FastAPI (/segments)' : 'Offline Benchmark Preview';
+      }
+
+      const skus = (Array.isArray(skusRes) && skusRes.length > 0)
+        ? skusRes
+        : (selectedCell ? fb.skus.filter(function(s) { return (s.abc + s.xyz) === selectedCell; }) : fb.skus);
+
+      // Compute matrix cell counts from summaryRes if present, else fallback map
+      const matrixCounts = Object.assign({}, fb.cells);
+      if (summaryRes && summaryRes.abc_xyz) {
+        Object.keys(matrixCounts).forEach(function(k) {
+          if (summaryRes.abc_xyz[k] !== undefined) matrixCounts[k] = Number(summaryRes.abc_xyz[k]);
+        });
+      } else if (summaryRes && Array.isArray(summaryRes.matrix)) {
+        summaryRes.matrix.forEach(function(m) {
+          const code = (m.abc || '') + (m.xyz || '');
+          if (matrixCounts[code] !== undefined) matrixCounts[code] = Number(m.count || 0);
+        });
+      }
+
+      const sil = summaryRes?.silhouette_score ?? fb.silhouette;
+      const silEl = document.getElementById('seg-sil');
+      if (silEl) silEl.textContent = Number(sil).toFixed(4);
+
+      const totalSkus = Object.values(matrixCounts).reduce(function(a, b) { return a + b; }, 0);
+      const totEl = document.getElementById('seg-total-skus');
+      if (totEl) totEl.textContent = `${totalSkus} SKUs`;
+
+      // Render 9-box cells
+      Object.keys(matrixCounts).forEach(function(code) {
+        const el = document.getElementById(`cell-${code}`);
+        if (!el) return;
+        const active = selectedCell === code;
+        const g = CELL_GUIDANCE[code];
+        el.style.backgroundColor = active ? 'var(--accent-primary)' : 'var(--bg-subtle)';
+        el.style.color = active ? 'var(--accent-primary-ink)' : 'var(--text-primary)';
+        el.innerHTML = `
+          <div class="flex items-center justify-between">
+            <strong class="font-tabular text-xs">${code}</strong>
+            <span class="font-tabular text-base font-bold">${matrixCounts[code]}</span>
+          </div>
+          <span class="block text-[10px] truncate mt-0.5" style="opacity:0.85;">${g.title.split('•')[1] || ''}</span>
+        `;
+      });
+
+      const adviceEl = document.getElementById('seg-cell-advice');
+      if (adviceEl) {
+        if (selectedCell && CELL_GUIDANCE[selectedCell]) {
+          const info = CELL_GUIDANCE[selectedCell];
+          adviceEl.innerHTML = `
+            <strong style="color:var(--text-primary);">${info.title}:</strong>
+            <span class="biz-only">${info.biz}</span>
+            <span class="tech-only font-tabular">${info.tech}</span>
+          `;
+        } else {
+          adviceEl.textContent = 'Tap any 3×3 matrix box to filter SKUs by revenue importance (A/B/C) and demand steadiness (X/Y/Z).';
+        }
+      }
+
+      // Render 2D K-Means Scatter SVG (keep all baseline points visible, highlight active segment)
+      const svg = document.getElementById('seg-scatter-svg');
+      if (svg) {
+        const scatterSource = live ? skus : fb.skus;
+        const maxMean = Math.max.apply(null, scatterSource.map(function(s) { return Number(s.mean_daily ?? s.mean_sales ?? s.avg_sales ?? 10); }).concat([60]));
+        const maxCv = Math.max.apply(null, scatterSource.map(function(s) { return Number(s.cv ?? 0.5); }).concat([1.0]));
+        const ptsHtml = scatterSource.map(function(s) {
+          const code = `${s.abc || ''}${s.xyz || ''}`;
+          const matched = !selectedCell || code === selectedCell;
+          const x = 36 + (Number(s.mean_daily ?? s.mean_sales ?? s.avg_sales ?? 10) / maxMean) * 390;
+          const y = 185 - (Number(s.cv ?? 0.3) / maxCv) * 155;
+          const col = CLUSTER_COLORS[(Number(s.cluster) || 0) % CLUSTER_COLORS.length];
+          return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${matched ? 5.2 : 3.5}" fill="${col}" opacity="${matched ? 0.88 : 0.22}" stroke="var(--bg-surface)" stroke-width="1" />`;
+        }).join('');
+
+        svg.innerHTML = `
+          <line x1="36" y1="20" x2="36" y2="188" stroke="var(--border-strong)" />
+          <line x1="36" y1="188" x2="435" y2="188" stroke="var(--border-strong)" />
+          <text x="235" y="210" text-anchor="middle" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono, monospace">Mean Daily Demand →</text>
+          <text x="14" y="105" text-anchor="middle" transform="rotate(-90 14 105)" fill="var(--text-muted)" font-size="10" font-family="JetBrains Mono, monospace">CV Volatility ↑</text>
+          ${ptsHtml}
+        `;
+      }
+
+      const legendEl = document.getElementById('seg-cluster-legend');
+      if (legendEl) {
+        const names = ['Cluster 0 • Steady Core', 'Cluster 1 • Fast Drivers', 'Cluster 2 • Mid Seasonal', 'Cluster 3 • Long Tail'];
+        legendEl.innerHTML = names.map(function(nm, idx) {
+          return `<div class="ed-well p-2 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${CLUSTER_COLORS[idx]};"></span>
+            <span class="text-[11px] truncate" style="color:var(--text-primary);">${nm}</span>
+          </div>`;
+        }).join('');
+      }
+
+      // Populate Drilldown Table
+      document.getElementById('seg-table-title').textContent = selectedCell ? `Segment ${selectedCell} SKUs` : 'Classified SKUs (All Segments)';
+      document.getElementById('seg-row-count').textContent = `${skus.length} shown`;
+      const tbody = document.getElementById('seg-tbody');
+      if (tbody) {
+        tbody.innerHTML = skus.slice(0, 50).map(function(s) {
+          const seg = `${s.abc || '?'}${s.xyz || '?'}`;
+          const tier = String(s.tier || 'R2_REORDER');
+          const tierCls = tier.startsWith('R1') ? 'ed-badge-danger' : (tier.startsWith('R2') ? 'ed-badge-warning' : 'ed-badge-success');
+          return `
+            <tr>
+              <td class="py-2 pr-3 font-tabular font-semibold" style="color:var(--text-primary);">Store #${Number(s.store) || 0} • Item #${Number(s.item) || 0}</td>
+              <td class="py-2 pr-3 font-tabular font-bold" style="color:var(--accent-primary);">${SmartStock.escapeHtml(seg)}</td>
+              <td class="py-2 pr-3 font-tabular" style="color:var(--text-secondary);">C${Number(s.cluster ?? 0)}</td>
+              <td class="py-2 pr-3 text-right font-tabular">${Number(s.mean_daily ?? s.mean_sales ?? s.avg_sales ?? 0).toFixed(1)}</td>
+              <td class="py-2 pr-3 text-right font-tabular tech-only">${Number(s.cv ?? 0).toFixed(2)}</td>
+              <td class="py-2 text-right"><span class="ed-badge ${tierCls}">${SmartStock.escapeHtml(tier)}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadSegmentation);
+    window.SmartStockPageRender = function() { loadSegmentation(); };
+  </script>
+</body>
+</html>

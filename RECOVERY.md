@@ -125,8 +125,9 @@ npx playwright test
 
 ## 4. Phase Checkpoints & Emergency Verification Checklist
 - **Phase 0 Recovery Baseline Hash:** `c81a1fe88bce955e6cbf4d8e5792aeebfec1f88c` (`recovery-phase0-baseline` / `recovery-baseline-v0`)
-- **Phase 1 Security Branch:** `feature/phase1-security-hardening`
-- **SQLite Hot Backup:** `data/supply_chain_backup_baseline.db` (`PRAGMA integrity_check` -> `ok`)
-- **Phase 1 Additive Schema Note:** `init_db()` adds `app_sessions` and tenant-scoped `idx_app_sales_user_idempotency` without touching or deleting existing `app_users`, `app_products`, `app_purchase_orders`, `app_sales`, `sales`, or `sku_master` records.
+- **Phase 1 Security Branch:** `feature/phase1-security-hardening` (`3c12e1d`)
+- **Phase 2 UI/UX & Parity Branch:** `feature/phase2-premium-editorial-ui`
+- **SQLite Hot Backups:** `data/supply_chain_backup_baseline.db`, `data/supply_chain_backup_phase1.db` (`PRAGMA integrity_check` -> `ok`)
+- **Phase 2 Additive Schema Note:** `init_db()` enables WAL mode and safely adds `category_name TEXT DEFAULT 'Groceries & Household'` to `app_products` without modifying or removing any existing records.
 - **Clean Tree Check:** `git status` should return `nothing to commit, working tree clean`.
 - **Remote Push Confirmed:** Both branch `recovery-phase0-baseline` and tag `recovery-baseline-v0` are verified present on GitHub `origin`.

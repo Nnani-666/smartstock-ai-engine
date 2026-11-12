@@ -472,6 +472,7 @@ class UserLoginRequest(BaseModel):
 
 class ProductCreateRequest(BaseModel):
     user_email: str | None = None
+    id: str | None = None
     name: str = Field(..., min_length=1, max_length=200)
     sku: str | None = None
     description: str = ""
@@ -482,15 +483,40 @@ class ProductCreateRequest(BaseModel):
     reorder_point: int = Field(5, ge=0)
     lead_time_days: int = Field(3, ge=0)
     supplier: str = "Metro Wholesale"
+    category_name: str = "Groceries & Household"
+
+
+class ProductUpdateRequest(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=200)
+    sku: str | None = None
+    description: str | None = None
+    unit_price: float | None = Field(None, ge=0)
+    unit_cost: float | None = Field(None, ge=0)
+    stock_on_hand: int | None = Field(None, ge=0)
+    safety_stock: int | None = Field(None, ge=0)
+    reorder_point: int | None = Field(None, ge=0)
+    lead_time_days: int | None = Field(None, ge=0)
+    supplier: str | None = None
+    category_name: str | None = None
+
+
+class BulkStockRequest(BaseModel):
+    product_ids: list[str] = Field(..., min_length=1, max_length=200)
+    delta: int = Field(..., ge=-10000, le=10000)
 
 
 class POCreateRequest(BaseModel):
     user_email: str | None = None
+    id: str | None = None
     po_number: str = Field(..., min_length=1, max_length=100)
     supplier: str = Field(..., min_length=1, max_length=200)
-    status: str = "ordered"
+    status: Literal["ordered", "in_transit", "draft", "pending"] = "ordered"
     total_amount: float = Field(..., ge=0)
     items: list[dict[str, Any]]
+
+
+class POStatusUpdateRequest(BaseModel):
+    status: Literal["ordered", "in_transit", "cancelled"]
 
 
 class SaleRecordRequest(BaseModel):
@@ -498,10 +524,10 @@ class SaleRecordRequest(BaseModel):
     product_id: str | None = None
     product_name: str | None = None
     sale_amount: float | None = Field(None, ge=0)
-    units: int = 1
+    units: int = Field(1, le=100000)
     unit_cost: float | None = Field(None, ge=0)
     timestamp: str | None = None
-    idempotency_key: str | None = None
+    idempotency_key: str | None = Field(None, max_length=128)
 
 
 class AIAssistantRequest(BaseModel):
@@ -651,14 +677,18 @@ def add_user_product(
 
     cursor = db.cursor()
     prod_id = str(uuid.uuid4())
+    if req.id:
+        cursor.execute("SELECT user_email FROM app_products WHERE id = ?", (req.id,))
+        if not cursor.fetchone():
+            prod_id = req.id
     sku = req.sku or f"SKU-{str(uuid.uuid4())[:6].upper()}"
     now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
     status_str = "out_of_stock" if req.stock_on_hand <= 0 else ("low_stock" if req.stock_on_hand <= req.reorder_point else "active")
 
     cursor.execute(
-        """INSERT INTO app_products (id, user_email, sku, name, description, unit_price, unit_cost, stock_on_hand, safety_stock, reorder_point, lead_time_days, supplier, status, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (prod_id, clean_email, sku, req.name, req.description, req.unit_price, req.unit_cost, req.stock_on_hand, req.safety_stock, req.reorder_point, req.lead_time_days, req.supplier, status_str, now_iso),
+        """INSERT INTO app_products (id, user_email, sku, name, description, unit_price, unit_cost, stock_on_hand, safety_stock, reorder_point, lead_time_days, supplier, category_name, status, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (prod_id, clean_email, sku, req.name, req.description, req.unit_price, req.unit_cost, req.stock_on_hand, req.safety_stock, req.reorder_point, req.lead_time_days, req.supplier, req.category_name, status_str, now_iso),
     )
     db.commit()
 
@@ -672,8 +702,111 @@ def add_user_product(
         "stock_on_hand": req.stock_on_hand,
         "reorder_point": req.reorder_point,
         "supplier": req.supplier,
+        "category_name": req.category_name,
         "status": status_str,
     }
+
+
+@app.put("/api/v1/user/products/{product_id}")
+def update_user_product(
+    product_id: str,
+    req: ProductUpdateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Update product fields strictly within authenticated merchant's catalog."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        cursor.execute("SELECT * FROM app_products WHERE id = ? AND user_email = ?", (product_id, clean_email))
+        row = cursor.fetchone()
+        if not row:
+            db.rollback()
+            raise HTTPException(status_code=404, detail="Product not found in merchant inventory")
+
+        cur = dict(row)
+        new_name = req.name if req.name is not None else cur["name"]
+        new_sku = req.sku if req.sku is not None else cur["sku"]
+        new_desc = req.description if req.description is not None else cur["description"]
+        new_price = req.unit_price if req.unit_price is not None else cur["unit_price"]
+        new_cost = req.unit_cost if req.unit_cost is not None else cur["unit_cost"]
+        new_stock = req.stock_on_hand if req.stock_on_hand is not None else int(cur["stock_on_hand"])
+        new_ss = req.safety_stock if req.safety_stock is not None else int(cur["safety_stock"])
+        new_rop = req.reorder_point if req.reorder_point is not None else int(cur["reorder_point"])
+        new_lt = req.lead_time_days if req.lead_time_days is not None else int(cur["lead_time_days"])
+        new_supp = req.supplier if req.supplier is not None else cur["supplier"]
+        new_cat = req.category_name if req.category_name is not None else (cur.get("category_name") or "Groceries & Household")
+        new_status = "out_of_stock" if new_stock <= 0 else ("low_stock" if new_stock <= new_rop else "active")
+
+        cursor.execute(
+            """UPDATE app_products
+               SET name = ?, sku = ?, description = ?, unit_price = ?, unit_cost = ?,
+                   stock_on_hand = ?, safety_stock = ?, reorder_point = ?, lead_time_days = ?,
+                   supplier = ?, category_name = ?, status = ?
+               WHERE id = ? AND user_email = ?""",
+            (new_name, new_sku, new_desc, new_price, new_cost, new_stock, new_ss, new_rop, new_lt, new_supp, new_cat, new_status, product_id, clean_email),
+        )
+        db.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        logger.error("Product update error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error during product update")
+
+    cursor.execute("SELECT * FROM app_products WHERE id = ? AND user_email = ?", (product_id, clean_email))
+    return dict(cursor.fetchone())
+
+
+@app.delete("/api/v1/user/products/{product_id}")
+def delete_user_product(
+    product_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Delete a product strictly from the authenticated merchant's catalog."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM app_products WHERE id = ? AND user_email = ?", (product_id, clean_email))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Product not found in merchant inventory")
+    db.commit()
+    return {"status": "ok", "deleted_id": product_id}
+
+
+@app.post("/api/v1/user/products/bulk-stock")
+def bulk_update_stock(
+    req: BulkStockRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Atomically adjust stock on hand across multiple products owned by authenticated merchant."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    updated_ids: list[str] = []
+    unique_ids = list(dict.fromkeys(req.product_ids))
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        for pid in unique_ids:
+            cursor.execute(
+                """UPDATE app_products
+                   SET stock_on_hand = stock_on_hand + ?,
+                       status = CASE WHEN stock_on_hand + ? <= 0 THEN 'out_of_stock'
+                                     WHEN stock_on_hand + ? <= reorder_point THEN 'low_stock'
+                                     ELSE 'active' END
+                   WHERE id = ? AND user_email = ? AND stock_on_hand + ? >= 0""",
+                (req.delta, req.delta, req.delta, pid, clean_email, req.delta),
+            )
+            if cursor.rowcount == 1:
+                updated_ids.append(pid)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error("Bulk stock update error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error during bulk stock update")
+
+    return {"status": "ok", "updated_count": len(updated_ids), "updated_ids": updated_ids}
 
 
 @app.get("/api/v1/user/purchase-orders")
@@ -722,6 +855,10 @@ def create_user_po(
 
     cursor = db.cursor()
     po_id = str(uuid.uuid4())
+    if req.id:
+        cursor.execute("SELECT user_email FROM app_purchase_orders WHERE id = ?", (req.id,))
+        if not cursor.fetchone():
+            po_id = req.id
     now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
     cursor.execute(
@@ -740,6 +877,50 @@ def create_user_po(
         "items": req.items,
         "created_at": now_iso,
     }
+
+
+@app.patch("/api/v1/user/purchase-orders/{po_id}/status")
+def update_user_po_status(
+    po_id: str,
+    req: POStatusUpdateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Update status (ordered, in_transit, cancelled) of an uncompleted purchase order."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        cursor.execute(
+            "SELECT status FROM app_purchase_orders WHERE id = ? AND user_email = ?",
+            (po_id, clean_email),
+        )
+        row = cursor.fetchone()
+        if not row:
+            db.rollback()
+            raise HTTPException(status_code=404, detail="Purchase order not found")
+        if row["status"] in ("completed", "cancelled"):
+            db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot change status of a {row['status']} purchase order",
+            )
+
+        cursor.execute(
+            "UPDATE app_purchase_orders SET status = ? WHERE id = ? AND user_email = ? AND status NOT IN ('completed', 'cancelled')",
+            (req.status, po_id, clean_email),
+        )
+        if cursor.rowcount != 1:
+            db.rollback()
+            raise HTTPException(status_code=409, detail="Purchase order status conflict")
+        db.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        logger.error("PO status update error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error during PO status update")
+    return {"status": "ok", "po_id": po_id, "new_status": req.status}
 
 
 @app.post("/api/v1/user/purchase-orders/{po_id}/receive")
@@ -796,7 +977,10 @@ def receive_user_po(
 
         # Increment stock in app_products for each valid item
         for it in items:
-            units = int(it.get("units") or it.get("quantity") or 0)
+            try:
+                units = int(it.get("units") or it.get("quantity") or 0)
+            except (ValueError, TypeError):
+                units = 0
             if units <= 0:
                 continue
             p_name = it.get("name") or it.get("item")
@@ -845,74 +1029,74 @@ def record_user_sale(
     if req.units <= 0:
         raise HTTPException(status_code=400, detail="Sale units must be greater than zero")
 
-    cursor = db.cursor()
-
-    # Idempotency check
-    if req.idempotency_key:
-        cursor.execute(
-            "SELECT id, sale_amount, units FROM app_sales WHERE idempotency_key = ? AND user_email = ?",
-            (req.idempotency_key, clean_email),
-        )
-        existing = cursor.fetchone()
-        if existing:
-            return {
-                "status": "ok",
-                "sale_id": existing["id"],
-                "replayed": True,
-                "message": "Sale already processed",
-            }
-
-    # Validate timestamp if provided
+    # Validate timestamp if provided and normalize to naive UTC ISO-8601
     if req.timestamp:
         try:
-            datetime.fromisoformat(req.timestamp.replace("Z", "+00:00"))
-            sale_timestamp = req.timestamp
+            parsed_ts = datetime.fromisoformat(req.timestamp.replace("Z", "+00:00"))
+            if parsed_ts.tzinfo is not None:
+                parsed_ts = parsed_ts.astimezone(timezone.utc).replace(tzinfo=None)
+            sale_timestamp = parsed_ts.isoformat()
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid timestamp format. ISO-8601 required.")
     else:
         sale_timestamp = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
-    # Look up product in user's catalog
-    if req.product_id:
-        cursor.execute(
-            "SELECT * FROM app_products WHERE id = ? AND user_email = ?",
-            (req.product_id, clean_email),
-        )
-    elif req.product_name:
-        cursor.execute(
-            "SELECT * FROM app_products WHERE name = ? AND user_email = ?",
-            (req.product_name, clean_email),
-        )
-    else:
+    if not req.product_id and not req.product_name:
         raise HTTPException(status_code=400, detail="Either product_id or product_name must be provided")
 
-    prod_row = cursor.fetchone()
-    if not prod_row:
-        raise HTTPException(status_code=404, detail="Product not found in user inventory")
-
-    prod = dict(prod_row)
-    current_stock = int(prod["stock_on_hand"])
-
-    # Strict overselling pre-check
-    if current_stock < req.units:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Insufficient stock on hand: requested {req.units} units, but only {current_stock} available.",
-        )
-
-    # Decimal price calculation
-    unit_price_dec = Decimal(str(prod["unit_price"] or 0))
-    calc_amount = (unit_price_dec * Decimal(req.units)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    final_amount = float(calc_amount)
-
-    # Historical cost basis
-    final_cost = prod["unit_cost"] if prod["unit_cost"] is not None else req.unit_cost
-
+    cursor = db.cursor()
     sale_id = str(uuid.uuid4())
-    prod_name = prod["name"]
-
     try:
         cursor.execute("BEGIN IMMEDIATE")
+
+        # Idempotency check inside write transaction to prevent TOCTOU races
+        if req.idempotency_key:
+            cursor.execute(
+                "SELECT id, sale_amount, units FROM app_sales WHERE idempotency_key = ? AND user_email = ?",
+                (req.idempotency_key, clean_email),
+            )
+            existing = cursor.fetchone()
+            if existing:
+                db.rollback()
+                return {
+                    "status": "ok",
+                    "sale_id": existing["id"],
+                    "replayed": True,
+                    "message": "Sale already processed",
+                }
+
+        # Look up product inside write transaction for fresh price/cost/stock
+        if req.product_id:
+            cursor.execute(
+                "SELECT * FROM app_products WHERE id = ? AND user_email = ?",
+                (req.product_id, clean_email),
+            )
+        else:
+            cursor.execute(
+                "SELECT * FROM app_products WHERE name = ? AND user_email = ?",
+                (req.product_name, clean_email),
+            )
+
+        prod_row = cursor.fetchone()
+        if not prod_row:
+            db.rollback()
+            raise HTTPException(status_code=404, detail="Product not found in user inventory")
+
+        prod = dict(prod_row)
+        current_stock = int(prod["stock_on_hand"])
+        if current_stock < req.units:
+            db.rollback()
+            raise HTTPException(
+                status_code=400,
+                detail=f"Insufficient stock on hand: requested {req.units} units, but only {current_stock} available.",
+            )
+
+        unit_price_dec = Decimal(str(prod["unit_price"] or 0))
+        calc_amount = (unit_price_dec * Decimal(req.units)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        final_amount = float(calc_amount)
+        final_cost = prod["unit_cost"] if prod["unit_cost"] is not None else req.unit_cost
+        prod_name = prod["name"]
+
         # Atomic conditional stock deduction (prevents TOCTOU race conditions)
         cursor.execute(
             """UPDATE app_products

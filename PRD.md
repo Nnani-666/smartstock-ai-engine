@@ -109,3 +109,10 @@ graph TD
 - **Server-Side AI Proxy:** `POST /api/v1/ai/assistant` handles Gemini 2.5 Flash requests server-side via `x-goog-api-key` header, eliminating browser API key exposure.
 - **Rate Limiting & Fail-Closed Production Auth:** Sliding-window rate limiting guards `/api/v1/auth/*` and `/api/v1/ai/assistant` (`429 Too Many Requests`). When `SMARTSTOCK_ENV=production`, analytical routes fail closed (`503`) if `API_KEY` is unconfigured.
 - **XSS & CSV Formula Defense:** Frontend `stitch/smartstock-bridge.js` escapes dynamic values in `innerHTML` templates (`escapeHtml`, `escapeJsAttr`), validates tokens via `/api/v1/auth/me`, and neutralizes CSV formula prefixes (`exportCSV`).
+
+---
+
+## 6. Phase 2 UX & Product Intelligence Guarantees (Premium Editorial)
+- **Editorial Design System:** Dual Light (Warm Parchment & Pine Ink) / Dark (Forest Obsidian & Ivory Sage) themes defined in `stitch/editorial-theme.css` with unified navigation shell in `stitch/editorial-shell.js` across 12 distinct screens + Preview Hub (`stitch/index.html`) synced to Web, iOS (`SmartStock/stitch/`), and Android (`SmartStockAndroid/app/src/main/assets/stitch/`).
+- **Two-Level Intelligence:** Interactive `Business` (Shopkeeper plain language) vs. `Academic` (Statistical & ML telemetry) mode toggle across all screens without duplicating or distorting underlying backend outputs.
+- **Full Functional Parity (Stage E):** Authenticated backend routes (`PUT /api/v1/user/products/{id}`, `DELETE /api/v1/user/products/{id}`, `POST /api/v1/user/products/bulk-stock`, `PATCH /api/v1/user/purchase-orders/{id}/status`) integrated with dedicated POS (`07_sales.html`), Anomaly Monitor (`08_anomalies.html`), Segmentation Studio (`09_segmentation.html`), Conversational Advisor (`10_assistant.html`), Analytics Lab (`11_analytics.html`), and Suppliers Directory (`12_suppliers.html`).

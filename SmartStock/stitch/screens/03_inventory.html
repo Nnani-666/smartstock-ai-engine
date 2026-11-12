@@ -1,194 +1,319 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f6faf5;}body{overscroll-behavior:none;color:#181d1a;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}#side-drawer.open{transform:translateX(0);}#drawer-backdrop.open{opacity:1;pointer-events:auto;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-variant": "#dfe4df", "tertiary-fixed": "#dae5da", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", "on-tertiary-container": "#a6b1a7", "surface": "#f6faf5", "on-secondary-container": "#783920", "tertiary-fixed-dim": "#bec9bf", "on-surface": "#181d1a", "on-primary-fixed-variant": "#294d42", "on-surface-variant": "#414845", "on-primary": "#ffffff", "inverse-primary": "#a8cfc0", "surface-bright": "#f6faf5", "on-secondary-fixed": "#380d00", "primary-fixed": "#c3ebdc", "inverse-surface": "#2d322e", "on-error-container": "#93000a", "background": "#f6faf5", "primary-fixed-dim": "#a8cfc0", "secondary-fixed-dim": "#ffb59a", "surface-dim": "#d7dbd6", "outline": "#717975", "tertiary-container": "#3a443c", "secondary-container": "#fea685", "on-background": "#181d1a", "surface-container": "#ebefea", "on-primary-container": "#90b6a8", "surface-container-high": "#e5e9e4", "secondary-fixed": "#ffdbcf", "error": "#ba1a1a", "on-primary-fixed": "#002018", "tertiary": "#242e27", "secondary": "#904c31", "surface-container-highest": "#dfe4df", "on-tertiary-fixed": "#141e17", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#73351c", "inverse-on-surface": "#edf2ed", "primary": "#0b3127", "primary-container": "#24483d", "on-tertiary-fixed-variant": "#3f4941", "surface-container-low": "#f0f5f0", "outline-variant": "#c1c8c4", "surface-tint": "#416559", "surface-container-lowest": "#ffffff", "on-error": "#ffffff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1rem", "gutter-desktop": "1.5rem", "margin-desktop": "2rem", "gutter": "1rem", "space-xs": "0.25rem", "space-md": "1rem", "space-2xl": "3rem", "space-lg": "1.5rem", "space-xl": "2rem", "margin-mobile": "1rem", "gutter-mobile": "0.75rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-lg-mobile": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "display-lg": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "headline-lg": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "display-lg-mobile": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "code-md": ["JetBrains Mono"], "body-md": ["Hanken Grotesk"], "label-sm": ["Hanken Grotesk"], "code-sm": ["JetBrains Mono"], "body-lg": ["Hanken Grotesk"], "body-sm": ["Hanken Grotesk"], "label-lg": ["Hanken Grotesk"], "headline-sm": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "label-md": ["Hanken Grotesk"], "headline-md": ["-apple-system", "BlinkMacSystemFont", "sans-serif"] }, "fontSize": { "headline-lg-mobile": ["22px", {"lineHeight": "30px", "fontWeight": "600"}], "display-lg": ["36px", {"lineHeight": "44px", "fontWeight": "600"}], "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}], "display-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}], "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}], "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}], "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}], "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}], "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}], "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "600"}], "headline-sm": ["18px", {"lineHeight": "26px", "fontWeight": "500"}], "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}], "headline-md": ["22px", {"lineHeight": "30px", "fontWeight": "500"}] } } } };</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartStock — Retail Inventory Workbench</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            surface: "#faf8f5",
+            "on-surface": "#161d1a",
+            "on-surface-variant": "#525c57",
+            outline: "#76807b",
+            primary: "#0f382b",
+            "primary-container": "#174c3b",
+            "primary-fixed": "#cbe8dc",
+            "on-primary-fixed": "#0a2a20",
+            "on-primary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2efe9",
+            "surface-container": "#ece8e0",
+            "surface-container-high": "#e4dfd5",
+            "surface-variant": "#dde4de",
+            secondary: "#a84a28",
+            "on-secondary": "#ffffff",
+            "secondary-fixed": "#fbe5dc",
+            "on-secondary-fixed": "#511d0a",
+            "on-secondary-fixed-variant": "#7d3318",
+            error: "#b3261e",
+            "error-container": "#fce8e6",
+            "on-error-container": "#7c1812"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="../editorial-theme.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('smartstock_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../smartstock-bridge.js"></script>
+  <script src="../editorial-shell.js"></script>
+</head>
+<body class="min-h-screen antialiased">
 
-</head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><div class="fixed inset-0 bg-inverse-surface/40 backdrop-blur-[2px] z-50 opacity-0 pointer-events-none transition-opacity duration-300" id="drawer-backdrop" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')"></div><aside class="fixed top-0 left-0 bottom-0 w-[84%] max-w-[320px] bg-surface-container-lowest z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-[0_20px_40px_-8px_rgba(41,46,43,0.18)] pt-safe pb-safe" id="side-drawer">
-  <div class="p-space-md flex items-center justify-between">
-    <div class="flex items-center gap-space-xs">
-      <img alt="SmartStock Logo" class="h-8 w-8 rounded-lg shadow-xs object-cover" src="../assets/smartstock-logo.svg">
-      <span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">SmartStock</span>
-    </div>
-    <button class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full cursor-pointer" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')">
-      <span class="material-symbols-outlined text-[22px]">close</span>
-    </button>
+  <div class="ed-layout">
+    <main class="ed-main-shell px-4 md:px-7">
+      <div class="max-w-7xl w-full mx-auto py-6 space-y-5">
+
+        <!-- Workbench Action Masthead -->
+        <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b ed-rule">
+          <div>
+            <span class="ed-kicker">Store Catalog &amp; Stock Control</span>
+            <h2 class="font-editorial text-2xl sm:text-3xl font-semibold mt-0.5" style="color:var(--text-primary);">Retail Inventory Ledger</h2>
+            <p class="biz-only text-xs sm:text-sm mt-0.5" style="color:var(--text-secondary);">Search items, adjust shelf stock, import spreadsheets, or click any product for margin &amp; reorder specs.</p>
+            <p class="tech-only text-xs font-tabular mt-0.5" style="color:var(--text-secondary);">Tenant-scoped SQLite <code>app_products</code> ledger • Full CRUD + atomic <code>bulk-stock</code> transactions</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <button type="button" onclick="SmartStock.openAddProductModal()" class="ed-btn-primary">
+              <span class="material-symbols-outlined text-[17px]">add</span>
+              <span>Add Product</span>
+            </button>
+            <button type="button" onclick="SmartStock.openImportModal()" class="ed-btn-secondary">
+              <span class="material-symbols-outlined text-[17px]">file_upload</span>
+              <span>Import CSV</span>
+            </button>
+            <button type="button" onclick="SmartStock.exportCurrentInventory()" class="ed-btn-secondary">
+              <span class="material-symbols-outlined text-[17px]">file_download</span>
+              <span>Export</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Search, Category & Sort Controls -->
+        <section class="ed-sheet p-4 space-y-3">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+            <div class="md:col-span-6 relative">
+              <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[19px]" style="color:var(--text-muted);">search</span>
+              <input class="ed-input w-full pl-10 pr-16 h-10" placeholder="Search by SKU, product name, barcode..." type="text">
+              <span class="font-tabular text-[11px] absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline" style="color:var(--text-muted);">⌘K</span>
+            </div>
+
+            <div class="md:col-span-4 relative">
+              <select id="category-filter-select" onchange="SmartStock.filterByCategory(this.value)"
+                class="ed-input w-full h-10 appearance-none pl-3.5 pr-8 font-medium cursor-pointer">
+                <option value="all">All Categories</option>
+                <option value="pantry">Pantry &amp; Larder</option>
+                <option value="grocer">Groceries &amp; Staples</option>
+                <option value="home">Home &amp; Ceramics</option>
+                <option value="care">Body &amp; Personal Care</option>
+                <option value="apparel">Apparel &amp; Textiles</option>
+                <option value="general">General</option>
+              </select>
+              <span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[18px]" style="color:var(--text-muted);">expand_more</span>
+            </div>
+
+            <div class="md:col-span-2">
+              <button type="button" id="toggle-sort-btn" onclick="SmartStock.cycleSort()" class="ed-btn-secondary w-full h-10 justify-between px-3">
+                <span class="material-symbols-outlined text-[17px]">swap_vert</span>
+                <span class="font-label-sm text-xs font-semibold truncate">Velocity</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Status Filter Pills -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <button type="button" data-filter="all" onclick="SmartStock.filterInventory('all', this)"
+              class="filter-pill active px-3 h-8 rounded-full bg-primary text-on-primary text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+              <span>All</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-on-primary/20 text-on-primary font-tabular text-[10px]" id="pill-count-all">0</span>
+            </button>
+            <button type="button" data-filter="low" onclick="SmartStock.filterInventory('low', this)"
+              class="filter-pill px-3 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+              <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+              <span>Low Stock</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-secondary/15 font-tabular text-[10px]" id="pill-count-low">0</span>
+            </button>
+            <button type="button" data-filter="zero" onclick="SmartStock.filterInventory('zero', this)"
+              class="filter-pill px-3 h-8 rounded-full bg-error-container text-on-error-container text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+              <span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+              <span>Out of Stock</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-error/15 font-tabular text-[10px]" id="pill-count-zero">0</span>
+            </button>
+            <button type="button" data-filter="healthy" onclick="SmartStock.filterInventory('healthy', this)"
+              class="filter-pill px-3 h-8 rounded-full bg-surface-container-high text-on-surface-variant text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+              <span>Healthy</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-surface-variant font-tabular text-[10px]" id="pill-count-healthy">0</span>
+            </button>
+            <button type="button" data-filter="excess" onclick="SmartStock.filterInventory('excess', this)"
+              class="filter-pill px-3 h-8 rounded-full bg-surface-container-high text-on-surface-variant text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+              <span>Excess</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-surface-variant font-tabular text-[10px]" id="pill-count-excess">0</span>
+            </button>
+            <button type="button" data-filter="slow" onclick="SmartStock.filterInventory('slow', this)"
+              class="filter-pill px-3 h-8 rounded-full bg-surface-container-high text-on-surface-variant text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 cursor-pointer">
+              <span>Slow Moving</span>
+              <span class="px-1.5 py-0.2 rounded-full bg-surface-variant font-tabular text-[10px]" id="pill-count-slow">0</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Bulk Selection Context Bar -->
+        <section class="ed-well px-4 py-2.5 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2.5">
+            <label class="relative flex items-center cursor-pointer">
+              <input class="peer sr-only" id="master-select" type="checkbox" onchange="SmartStock.toggleSelectAll(this.checked)">
+              <div class="w-5 h-5 rounded border ed-rule flex items-center justify-center transition-colors peer-checked:bg-primary" style="background:var(--bg-surface);">
+                <span class="material-symbols-outlined text-on-primary text-[15px] scale-0 peer-checked:scale-100 transition-transform">check</span>
+              </div>
+            </label>
+            <span class="text-xs font-semibold" id="selection-label" style="color:var(--text-primary);">0 items selected</span>
+          </div>
+
+          <div class="flex items-center gap-2 opacity-50 pointer-events-none transition-opacity" id="bulk-action-group">
+            <button type="button" onclick="SmartStock.bulkAddStock(5)" class="ed-btn-secondary py-1.5 px-3 text-xs">
+              <span class="material-symbols-outlined text-[15px]" style="color:var(--accent-primary);">add_circle</span>
+              <span>+5 Stock</span>
+            </button>
+            <button type="button" onclick="SmartStock.bulkDelete()" class="ed-btn-secondary py-1.5 px-3 text-xs" style="color:var(--status-danger);">
+              <span class="material-symbols-outlined text-[15px]">delete</span>
+              <span>Delete Selected</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Two-Pane Workbench: Left 8 Cols Catalog List + Right 4 Cols Sticky SKU Inspector -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+          <div class="lg:col-span-8 flex flex-col gap-3" id="inventory-list">
+            <div class="ed-sheet p-10 text-center space-y-3">
+              <span class="material-symbols-outlined text-[36px]" style="color:var(--text-muted);">inventory_2</span>
+              <h3 class="font-semibold text-base" style="color:var(--text-primary);">Loading Store Catalog...</h3>
+              <p class="text-xs max-w-sm mx-auto" style="color:var(--text-secondary);">Products from your store ledger will display here.</p>
+            </div>
+          </div>
+
+          <!-- Sticky Product Detail Inspector -->
+          <aside class="lg:col-span-4 lg:sticky lg:top-20 ed-sheet p-5 space-y-4" id="sku-inspector">
+            <div class="flex items-center justify-between pb-3 border-b ed-rule">
+              <div>
+                <span class="ed-kicker">SKU Inspector</span>
+                <h3 class="font-editorial text-lg font-semibold mt-0.5" id="insp-title" style="color:var(--text-primary);">Select a Product</h3>
+              </div>
+              <span class="ed-badge ed-badge-neutral" id="insp-badge">Idle</span>
+            </div>
+
+            <div id="insp-body" class="space-y-4 text-xs" style="color:var(--text-secondary);">
+              <p>Click any product row on the left to view margin breakdown, stock buffer gauge, and one-tap restock/edit actions.</p>
+            </div>
+          </aside>
+        </section>
+
+      </div>
+    </main>
   </div>
-  <div class="px-space-md py-space-xs">
-    <div onclick="SmartStock.openStoreSwitcherModal()" class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between cursor-pointer active:scale-98 transition-all">
-      <div class="flex items-center gap-space-sm">
-        <span class="material-symbols-outlined text-secondary text-[20px]">storefront</span>
-        <div>
-          <p class="drawer-store-name font-label-md text-label-md text-on-surface font-semibold">My Store</p>
-          <p class="font-label-sm text-label-sm text-on-surface-variant font-code-sm">Merchant Register • Active</p>
+
+  <script>
+    SmartStockEditorial.renderShell({
+      pageId: 'inventory',
+      title: 'Inventory Catalog',
+      subtitle: 'Live SKU stock control, margin inspector, and bulk operations'
+    });
+
+    window.SmartStockCatalogCache = [];
+
+    window.inspectCatalogItem = function(productId) {
+      const products = window.SmartStockCatalogCache || [];
+      const p = products.find(function(item) { return String(item.id) === String(productId); }) || products[0];
+      const titleEl = document.getElementById('insp-title');
+      const badgeEl = document.getElementById('insp-badge');
+      const bodyEl = document.getElementById('insp-body');
+      if (!bodyEl) return;
+
+      if (!p) {
+        if (titleEl) titleEl.textContent = 'No Products';
+        if (badgeEl) { badgeEl.className = 'ed-badge ed-badge-neutral'; badgeEl.textContent = 'Empty'; }
+        bodyEl.innerHTML = '<p>Add a product or import a CSV spreadsheet to inspect live margin and stock gauges.</p>';
+        return;
+      }
+
+      const stock = Number(p.stock_on_hand) || 0;
+      const rop = Number(p.reorder_point ?? 10);
+      const price = Number(p.unit_price) || 0;
+      const cost = Number(p.unit_cost) || 0;
+      const marginPct = price > 0 ? (((price - cost) / price) * 100).toFixed(1) : '0.0';
+      const val = stock * price;
+      const fillRatio = rop > 0 ? Math.min(100, Math.round((stock / (rop * 2)) * 100)) : 100;
+
+      if (titleEl) titleEl.textContent = p.name || 'Unnamed Product';
+      if (badgeEl) {
+        if (stock <= 0) {
+          badgeEl.className = 'ed-badge ed-badge-danger';
+          badgeEl.textContent = 'Out of Stock';
+        } else if (stock <= rop) {
+          badgeEl.className = 'ed-badge ed-badge-warning';
+          badgeEl.textContent = 'Low Stock';
+        } else {
+          badgeEl.className = 'ed-badge ed-badge-success';
+          badgeEl.textContent = 'Healthy';
+        }
+      }
+
+      const e = SmartStock.escapeHtml.bind(SmartStock);
+      const attrId = SmartStock.escapeJsAttr(p.id);
+      const barColor = stock <= 0 ? 'var(--status-danger)' : (stock <= rop ? 'var(--status-warning)' : 'var(--status-success)');
+
+      bodyEl.innerHTML = `
+        <div class="flex items-center justify-between font-tabular text-[11px]" style="color:var(--text-secondary);">
+          <span>SKU: <strong style="color:var(--text-primary);">${e(p.sku || 'N/A')}</strong></span>
+          <span>${e(p.category_name || 'General')}</span>
         </div>
-      </div>
-      <span class="material-symbols-outlined text-outline text-[18px]">unfold_more</span>
-    </div>
-  </div>
-  <div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="overview" href="02_overview.html">
-      <span class="material-symbols-outlined text-[20px]">dashboard</span>
-      <span class="font-label-lg text-label-lg">Overview</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="inventory" href="03_inventory.html">
-      <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-      <span class="font-label-lg text-label-lg">Inventory</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="sales" href="#" onclick="SmartStock.openSalesModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">point_of_sale</span>
-      <span class="font-label-lg text-label-lg">Sales Register</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="orders" href="05_purchase_orders.html">
-      <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-      <span class="font-label-lg text-label-lg">Orders Ledger</span>
-    </a>
-    <a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="ai-insights-&-replenishment" href="05_replenishment.html">
-      <div class="flex items-center gap-space-md">
-        <span class="material-symbols-outlined text-secondary text-[20px]">auto_awesome</span>
-        <span class="font-label-lg text-label-lg">AI Replenishment</span>
-      </div>
-      <span class="bg-secondary text-on-secondary font-label-sm text-label-sm px-2 py-0.5 rounded-full">AI</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="forecasts" href="04_forecasts.html">
-      <span class="material-symbols-outlined text-[20px]">query_stats</span>
-      <span class="font-label-lg text-label-lg">Demand Forecasts</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="suppliers" href="#" onclick="SmartStock.openSuppliersModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">local_shipping</span>
-      <span class="font-label-lg text-label-lg">Suppliers Directory</span>
-    </a>
-  </div>
-  <div class="p-space-md bg-surface-container-low/60 space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="settings" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">settings</span>
-      <span class="font-label-md text-label-md">Settings</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="help-&-support" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">help_outline</span>
-      <span class="font-label-md text-label-md">Help &amp; Support</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-error hover:opacity-80 transition-opacity cursor-pointer" data-path="login" href="01_signin.html" onclick="SmartStock.signOut(); return false;">
-      <span class="material-symbols-outlined text-[20px]">logout</span>
-      <span class="font-label-md text-label-md font-semibold">Sign Out</span>
-    </a>
-  </div>
-</aside><header class="fixed top-0 w-full z-40 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] pt-safe"><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-xs"><button class="w-11 h-11 flex items-center justify-center text-primary rounded-lg active:bg-surface-variant/40" onclick="document.getElementById('side-drawer').classList.add('open');document.getElementById('drawer-backdrop').classList.add('open')"><span class="material-symbols-outlined text-[24px]">menu</span></button><img alt="SmartStock Logo" class="h-8 w-8 rounded-lg shadow-xs object-cover" src="../assets/smartstock-logo.svg"><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold hidden min-[360px]:inline">SmartStock</span></div><div class="flex items-center gap-space-xs"><button onclick="SmartStock.openStoreSwitcherModal()" class="h-9 px-3 bg-surface-container-lowest shadow-xs rounded-full flex items-center gap-1.5 active:scale-95 transition-all"><span class="w-2 h-2 rounded-full bg-surface-tint"></span><span class="font-label-sm text-label-sm text-on-surface font-semibold max-w-[140px] truncate store-pill-name">My Store</span><span class="material-symbols-outlined text-[16px] text-outline">expand_more</span></button><button onclick="SmartStock.openNotificationsModal()" class="relative w-11 h-11 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-on-secondary font-code-sm text-[10px] leading-4 flex items-center justify-center font-bold header-notif-badge">1</span></button><a href="06_settings.html" class="w-11 h-11 flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(41,46,43,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2oQa0rK-iaQ1bYCN9Pl2yH1csvapSNVt7-BmWvqXFRMZUiNPvmd7BSG1rGOlergv8pNCWzOioaGcj3P9MnYocAloiiT9mYXnQiZePZlCBQfd9_84JPpVdUZachLZ_eVzaW7QMLJ8ToWCW6mYqkVBk_eT2Ei-9vSk6zhC0LQPIR9nsui2hepL_tlUR05TqLiFekmXRyNLs4UuPjrYAJMtjJPzBCu_1IQRE9yq7WIld5OUvo7lSeZ0"></a></div></div><div class="px-space-md pb-space-xs flex items-center justify-between"><h1 class="font-headline-md text-headline-md text-primary font-bold">Inventory</h1><span class="font-code-sm text-code-sm text-on-surface-variant tracking-wider uppercase">Merchant Mode</span></div></header><main class="flex flex-col relative w-full pt-28 pb-28 bg-surface px-space-md"><div class="flex flex-col w-full pb-8 space-y-space-md">
-<!-- Interactive Search and Quick Actions Bar -->
-<div class="flex flex-col gap-space-sm">
-<div class="relative w-full">
-<span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
-<input class="w-full h-11 pl-10 pr-20 bg-surface-container-lowest rounded-lg font-body-md text-body-md text-on-surface placeholder:text-outline shadow-sm focus:outline-none focus:bg-surface-container-low transition-colors" placeholder="Search by SKU, product name, barcode..." type="text">
-<div class="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-<button class="w-7 h-7 flex items-center justify-center rounded bg-surface-container-high text-on-surface-variant active:scale-95 transition-transform" title="Scan Barcode">
-<span class="material-symbols-outlined text-[17px]">barcode_scanner</span>
-</button>
-<span class="font-code-sm text-code-sm text-outline hidden sm:inline px-1">⌘K</span>
-</div>
-</div>
-<!-- Category Selector Dropdown & Filter Utility -->
-<div class="flex items-center gap-space-xs">
-<div class="relative flex-1">
-<select id="category-filter-select" onchange="SmartStock.filterByCategory(this.value)" class="w-full h-10 appearance-none bg-surface-container-lowest pl-3.5 pr-8 rounded-lg font-label-md text-label-md text-on-surface font-semibold shadow-sm focus:outline-none cursor-pointer">
-<option value="all">All Categories (Groceries, Home, Apparel, Pantry)</option>
-<option value="pantry">Pantry &amp; Larder</option>
-<option value="home">Home &amp; Ceramics</option>
-<option value="care">Body &amp; Personal Care</option>
-<option value="apparel">Apparel &amp; Textiles</option>
-<option value="grocer">Groceries &amp; Staples</option>
-</select>
-<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-outline pointer-events-none text-[18px]">expand_more</span>
-</div>
-<button class="h-10 px-3 bg-surface-container-lowest rounded-lg text-on-surface-variant flex items-center justify-center gap-1 shadow-sm active:bg-surface-container cursor-pointer" id="toggle-sort-btn" onclick="SmartStock.cycleSort()">
-<span class="material-symbols-outlined text-[18px]">swap_vert</span>
-<span class="font-label-sm text-label-sm font-semibold">Velocity</span>
-</button>
-</div>
-</div>
-<!-- Horizontally Scrollable Operational Status Pills -->
-<div class="w-full -mx-space-md px-space-md overflow-x-auto flex items-center gap-2 py-0.5 no-scrollbar">
-<button data-filter="all" onclick="SmartStock.filterInventory('all', this)" class="filter-pill active px-3.5 h-8 rounded-full bg-primary text-on-primary font-label-sm text-label-sm font-semibold whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer">
-<span class="">All</span>
-<span class="bg-on-primary/20 text-on-primary px-1.5 py-0.2 rounded-full font-code-sm text-[10px]" id="pill-count-all">0</span>
-</button>
-<button data-filter="low" onclick="SmartStock.filterInventory('low', this)" class="filter-pill px-3.5 h-8 rounded-full bg-secondary-fixed text-on-secondary-fixed-variant font-label-sm text-label-sm font-semibold whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer">
-<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
-<span class="">Low Stock</span>
-<span class="bg-secondary/15 px-1.5 py-0.2 rounded-full font-code-sm text-[10px]" id="pill-count-low">0</span>
-</button>
-<button data-filter="zero" onclick="SmartStock.filterInventory('zero', this)" class="filter-pill px-3.5 h-8 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer">
-<span class="w-2 h-2 rounded-full bg-error"></span>
-<span class="">Out of Stock</span>
-<span class="bg-error/15 px-1.5 py-0.2 rounded-full font-code-sm text-[10px]" id="pill-count-zero">0</span>
-</button>
-<button data-filter="healthy" onclick="SmartStock.filterInventory('healthy', this)" class="filter-pill px-3.5 h-8 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer">
-<span class="">Healthy</span>
-<span class="bg-surface-variant px-1.5 py-0.2 rounded-full font-code-sm text-[10px]" id="pill-count-healthy">0</span>
-</button>
-<button data-filter="excess" onclick="SmartStock.filterInventory('excess', this)" class="filter-pill px-3.5 h-8 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer">
-<span class="">Excess</span>
-<span class="bg-surface-variant px-1.5 py-0.2 rounded-full font-code-sm text-[10px]" id="pill-count-excess">0</span>
-</button>
-<button data-filter="slow" onclick="SmartStock.filterInventory('slow', this)" class="filter-pill px-3.5 h-8 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-semibold whitespace-nowrap shadow-sm flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer">
-<span class="">Slow Moving</span>
-<span class="bg-surface-variant px-1.5 py-0.2 rounded-full font-code-sm text-[10px]" id="pill-count-slow">0</span>
-</button>
-</div>
-<!-- Primary Storekeeper Action Bar -->
-<div class="flex items-center justify-between gap-space-xs">
-<button onclick="SmartStock.openAddProductModal()" class="flex-1 h-10 px-3 bg-primary text-on-primary font-label-lg text-label-lg rounded-lg shadow-sm flex items-center justify-center gap-1.5 active:bg-primary-container transition-colors cursor-pointer">
-<span class="material-symbols-outlined text-[19px]">add</span>
-<span class="">Add Product</span>
-</button>
-<div class="flex items-center gap-1.5">
-<button onclick="SmartStock.openImportModal()" class="h-10 px-3 bg-surface-container-lowest text-on-surface font-label-md text-label-md rounded-lg shadow-sm flex items-center gap-1 hover:bg-surface-container-low active:bg-surface-container transition-colors cursor-pointer" title="Import Inventory File">
-<span class="material-symbols-outlined text-[18px] text-on-surface-variant">file_upload</span>
-<span class="hidden min-[380px]:inline">Import</span>
-</button>
-<button onclick="SmartStock.exportCurrentInventory()" class="h-10 px-3 bg-surface-container-lowest text-on-surface font-label-md text-label-md rounded-lg shadow-sm flex items-center gap-1 hover:bg-surface-container-low active:bg-surface-container transition-colors cursor-pointer" title="Export Inventory File">
-<span class="material-symbols-outlined text-[18px] text-on-surface-variant">file_download</span>
-<span class="hidden min-[380px]:inline">Export</span>
-</button>
-</div>
-</div>
-<!-- Bulk Selection Context Bar -->
-<div class="bg-surface-container-low rounded-lg p-space-sm flex items-center justify-between shadow-sm">
-<div class="flex items-center gap-2.5">
-<label class="relative flex items-center cursor-pointer">
-<input class="peer sr-only" id="master-select" type="checkbox" onchange="SmartStock.toggleSelectAll(this.checked)">
-<div class="w-5 h-5 rounded bg-surface-container-lowest peer-checked:bg-primary transition-colors flex items-center justify-center shadow-xs">
-<span class="material-symbols-outlined text-on-primary text-[16px] scale-0 peer-checked:scale-100 transition-transform">check</span>
-</div>
-</label>
-<span class="font-label-md text-label-md text-on-surface font-medium" id="selection-label">0 items selected</span>
-</div>
-<div class="flex items-center gap-1 opacity-50 pointer-events-none transition-opacity" id="bulk-action-group">
-<button onclick="SmartStock.bulkAddStock(5)" class="h-8 px-2.5 rounded bg-surface-container-lowest text-primary font-label-sm text-label-sm flex items-center gap-1 shadow-xs active:bg-surface-container cursor-pointer" title="Inward +5 stock to selected">
-<span class="material-symbols-outlined text-[16px]">add_circle</span>
-<span class="">+5 Stock</span>
-</button>
-<button onclick="SmartStock.bulkDelete()" class="h-8 px-2.5 rounded bg-surface-container-lowest text-error font-label-sm text-label-sm flex items-center gap-1 shadow-xs active:bg-surface-container cursor-pointer" title="Delete selected items">
-<span class="material-symbols-outlined text-[16px]">delete</span>
-<span class="">Delete</span>
-</button>
-</div>
-</div>
-<div class="flex flex-col gap-space-sm" id="inventory-list">
-  <div class="bg-surface-container-lowest rounded-xl p-10 text-center border border-outline/10 space-y-3">
-    <span class="material-symbols-outlined text-[36px] text-outline">inventory_2</span>
-    <h3 class="font-bold text-base text-on-surface">No Products in Inventory</h3>
-    <p class="text-xs text-on-surface-variant max-w-sm mx-auto">
-      Your catalog is currently empty (0 items). Add products manually or import a spreadsheet.
-    </p>
-    <div class="flex items-center justify-center gap-2 pt-2">
-      <button onclick="SmartStock.openAddProductModal()" class="px-4 py-2 bg-primary text-on-primary rounded-lg font-semibold text-xs shadow-xs active:scale-95 transition-all cursor-pointer">
-        + Add Product
-      </button>
-      <button onclick="SmartStock.openImportModal()" class="px-4 py-2 bg-surface-container text-on-surface rounded-lg font-semibold text-xs hover:bg-surface-container-high active:scale-95 transition-all cursor-pointer">
-        Import File (CSV)
-      </button>
-    </div>
-  </div>
-</div>
-</div></main><nav class="fixed bottom-0 w-full z-40 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(41,46,43,0.06)]" data-active-classes="text-primary font-bold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="overview" href="02_overview.html"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm">Overview</span></a><a aria-current="page" class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 transition-colors text-primary font-bold" data-path="inventory" href="03_inventory.html"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-sm text-label-sm">Stock</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-11 px-2 -mt-4 text-on-primary" data-path="scan-barcode" href="03_inventory.html"><div class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(36,72,61,0.28)] active:scale-95 transition-transform"><span class="material-symbols-outlined text-[24px]">barcode_scanner</span></div></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="orders" href="05_purchase_orders.html"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-sm text-label-sm">Orders</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="ai-insights-&amp;-replenishment" href="05_replenishment.html"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm">AI Replenish</span></a></div></nav>
 
-</body></html>
+        <div class="ed-well p-3 space-y-2">
+          <div class="flex justify-between text-xs">
+            <span>On-Hand Buffer</span>
+            <strong class="font-tabular" style="color:var(--text-primary);">${stock} / Target ${Math.max(rop * 2, 10)} units</strong>
+          </div>
+          <div class="w-full h-2 rounded-full overflow-hidden" style="background:var(--border-hairline);">
+            <div style="width:${fillRatio}%; height:100%; background:${barColor}; border-radius:999px;"></div>
+          </div>
+          <p class="text-[11px]" style="color:var(--text-secondary);">Reorder Point: <strong class="font-tabular">${rop} units</strong></p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="ed-well p-2.5">
+            <span class="block text-[10px] uppercase tracking-wider">Unit Price / Cost</span>
+            <strong class="font-tabular text-sm" style="color:var(--text-primary);">${SmartStock.formatINR(price)}</strong>
+            <span class="block font-tabular text-[11px]">Cost: ${SmartStock.formatINR(cost)}</span>
+          </div>
+          <div class="ed-well p-2.5">
+            <span class="block text-[10px] uppercase tracking-wider">Gross Margin / Asset</span>
+            <strong class="font-tabular text-sm" style="color:var(--accent-primary);">${marginPct}%</strong>
+            <span class="block font-tabular text-[11px]">Val: ${SmartStock.formatINR(val)}</span>
+          </div>
+        </div>
+
+        <div class="tech-only ed-well p-2.5 font-tabular text-[11px] space-y-1">
+          <div>XYZ / Class: <strong>${e(p.xyz_class || 'Y')}</strong> • Lead Time Proxy: <strong>4d</strong></div>
+          <div>ROP Gap: <strong>${stock - rop} units</strong></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button type="button" onclick="SmartStock.updateStock('${attrId}', -1)" class="ed-btn-secondary py-2 text-xs">-1 Sell</button>
+          <button type="button" onclick="SmartStock.updateStock('${attrId}', 10)" class="ed-btn-primary py-2 text-xs">+10 Restock</button>
+          <button type="button" onclick="SmartStock.openEditProductModal('${attrId}')" class="ed-btn-secondary py-2 text-xs">Edit SKU</button>
+          <button type="button" onclick="SmartStock.deleteProduct('${attrId}')" class="ed-btn-secondary py-2 text-xs" style="color:var(--status-danger);">Delete</button>
+        </div>
+      `;
+    };
+
+    window.SmartStockPageRender = function(products) {
+      window.SmartStockCatalogCache = Array.isArray(products) ? products : [];
+      document.querySelectorAll('#inventory-list .inventory-card').forEach(function(card) {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function(ev) {
+          if (ev.target && ev.target.closest('button, input, label')) return;
+          const pid = card.getAttribute('data-id');
+          window.inspectCatalogItem(pid);
+        });
+      });
+      if (window.SmartStockCatalogCache.length > 0) {
+        window.inspectCatalogItem(window.SmartStockCatalogCache[0].id);
+      } else {
+        window.inspectCatalogItem(null);
+      }
+    };
+  </script>
+</body>
+</html>

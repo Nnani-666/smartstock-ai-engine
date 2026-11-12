@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartStock — Conversational Store Advisor</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            surface: "#faf8f5",
+            "on-surface": "#161d1a",
+            "on-surface-variant": "#525c57",
+            outline: "#76807b",
+            primary: "#0f382b",
+            "on-primary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2efe9",
+            "surface-container": "#ece8e0",
+            "surface-container-high": "#e4dfd5",
+            secondary: "#a84a28",
+            "on-secondary": "#ffffff",
+            "secondary-fixed": "#fbe5dc",
+            "on-secondary-fixed": "#511d0a",
+            error: "#b3261e"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="../editorial-theme.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('smartstock_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../smartstock-bridge.js"></script>
+  <script src="../editorial-shell.js"></script>
+</head>
+<body class="min-h-screen antialiased">
+
+  <div class="ed-layout">
+    <main class="ed-main-shell px-4 md:px-7">
+      <div class="max-w-7xl w-full mx-auto py-6">
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+          <!-- Left 4 Cols: Store Grounding & Quick Prompts -->
+          <aside class="lg:col-span-4 space-y-4">
+            <div class="ed-sheet p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="ed-kicker">Store Context Snapshot</span>
+                <span class="ed-badge ed-badge-success">Server Proxy</span>
+              </div>
+              <h2 class="font-editorial text-xl font-semibold" style="color:var(--text-primary);">Grounded Store Advisor</h2>
+              <p class="biz-only text-xs" style="color:var(--text-secondary);">Ask questions about low stock, reorder urgency, cashflow, or supplier orders in plain English.</p>
+              <p class="tech-only text-[11.5px] font-tabular" style="color:var(--text-secondary);">Authenticated proxy POST /api/v1/ai/assistant • Prompt hydrated exclusively from tenant SQLite inventory &amp; sales rows.</p>
+
+              <div class="grid grid-cols-3 gap-2 pt-2 text-center">
+                <div class="ed-well p-2">
+                  <strong id="ast-ctx-skus" class="font-tabular text-base font-bold block" style="color:var(--text-primary);">0</strong>
+                  <span class="text-[10.5px]" style="color:var(--text-secondary);">SKUs</span>
+                </div>
+                <div class="ed-well p-2">
+                  <strong id="ast-ctx-low" class="font-tabular text-base font-bold block" style="color:var(--accent-secondary);">0</strong>
+                  <span class="text-[10.5px]" style="color:var(--text-secondary);">Low / Out</span>
+                </div>
+                <div class="ed-well p-2">
+                  <strong id="ast-ctx-pos" class="font-tabular text-base font-bold block" style="color:var(--accent-primary);">0</strong>
+                  <span class="text-[10.5px]" style="color:var(--text-secondary);">Open POs</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="ed-sheet p-5 space-y-2.5">
+              <span class="ed-kicker block">Quick Prompts</span>
+              <button type="button" onclick="askPreset('What items should I reorder urgently today?')" class="w-full text-left ed-well p-3 text-xs font-medium hover:border-emerald-700 cursor-pointer transition-colors" style="color:var(--text-primary);">
+                "What items should I reorder urgently today?"
+              </button>
+              <button type="button" onclick="askPreset('Summarize my recent sales and revenue performance.')" class="w-full text-left ed-well p-3 text-xs font-medium hover:border-emerald-700 cursor-pointer transition-colors" style="color:var(--text-primary);">
+                "Summarize my recent sales &amp; revenue performance."
+              </button>
+              <button type="button" onclick="askPreset('What purchase orders are currently pending delivery?')" class="w-full text-left ed-well p-3 text-xs font-medium hover:border-emerald-700 cursor-pointer transition-colors" style="color:var(--text-primary);">
+                "What purchase orders are pending supplier delivery?"
+              </button>
+              <button type="button" onclick="askPreset('Give me 3 action steps to reduce stockouts this week.')" class="w-full text-left ed-well p-3 text-xs font-medium hover:border-emerald-700 cursor-pointer transition-colors" style="color:var(--text-primary);">
+                "Give me 3 action steps to reduce stockouts this week."
+              </button>
+            </div>
+          </aside>
+
+          <!-- Right 8 Cols: Conversational Workspace -->
+          <section class="lg:col-span-8 ed-sheet flex flex-col min-h-[540px] max-h-[78vh]">
+            <div class="px-5 py-4 border-b ed-rule flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:var(--accent-primary-soft); color:var(--accent-primary);">
+                  <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+                </div>
+                <div>
+                  <h3 class="font-editorial text-lg font-semibold leading-tight" style="color:var(--text-primary);">SmartStock Advisor</h3>
+                  <span class="text-[11px]" style="color:var(--text-secondary);">Powered by Gemini server proxy with deterministic offline fallback</span>
+                </div>
+              </div>
+              <button type="button" onclick="resetThread()" class="ed-btn-secondary py-1.5 px-3 text-xs">Clear Chat</button>
+            </div>
+
+            <div id="ast-messages" class="flex-1 overflow-y-auto p-5 space-y-4"></div>
+
+            <form id="assistant-form" onsubmit="submitAssistantPrompt(event)" class="p-4 border-t ed-rule flex items-center gap-2.5" style="background:var(--bg-subtle);">
+              <input id="ast-input" type="text" required placeholder="Ask about stockouts, sales margin, purchase orders, or forecast trends..."
+                class="ed-input flex-1 h-11 text-sm">
+              <button id="ast-send-btn" type="submit" class="ed-btn-primary h-11 px-5 shrink-0">
+                <span class="material-symbols-outlined text-[18px]">send</span>
+                <span class="hidden sm:inline">Ask Advisor</span>
+              </button>
+            </form>
+          </section>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    SmartStockEditorial.renderShell({
+      pageId: 'assistant',
+      title: 'Smart Assistant',
+      subtitle: 'Store-grounded conversational decision advisor'
+    });
+
+    const thread = [
+      {
+        role: 'assistant',
+        source: 'system_greeting',
+        text: 'Namaste! I am grounded in your active store catalog, POS sales, and purchase orders. Select a quick prompt on the left or type any inventory question below.'
+      }
+    ];
+
+    function renderThread() {
+      const box = document.getElementById('ast-messages');
+      if (!box) return;
+      const e = SmartStock.escapeHtml.bind(SmartStock);
+      box.innerHTML = thread.map(function(msg) {
+        const isUser = msg.role === 'user';
+        if (isUser) {
+          return `
+            <div class="flex justify-end">
+              <div class="max-w-[82%] px-4 py-3 rounded-xl text-sm leading-relaxed" style="background:var(--accent-primary); color:var(--accent-primary-ink);">
+                ${e(msg.text)}
+              </div>
+            </div>
+          `;
+        }
+        const srcLabel = (msg.source === 'gemini-2.5-flash' || msg.source === 'gemini_live')
+          ? 'Gemini Server Proxy'
+          : (msg.source === 'local_heuristic' ? 'Local Store Engine' : (msg.source === 'rate_limit' ? 'Rate Limit Guard' : 'Advisor Ready'));
+        return `
+          <div class="flex justify-start">
+            <div class="max-w-[88%] ed-well p-4 space-y-2">
+              <div class="flex items-center justify-between gap-3">
+                <span class="ed-kicker text-[10px]">SmartStock Advisor</span>
+                <span class="ed-badge ed-badge-neutral text-[9.5px]">${e(srcLabel)}</span>
+              </div>
+              <p class="text-[13.5px] leading-relaxed whitespace-pre-wrap" style="color:var(--text-primary);">${e(msg.text)}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function resetThread() {
+      thread.splice(1);
+      renderThread();
+    }
+
+    async function askPreset(q) {
+      const inp = document.getElementById('ast-input');
+      if (inp) inp.value = '';
+      await sendPromptText(q);
+    }
+
+    async function submitAssistantPrompt(ev) {
+      ev.preventDefault();
+      const inp = document.getElementById('ast-input');
+      const val = (inp?.value || '').trim();
+      if (!val) return;
+      inp.value = '';
+      await sendPromptText(val);
+    }
+
+    async function sendPromptText(text) {
+      thread.push({ role: 'user', text });
+      renderThread();
+
+      const btn = document.getElementById('ast-send-btn');
+      if (btn) btn.disabled = true;
+
+      try {
+        const res = await SmartStock.sendAssistantMessage(text);
+        thread.push({
+          role: 'assistant',
+          source: res?.source || 'local_heuristic',
+          text: res?.analysis || res?.reply || 'Unable to generate advisor response.'
+        });
+      } catch (err) {
+        thread.push({
+          role: 'assistant',
+          source: 'error',
+          text: 'Advisor error: ' + (err.message || 'Please try again.')
+        });
+      } finally {
+        if (btn) btn.disabled = false;
+        renderThread();
+      }
+    }
+
+    window.SmartStockPageRender = function(products) {
+      const list = Array.isArray(products) ? products : [];
+      const lowOut = list.filter(function(p) { return (Number(p.stock_on_hand) || 0) <= (Number(p.reorder_point) || 10); }).length;
+      const openPOs = (SmartStock.getPurchaseOrders ? SmartStock.getPurchaseOrders() : []).filter(function(po) {
+        return po.status === 'ordered' || po.status === 'in_transit';
+      }).length;
+      document.getElementById('ast-ctx-skus').textContent = String(list.length);
+      document.getElementById('ast-ctx-low').textContent = String(lowOut);
+      document.getElementById('ast-ctx-pos').textContent = String(openPOs);
+      renderThread();
+    };
+  </script>
+</body>
+</html>

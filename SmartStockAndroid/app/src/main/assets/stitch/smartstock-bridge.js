@@ -219,7 +219,7 @@
             const activeRange = rangeLabel || this.getActiveDateRange();
             const todayStr = this.getBusinessDate();
 
-            if (activeRange === 'Today (Live)' || !activeRange) {
+            if (activeRange === 'Today (Live)' || activeRange === 'Today' || !activeRange) {
                 return allSales.filter(s => {
                     const sDate = s.date || this.getBusinessDate(s.timestamp);
                     return sDate === todayStr;
@@ -699,18 +699,15 @@
                 category_name: productData.category_name || 'Groceries & Household'
             };
 
-            const local = await this.getProducts();
-            local.unshift(newProduct);
-            this.saveProducts(local);
-
-            // Sync to backend if available
-            try {
-                const token = this.getAuthToken();
-                if (token) {
-                    fetch(`${API_BASE_URL}/api/v1/user/products`, {
+            // Sync to backend first if authenticated
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/v1/user/products`, {
                         method: 'POST',
                         headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({
+                            id: newProduct.id,
                             name: newProduct.name,
                             sku: newProduct.sku,
                             unit_cost: newProduct.unit_cost,
@@ -719,11 +716,27 @@
                             reorder_point: newProduct.reorder_point,
                             safety_stock: newProduct.safety_stock,
                             lead_time_days: newProduct.lead_time_days,
+                            supplier: productData.supplier || 'Metro Wholesale',
                             category_name: newProduct.category_name
                         })
-                    }).catch(e => console.warn('Backend product add sync error:', e));
+                    });
+                    if (!resp.ok) {
+                        const err = await resp.json().catch(() => ({}));
+                        this.showToast(err.detail || 'Could not save product to server', 'error');
+                        return null;
+                    }
+                    const serverProd = await resp.json();
+                    if (serverProd && serverProd.id) {
+                        newProduct.id = serverProd.id;
+                    }
+                } catch (e) {
+                    console.warn('Backend unreachable; saved to local catalog:', e);
                 }
-            } catch (e) {}
+            }
+
+            const local = await this.getProducts();
+            local.unshift(newProduct);
+            this.saveProducts(local);
 
             this.showToast(`Product added: ${newProduct.name}`, 'success');
             return newProduct;
@@ -848,6 +861,24 @@
                 ok = true;
             }
             if (!ok) return;
+
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/v1/user/products/${encodeURIComponent(productId)}`, {
+                        method: 'DELETE',
+                        headers: this.getAuthHeaders()
+                    });
+                    if (!resp.ok && resp.status !== 404) {
+                        const err = await resp.json().catch(() => ({}));
+                        this.showToast(err.detail || 'Could not delete product from server', 'error');
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Backend delete unavailable; updating local catalog:', e);
+                }
+            }
+
             const local = (await this.getProducts()).filter(p => p.id !== productId && String(p.id) !== String(productId));
             this.saveProducts(local);
             this.showToast('Product removed from inventory.', 'info');
@@ -1571,7 +1602,10 @@
             if (priceInput) priceInput.value = prod.unit_price || 0;
             if (costInput) costInput.value = prod.unit_cost || Math.round((prod.unit_price || 0) * 0.85);
             if (stockInput) stockInput.value = prod.stock_on_hand || 0;
-            if (reorderInput) reorderInput.value = Math.min(30, Number(prod.reorder_point) || 10);
+            if (reorderInput) {
+                const rawRop = Number(prod.reorder_point);
+                reorderInput.value = (prod.reorder_point !== undefined && prod.reorder_point !== null && !isNaN(rawRop)) ? rawRop : 10;
+            }
             if (catInput) catInput.value = prod.category_name || 'Groceries & Household';
 
             modal.classList.remove('hidden');
@@ -1589,21 +1623,52 @@
         async saveEditProduct() {
             const id = document.getElementById('edit-prod-id')?.value;
             const name = document.getElementById('edit-item-name')?.value.trim();
-            const price = parseFloat(document.getElementById('edit-item-price')?.value) || 0;
-            const cost = parseFloat(document.getElementById('edit-item-cost')?.value) || Math.round(price * 0.85);
-            const stock = parseInt(document.getElementById('edit-item-stock')?.value, 10) || 0;
-            const reorder = Math.min(30, Math.max(1, parseInt(document.getElementById('edit-item-reorder')?.value, 10) || 10));
+            const rawPrice = parseFloat(document.getElementById('edit-item-price')?.value);
+            const price = (!isNaN(rawPrice) && rawPrice >= 0) ? rawPrice : 0;
+            const rawCost = parseFloat(document.getElementById('edit-item-cost')?.value);
+            const cost = (!isNaN(rawCost) && rawCost >= 0) ? rawCost : Math.round(price * 0.85);
+            const rawStock = parseInt(document.getElementById('edit-item-stock')?.value, 10);
+            const stock = (!isNaN(rawStock) && rawStock >= 0) ? rawStock : 0;
+            const rawRop = parseInt(document.getElementById('edit-item-reorder')?.value, 10);
+            const reorder = (!isNaN(rawRop) && rawRop >= 0) ? rawRop : 10;
             const category = document.getElementById('edit-item-category')?.value || 'Groceries & Household';
 
             const products = await this.getProducts();
             const prod = products.find(p => String(p.id) === String(id));
             if (prod) {
-                prod.name = name || prod.name;
-                prod.unit_price = price;
-                prod.unit_cost = cost;
-                prod.stock_on_hand = Math.max(0, stock);
-                prod.reorder_point = reorder;
-                prod.category_name = category;
+                const updatedPayload = {
+                    name: name || prod.name,
+                    unit_price: price,
+                    unit_cost: cost,
+                    stock_on_hand: stock,
+                    reorder_point: reorder,
+                    category_name: category
+                };
+
+                const token = this.getAuthToken();
+                if (token) {
+                    try {
+                        const resp = await fetch(`${API_BASE_URL}/api/v1/user/products/${encodeURIComponent(id)}`, {
+                            method: 'PUT',
+                            headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                            body: JSON.stringify(updatedPayload)
+                        });
+                        if (!resp.ok && resp.status !== 404) {
+                            const err = await resp.json().catch(() => ({}));
+                            this.showToast(err.detail || 'Could not update product on server', 'error');
+                            return;
+                        }
+                    } catch (e) {
+                        console.warn('Backend update unavailable; saving locally:', e);
+                    }
+                }
+
+                prod.name = updatedPayload.name;
+                prod.unit_price = updatedPayload.unit_price;
+                prod.unit_cost = updatedPayload.unit_cost;
+                prod.stock_on_hand = updatedPayload.stock_on_hand;
+                prod.reorder_point = updatedPayload.reorder_point;
+                prod.category_name = updatedPayload.category_name;
                 prod.status = prod.stock_on_hand <= 0 ? 'out_of_stock' : (prod.stock_on_hand <= reorder ? 'low_stock' : 'active');
 
                 this.saveProducts(products);
@@ -2127,6 +2192,7 @@
                         method: 'POST',
                         headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({
+                            id: newPO.id,
                             po_number: poNumber,
                             supplier: newPO.supplier,
                             status: newPO.status,
@@ -2410,6 +2476,7 @@
                         method: 'POST',
                         headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify({
+                            id: newPO.id,
                             po_number: poNumber,
                             supplier: newPO.supplier,
                             status: newPO.status,
@@ -2615,6 +2682,33 @@
                 notes: 'Manual Purchase Order'
             };
 
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/v1/user/purchase-orders`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({
+                            id: newPO.id,
+                            po_number: poNumber,
+                            supplier: newPO.supplier,
+                            status: newPO.status,
+                            total_amount: newPO.total_amount,
+                            items: newPO.items
+                        })
+                    });
+                    if (!resp.ok) {
+                        const err = await resp.json().catch(() => ({}));
+                        this.showToast(err.detail || 'Failed to save purchase order to server', 'error');
+                        return;
+                    }
+                    const serverPo = await resp.json();
+                    if (serverPo && serverPo.id) newPO.id = serverPo.id;
+                } catch (e) {
+                    console.warn('Backend PO submit unavailable; saving locally:', e);
+                }
+            }
+
             const products = await this.getProducts();
             const p = products.find(prod => String(prod.id) === String(productId));
             if (p) {
@@ -2628,6 +2722,37 @@
             this.closeNewPOModal();
             this.showToast(`Purchase Order ${poNumber} issued to ${supplier}!`, 'success');
             localStorage.setItem('smartstock_po_filter', 'ordered');
+            await this.bindLivePageData();
+        },
+
+        async updatePOStatus(poId, newStatus) {
+            const purchaseOrders = this.getPurchaseOrders();
+            const po = purchaseOrders.find(o => String(o.id) === String(poId) || o.po_number === poId);
+            if (!po) return;
+            if (po.status === 'completed') {
+                this.showToast('Cannot change status of a completed PO.', 'warning');
+                return;
+            }
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/v1/user/purchase-orders/${encodeURIComponent(po.id)}/status`, {
+                        method: 'PATCH',
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({ status: newStatus })
+                    });
+                    if (!resp.ok && resp.status !== 404) {
+                        const err = await resp.json().catch(() => ({}));
+                        this.showToast(err.detail || 'Could not update PO status', 'error');
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Backend PO status update offline:', e);
+                }
+            }
+            po.status = newStatus;
+            this.savePurchaseOrders(purchaseOrders);
+            this.showToast(`Order ${po.po_number} marked as ${newStatus.replace('_', ' ')}`, 'success');
             await this.bindLivePageData();
         },
 
@@ -2857,7 +2982,7 @@
                         ${aiData.critical_risks.slice(0, 2).map(r => `
                             <div class="p-2 rounded-lg bg-error-container/20 border border-error/10 text-xs flex items-start gap-1.5">
                                 <span class="material-symbols-outlined text-error text-[15px] shrink-0 mt-0.5">warning</span>
-                                <span class="text-on-surface leading-snug">${r}</span>
+                                <span class="text-on-surface leading-snug">${this.escapeHtml(r)}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -2872,7 +2997,7 @@
                         ${aiData.recommendations.slice(0, 2).map(rec => `
                             <div class="p-2 rounded-lg bg-surface-container-low text-xs flex items-start gap-1.5">
                                 <span class="material-symbols-outlined text-secondary text-[15px] shrink-0 mt-0.5">check_circle</span>
-                                <span class="text-on-surface leading-snug">${rec}</span>
+                                <span class="text-on-surface leading-snug">${this.escapeHtml(rec)}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -3170,7 +3295,7 @@
                 emptyMsg.style.display = 'block';
                 emptyMsg.innerHTML = `
                     <span class="material-symbols-outlined text-[28px] text-outline block">filter_alt_off</span>
-                    <p class="font-bold text-sm text-on-surface">No products match "${filter.toUpperCase()}"</p>
+                    <p class="font-bold text-sm text-on-surface">No products match "${this.escapeHtml(filter.toUpperCase())}"</p>
                     <p>Try switching to "All" or choosing another category filter.</p>
                     <button onclick="SmartStock.filterInventory('all')" class="mt-2 px-3 py-1.5 bg-primary text-on-primary rounded-lg text-xs font-semibold active:scale-95 transition-all">
                         Show All Products
@@ -3269,7 +3394,18 @@
             const count = checkedBoxes.length;
             if (!confirm(`Delete ${count} selected item${count === 1 ? '' : 's'} from inventory?`)) return;
 
-            const ids = checkedBoxes.map(cb => cb.getAttribute('data-id'));
+            const ids = checkedBoxes.map(cb => cb.getAttribute('data-id')).filter(Boolean);
+            const token = this.getAuthToken();
+            if (token) {
+                for (const id of ids) {
+                    try {
+                        await fetch(`${API_BASE_URL}/api/v1/user/products/${encodeURIComponent(id)}`, {
+                            method: 'DELETE',
+                            headers: this.getAuthHeaders()
+                        });
+                    } catch (e) {}
+                }
+            }
             const client = this.client();
             if (client) {
                 try {
@@ -3286,13 +3422,33 @@
         async bulkAddStock(qty = 5) {
             const checkedBoxes = Array.from(document.querySelectorAll('.item-checkbox:checked'));
             if (checkedBoxes.length === 0) return;
-            const ids = checkedBoxes.map(cb => cb.getAttribute('data-id'));
-            const products = await this.getProducts();
+            const ids = checkedBoxes.map(cb => cb.getAttribute('data-id')).filter(Boolean);
+            if (ids.length === 0) return;
 
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/v1/user/products/bulk-stock`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({ product_ids: ids, delta: qty })
+                    });
+                    if (!resp.ok) {
+                        const err = await resp.json().catch(() => ({}));
+                        this.showToast(err.detail || 'Could not update stock on server', 'error');
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Backend bulk stock unavailable; updating locally:', e);
+                }
+            }
+
+            const products = await this.getProducts();
             products.forEach(p => {
                 if (ids.includes(String(p.id))) {
-                    p.stock_on_hand = (Number(p.stock_on_hand) || 0) + qty;
-                    p.status = p.stock_on_hand > (p.reorder_point || 5) ? 'active' : 'low_stock';
+                    p.stock_on_hand = Math.max(0, (Number(p.stock_on_hand) || 0) + qty);
+                    const rop = (p.reorder_point !== undefined && p.reorder_point !== null) ? Number(p.reorder_point) : 5;
+                    p.status = p.stock_on_hand <= 0 ? 'out_of_stock' : (p.stock_on_hand <= rop ? 'low_stock' : 'active');
                 }
             });
 
@@ -3891,33 +4047,25 @@
                 if (path === 'overview') {
                     target = '02_overview.html';
                 } else if (path === 'sales') {
-                    target = '#';
-                    el.onclick = (e) => {
-                        e.preventDefault();
-                        SmartStock.openSalesModal();
-                        const drawer = document.getElementById('side-drawer');
-                        const backdrop = document.getElementById('drawer-backdrop');
-                        if (drawer) drawer.classList.remove('open');
-                        if (backdrop) backdrop.classList.remove('open');
-                    };
+                    target = '07_sales.html';
                 } else if (path === 'inventory' || path === 'scan-barcode') {
                     target = '03_inventory.html';
                 } else if (path === 'forecasts') {
                     target = '04_forecasts.html';
+                } else if (path === 'anomalies') {
+                    target = '08_anomalies.html';
+                } else if (path === 'segmentation') {
+                    target = '09_segmentation.html';
+                } else if (path === 'assistant') {
+                    target = '10_assistant.html';
+                } else if (path === 'analytics') {
+                    target = '11_analytics.html';
                 } else if (path === 'ai-insights-&-replenishment' || path === 'ai-replenishment') {
                     target = '05_replenishment.html';
                 } else if (path === 'orders' || path === 'purchase-orders') {
                     target = '05_purchase_orders.html';
                 } else if (path === 'suppliers') {
-                    target = '#';
-                    el.onclick = (e) => {
-                        e.preventDefault();
-                        SmartStock.openSuppliersModal();
-                        const drawer = document.getElementById('side-drawer');
-                        const backdrop = document.getElementById('drawer-backdrop');
-                        if (drawer) drawer.classList.remove('open');
-                        if (backdrop) backdrop.classList.remove('open');
-                    };
+                    target = '12_suppliers.html';
                 } else if (path === 'settings' || path === 'help-&-support') {
                     target = '06_settings.html';
                 } else if (path === 'login') {
@@ -4257,11 +4405,12 @@
                     restockSub.textContent = lowStockCount === 0 ? '0 critical stockouts' : `${lowStockCount} below safety stock`;
                 }
 
-                if (invValCards && invValCards[3]) {
+                const grossProfitEl = document.getElementById('overview-gross-profit') || (invValCards && invValCards[3]);
+                if (grossProfitEl) {
                     if (summary.costAvailable) {
-                        invValCards[3].textContent = SmartStock.formatINR(summary.grossProfit);
+                        grossProfitEl.textContent = SmartStock.formatINR(summary.grossProfit);
                     } else {
-                        invValCards[3].textContent = 'Unavailable';
+                        grossProfitEl.textContent = 'Unavailable';
                     }
                 }
                 const slowTied = document.querySelector('.text-secondary.font-semibold');
@@ -4357,8 +4506,8 @@
                 SmartStock.renderFloorActivity(salesList, purchaseOrders, products);
             }
 
-            // 2. Forecasts Page Binding
-            if (currentPage === '04_forecasts.html') {
+            // 2. Forecasts Page Binding (skip legacy DOM hijack if Editorial #fc-main-svg is active)
+            if (currentPage === '04_forecasts.html' && !document.getElementById('fc-main-svg')) {
                 if (products.length === 0) {
                     const forecastMain = document.querySelector('main .space-y-space-md');
                     if (forecastMain) {
@@ -4469,7 +4618,7 @@
                 const totalCount = purchaseOrders.length + draftCount;
 
                 const poMain = document.querySelector('main .space-y-space-md');
-                if (!poMain) return;
+                if (poMain) {
 
                 // Build Tabs Bar
                 const tabs = [
@@ -4599,7 +4748,7 @@
                         <div class="space-y-space-sm">
                             <div class="flex items-center justify-between">
                                 <span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider font-semibold">
-                                    ${activeFilter === 'all' ? 'Purchase Orders Ledger' : activeFilter.toUpperCase() + ' ORDERS'} (${filteredOrders.length})
+                                    ${activeFilter === 'all' ? 'Purchase Orders Ledger' : this.escapeHtml(activeFilter.toUpperCase()) + ' ORDERS'} (${filteredOrders.length})
                                 </span>
                             </div>
                             <div class="space-y-3">
@@ -4693,11 +4842,11 @@
                     ordersListHtml = `
                         <div class="bg-surface-container-lowest rounded-2xl p-6 text-center border border-outline/10 space-y-2">
                             <span class="material-symbols-outlined text-[32px] text-outline">receipt_long</span>
-                            <h3 class="font-bold text-sm text-on-surface">No ${activeFilter.toUpperCase()} Orders Found</h3>
+                            <h3 class="font-bold text-sm text-on-surface">No ${this.escapeHtml(activeFilter.toUpperCase())} Orders Found</h3>
                             <p class="text-xs text-on-surface-variant max-w-sm mx-auto">
                                 ${activeFilter === 'all' 
                                     ? 'No purchase orders have been issued yet. Issue a replenishment draft or create a New PO.' 
-                                    : 'There are currently no orders in ' + activeFilter + ' status.'}
+                                    : 'There are currently no orders in ' + this.escapeHtml(activeFilter) + ' status.'}
                             </p>
                         </div>
                     `;
@@ -4738,8 +4887,8 @@
                     return;
                 }
 
-                // Assemble complete view
-                poMain.innerHTML = `
+                    // Assemble complete view
+                    poMain.innerHTML = `
                     <div class="flex flex-col gap-space-sm">
                         <div class="flex items-center justify-between gap-space-sm">
                             <div class="flex items-center gap-space-xs">
@@ -4757,6 +4906,7 @@
                     ${draftSectionHtml}
                     ${ordersListHtml}
                 `;
+                }
             }
 
             // 4. Settings Page Binding
@@ -4833,7 +4983,7 @@
             // 5. Inventory Page Binding
             if (currentPage === '03_inventory.html') {
                 const inventoryList = document.getElementById('inventory-list');
-                if (!inventoryList) return;
+                if (inventoryList) {
 
                 if (products.length === 0) {
                     inventoryList.innerHTML = `
@@ -4856,7 +5006,7 @@
                 } else {
                     inventoryList.innerHTML = products.map(p => {
                         const stock = Number(p.stock_on_hand) || 0;
-                        const rop = Math.min(30, Number(p.reorder_point) || 10);
+                        const rop = (p.reorder_point !== undefined && p.reorder_point !== null && !isNaN(Number(p.reorder_point))) ? Number(p.reorder_point) : 10;
                         const isZero = stock === 0;
                         const isLow = stock <= rop && !isZero;
                         const statusKey = isZero ? 'zero' : (isLow ? 'low' : 'healthy');
@@ -4944,18 +5094,18 @@
                 const countAll = products.length;
                 const countLow = products.filter(p => {
                     const s = Number(p.stock_on_hand) || 0;
-                    const r = Math.min(30, Number(p.reorder_point) || 10);
+                    const r = (p.reorder_point !== undefined && p.reorder_point !== null && !isNaN(Number(p.reorder_point))) ? Number(p.reorder_point) : 10;
                     return s <= r && s > 0;
                 }).length;
                 const countZero = products.filter(p => (Number(p.stock_on_hand) || 0) === 0).length;
                 const countHealthy = products.filter(p => {
                     const s = Number(p.stock_on_hand) || 0;
-                    const r = Math.min(30, Number(p.reorder_point) || 10);
+                    const r = (p.reorder_point !== undefined && p.reorder_point !== null && !isNaN(Number(p.reorder_point))) ? Number(p.reorder_point) : 10;
                     return s > r;
                 }).length;
                 const countExcess = products.filter(p => {
                     const s = Number(p.stock_on_hand) || 0;
-                    const r = Math.min(30, Number(p.reorder_point) || 10);
+                    const r = (p.reorder_point !== undefined && p.reorder_point !== null && !isNaN(Number(p.reorder_point))) ? Number(p.reorder_point) : 10;
                     return s > r * 3;
                 }).length;
                 const countSlow = products.filter(p => p.xyz_class === 'Z' || (Number(p.stock_on_hand) || 0) > 30).length;
@@ -5006,28 +5156,148 @@
                 // Apply initial active filter if saved
                 const savedFilter = localStorage.getItem('smartstock_inventory_filter') || 'all';
                 SmartStock.filterInventory(savedFilter);
+                }
             }
 
-            // Wire Toolbar Buttons
+            // Update notification badge with live alert count
+            const alertBadgeCount = products.filter(p => (Number(p.stock_on_hand) || 0) <= (Number(p.reorder_point) || 5)).length;
+            document.querySelectorAll('.header-notif-badge').forEach(el => {
+                el.textContent = String(alertBadgeCount);
+                el.style.display = alertBadgeCount > 0 ? 'flex' : 'none';
+            });
+
+            // Wire Toolbar Buttons safely (skip form submits and explicit custom handlers)
             document.querySelectorAll('button, a').forEach(el => {
+                if (el.closest('form') || el.hasAttribute('data-custom-action')) return;
                 const text = (el.textContent || '').trim();
                 if (text.includes('Add Item') || text.includes('Add Product')) {
                     el.onclick = (e) => {
                         e.preventDefault();
                         SmartStock.openAddProductModal();
                     };
-                } else if (text.includes('Import') || text.includes('Import CSV')) {
+                } else if (text.includes('Import CSV') || text.includes('Import File')) {
                     el.onclick = (e) => {
                         e.preventDefault();
                         SmartStock.openImportModal();
                     };
-                } else if (text.includes('Export')) {
+                } else if (text === 'Export' || text === 'Export CSV') {
                     el.onclick = (e) => {
                         e.preventDefault();
                         SmartStock.exportCSV(products);
                     };
                 }
             });
+
+            if (typeof window !== 'undefined' && typeof window.SmartStockPageRender === 'function') {
+                await window.SmartStockPageRender(products);
+            }
+        },
+
+        // Analytical & Assistant API Helpers for Phase 2 Screens
+        async fetchBackendMetrics() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/metrics`);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+            return null;
+        },
+
+        async fetchBackendSegmentsSummary() {
+            try {
+                const res = await fetch(`${API_BASE_URL}/segments/summary`);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+            return null;
+        },
+
+        async fetchBackendSkus(filters = {}) {
+            try {
+                const q = new URLSearchParams();
+                Object.entries(filters).forEach(([k, v]) => {
+                    if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
+                });
+                const res = await fetch(`${API_BASE_URL}/skus?${q.toString()}`);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+            return null;
+        },
+
+        async fetchBackendForecast(store = 1, item = 1, horizonDays = 14, granularity = 'daily', model = 'best') {
+            try {
+                const res = await fetch(`${API_BASE_URL}/forecast`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ store, item, horizon_days: horizonDays, granularity, model })
+                });
+                if (res.ok) return await res.json();
+            } catch (e) {}
+            return null;
+        },
+
+        async fetchBackendAnomalies(store = 1, item = 1, method = 'any') {
+            try {
+                const q = new URLSearchParams({ store: String(store), item: String(item), method });
+                const res = await fetch(`${API_BASE_URL}/anomalies?${q.toString()}`);
+                if (res.ok) return await res.json();
+            } catch (e) {}
+            return null;
+        },
+
+        async sendAssistantMessage(promptText) {
+            const products = await this.getProducts();
+            const sales = this.getSales();
+            const orders = this.getPurchaseOrders();
+            const summaryToday = this.getSalesSummary('Today (Live)');
+            const outItems = products.filter(p => (Number(p.stock_on_hand) || 0) <= 0);
+            const lowItems = products.filter(p => (Number(p.stock_on_hand) || 0) > 0 && (Number(p.stock_on_hand) || 0) <= (Number(p.reorder_point) || 5));
+
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    const res = await fetch(`${API_BASE_URL}/api/v1/ai/assistant`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({ prompt: promptText, context_type: 'custom' })
+                    });
+                    if (res.ok) {
+                        return await res.json();
+                    }
+                    if (res.status === 429) {
+                        return { status: 'error', source: 'rate_limit', analysis: 'Rate limit reached (20 requests/min). Please wait a moment before asking again.' };
+                    }
+                } catch (e) {}
+            }
+
+            // Local heuristic scoped strictly to active store catalog
+            const q = (promptText || '').toLowerCase();
+            let reply = '';
+            if (q.includes('reorder') || q.includes('buy') || q.includes('out')) {
+                if (outItems.length + lowItems.length === 0) {
+                    reply = `All ${products.length} catalog items are currently stocked above reorder points. No urgent purchases needed today.`;
+                } else {
+                    const topUrgent = [...outItems, ...lowItems].slice(0, 4).map(p => `${p.name} (${p.stock_on_hand} left, reorder at ${p.reorder_point || 5})`).join('; ');
+                    reply = `${outItems.length} out-of-stock and ${lowItems.length} low-stock items require attention: ${topUrgent}. Open Replenishment Engine to dispatch draft purchase orders.`;
+                }
+            } else if (q.includes('sale') || q.includes('revenue') || q.includes('profit')) {
+                reply = `Today's recorded revenue is ${this.formatINR(summaryToday.revenue)} across ${summaryToday.count} transactions (${summaryToday.totalUnits} units). Total historical sales logged: ${sales.length}.`;
+            } else if (q.includes('order') || q.includes('po') || q.includes('supplier')) {
+                const pending = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+                reply = `You currently have ${pending.length} active purchase order(s) awaiting delivery and ${orders.length} total recorded orders.`;
+            } else {
+                reply = `Store Catalog: ${products.length} SKUs (${outItems.length} out of stock, ${lowItems.length} low stock). Today's sales: ${this.formatINR(summaryToday.revenue)}. Ask about reorders, daily revenue, or pending supplier deliveries.`;
+            }
+
+            return {
+                status: 'ok',
+                source: 'local_heuristic',
+                analysis: reply,
+                metrics: {
+                    total_products: products.length,
+                    out_of_stock: outItems.length,
+                    low_stock: lowItems.length,
+                    recent_sales_amount: summaryToday.revenue
+                }
+            };
         }
     };
 

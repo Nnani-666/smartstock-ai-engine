@@ -1,111 +1,316 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><meta content="mobile_tab" name="shell-type"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;background-color:#f6faf5;}body{overscroll-behavior:none;color:#181d1a;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}#side-drawer.open{transform:translateX(0);}#drawer-backdrop.open{opacity:1;pointer-events:auto;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "surface-variant": "#dfe4df", "tertiary-fixed": "#dae5da", "on-secondary": "#ffffff", "on-tertiary": "#ffffff", "on-tertiary-container": "#a6b1a7", "surface": "#f6faf5", "on-secondary-container": "#783920", "tertiary-fixed-dim": "#bec9bf", "on-surface": "#181d1a", "on-primary-fixed-variant": "#294d42", "on-surface-variant": "#414845", "on-primary": "#ffffff", "inverse-primary": "#a8cfc0", "surface-bright": "#f6faf5", "on-secondary-fixed": "#380d00", "primary-fixed": "#c3ebdc", "inverse-surface": "#2d322e", "on-error-container": "#93000a", "background": "#f6faf5", "primary-fixed-dim": "#a8cfc0", "secondary-fixed-dim": "#ffb59a", "surface-dim": "#d7dbd6", "outline": "#717975", "tertiary-container": "#3a443c", "secondary-container": "#fea685", "on-background": "#181d1a", "surface-container": "#ebefea", "on-primary-container": "#90b6a8", "surface-container-high": "#e5e9e4", "secondary-fixed": "#ffdbcf", "error": "#ba1a1a", "on-primary-fixed": "#002018", "tertiary": "#242e27", "secondary": "#904c31", "surface-container-highest": "#dfe4df", "on-tertiary-fixed": "#141e17", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#73351c", "inverse-on-surface": "#edf2ed", "primary": "#0b3127", "primary-container": "#24483d", "on-tertiary-fixed-variant": "#3f4941", "surface-container-low": "#f0f5f0", "outline-variant": "#c1c8c4", "surface-tint": "#416559", "surface-container-lowest": "#ffffff", "on-error": "#ffffff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "margin": "1rem", "gutter-desktop": "1.5rem", "margin-desktop": "2rem", "gutter": "1rem", "space-xs": "0.25rem", "space-md": "1rem", "space-2xl": "3rem", "space-lg": "1.5rem", "space-xl": "2rem", "margin-mobile": "1rem", "gutter-mobile": "0.75rem", "space-sm": "0.5rem" }, "fontFamily": { "headline-lg-mobile": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "display-lg": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "headline-lg": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "display-lg-mobile": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "code-md": ["JetBrains Mono"], "body-md": ["Hanken Grotesk"], "label-sm": ["Hanken Grotesk"], "code-sm": ["JetBrains Mono"], "body-lg": ["Hanken Grotesk"], "body-sm": ["Hanken Grotesk"], "label-lg": ["Hanken Grotesk"], "headline-sm": ["-apple-system", "BlinkMacSystemFont", "sans-serif"], "label-md": ["Hanken Grotesk"], "headline-md": ["-apple-system", "BlinkMacSystemFont", "sans-serif"] }, "fontSize": { "headline-lg-mobile": ["22px", {"lineHeight": "30px", "fontWeight": "600"}], "display-lg": ["36px", {"lineHeight": "44px", "fontWeight": "600"}], "headline-lg": ["28px", {"lineHeight": "36px", "fontWeight": "600"}], "display-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}], "code-md": ["13px", {"lineHeight": "18px", "fontWeight": "500"}], "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}], "label-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}], "code-sm": ["11px", {"lineHeight": "14px", "fontWeight": "500"}], "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "body-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}], "label-lg": ["14px", {"lineHeight": "20px", "fontWeight": "600"}], "headline-sm": ["18px", {"lineHeight": "26px", "fontWeight": "500"}], "label-md": ["12px", {"lineHeight": "16px", "fontWeight": "500"}], "headline-md": ["22px", {"lineHeight": "30px", "fontWeight": "500"}] } } } };</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SmartStock — Procurement &amp; Receiving Desk</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            surface: "#faf8f5",
+            "on-surface": "#161d1a",
+            "on-surface-variant": "#525c57",
+            outline: "#76807b",
+            primary: "#0f382b",
+            "on-primary": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2efe9",
+            "surface-container": "#ece8e0",
+            "surface-container-high": "#e4dfd5",
+            secondary: "#a84a28",
+            "on-secondary": "#ffffff",
+            "secondary-fixed": "#fbe5dc",
+            "on-secondary-fixed": "#511d0a",
+            error: "#b3261e"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="../editorial-theme.css">
+  <script>
+    (function() {
+      var t = localStorage.getItem('smartstock_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../smartstock-bridge.js"></script>
+  <script src="../editorial-shell.js"></script>
+</head>
+<body class="min-h-screen antialiased">
 
-</head><body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen"><div class="fixed inset-0 bg-inverse-surface/40 backdrop-blur-[2px] z-50 opacity-0 pointer-events-none transition-opacity duration-300" id="drawer-backdrop" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')"></div><aside class="fixed top-0 left-0 bottom-0 w-[84%] max-w-[320px] bg-surface-container-lowest z-50 transform -translate-x-full transition-transform duration-300 ease-out flex flex-col shadow-[0_20px_40px_-8px_rgba(41,46,43,0.18)] pt-safe pb-safe" id="side-drawer">
-  <div class="p-space-md flex items-center justify-between">
-    <div class="flex items-center gap-space-xs">
-      <img alt="SmartStock Logo" class="h-8 w-8 rounded-lg shadow-xs object-cover" src="../assets/smartstock-logo.svg">
-      <span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold">SmartStock</span>
-    </div>
-    <button class="w-11 h-11 flex items-center justify-center text-on-surface-variant hover:text-on-surface rounded-full cursor-pointer" onclick="document.getElementById('side-drawer').classList.remove('open');document.getElementById('drawer-backdrop').classList.remove('open')">
-      <span class="material-symbols-outlined text-[22px]">close</span>
-    </button>
-  </div>
-  <div class="px-space-md py-space-xs">
-    <div onclick="SmartStock.openStoreSwitcherModal()" class="bg-surface-container-low p-space-sm rounded-lg flex items-center justify-between cursor-pointer active:scale-98 transition-all">
-      <div class="flex items-center gap-space-sm">
-        <span class="material-symbols-outlined text-secondary text-[20px]">storefront</span>
-        <div>
-          <p class="drawer-store-name font-label-md text-label-md text-on-surface font-semibold">My Store</p>
-          <p class="font-label-sm text-label-sm text-on-surface-variant font-code-sm">Merchant Register • Active</p>
-        </div>
-      </div>
-      <span class="material-symbols-outlined text-outline text-[18px]">unfold_more</span>
-    </div>
-  </div>
-  <div class="flex-1 overflow-y-auto px-space-sm py-space-sm space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="overview" href="02_overview.html">
-      <span class="material-symbols-outlined text-[20px]">dashboard</span>
-      <span class="font-label-lg text-label-lg">Overview</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="inventory" href="03_inventory.html">
-      <span class="material-symbols-outlined text-[20px]">inventory_2</span>
-      <span class="font-label-lg text-label-lg">Inventory</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="sales" href="#" onclick="SmartStock.openSalesModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">point_of_sale</span>
-      <span class="font-label-lg text-label-lg">Sales Register</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="orders" href="05_purchase_orders.html">
-      <span class="material-symbols-outlined text-[20px]">receipt_long</span>
-      <span class="font-label-lg text-label-lg">Orders Ledger</span>
-    </a>
-    <a class="flex items-center justify-between px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="ai-insights-&-replenishment" href="05_replenishment.html">
-      <div class="flex items-center gap-space-md">
-        <span class="material-symbols-outlined text-secondary text-[20px]">auto_awesome</span>
-        <span class="font-label-lg text-label-lg">AI Replenishment</span>
-      </div>
-      <span class="bg-secondary text-on-secondary font-label-sm text-label-sm px-2 py-0.5 rounded-full">AI</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="forecasts" href="04_forecasts.html">
-      <span class="material-symbols-outlined text-[20px]">query_stats</span>
-      <span class="font-label-lg text-label-lg">Demand Forecasts</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-primary transition-colors cursor-pointer" data-path="suppliers" href="#" onclick="SmartStock.openSuppliersModal(); document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-backdrop').classList.remove('open'); return false;">
-      <span class="material-symbols-outlined text-[20px]">local_shipping</span>
-      <span class="font-label-lg text-label-lg">Suppliers Directory</span>
-    </a>
-  </div>
-  <div class="p-space-md bg-surface-container-low/60 space-y-space-xs">
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="settings" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">settings</span>
-      <span class="font-label-md text-label-md">Settings</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-on-surface-variant hover:text-primary transition-colors cursor-pointer" data-path="help-&-support" href="06_settings.html">
-      <span class="material-symbols-outlined text-[20px]">help_outline</span>
-      <span class="font-label-md text-label-md">Help &amp; Support</span>
-    </a>
-    <a class="flex items-center gap-space-md px-space-md py-space-sm rounded-lg text-error hover:opacity-80 transition-opacity cursor-pointer" data-path="login" href="01_signin.html" onclick="SmartStock.signOut(); return false;">
-      <span class="material-symbols-outlined text-[20px]">logout</span>
-      <span class="font-label-md text-label-md font-semibold">Sign Out</span>
-    </a>
-  </div>
-</aside><header class="fixed top-0 w-full z-40 bg-surface/85 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] pt-safe"><div class="h-16 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-xs"><button class="w-11 h-11 flex items-center justify-center text-primary rounded-lg active:bg-surface-variant/40" onclick="document.getElementById('side-drawer').classList.add('open');document.getElementById('drawer-backdrop').classList.add('open')"><span class="material-symbols-outlined text-[24px]">menu</span></button><img alt="SmartStock Logo" class="h-8 w-8 rounded-lg shadow-xs object-cover" src="../assets/smartstock-logo.svg"><span class="font-headline-sm text-headline-sm text-primary tracking-tight font-semibold hidden min-[360px]:inline">SmartStock</span></div><div class="flex items-center gap-space-xs"><button onclick="SmartStock.openStoreSwitcherModal()" class="h-9 px-3 bg-surface-container-lowest shadow-xs rounded-full flex items-center gap-1.5 active:scale-95 transition-all"><span class="w-2 h-2 rounded-full bg-surface-tint"></span><span class="font-label-sm text-label-sm text-on-surface font-semibold max-w-[140px] truncate store-pill-name">My Store</span><span class="material-symbols-outlined text-[16px] text-outline">expand_more</span></button><button onclick="SmartStock.openNotificationsModal()" class="relative w-11 h-11 flex items-center justify-center text-on-surface-variant active:scale-95 transition-transform"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2 right-2 min-w-[16px] h-4 px-1 rounded-full bg-secondary text-on-secondary font-code-sm text-[10px] leading-4 flex items-center justify-center font-bold header-notif-badge">1</span></button><a href="06_settings.html" class="w-11 h-11 flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-[0_1px_3px_rgba(41,46,43,0.1)]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2oQa0rK-iaQ1bYCN9Pl2yH1csvapSNVt7-BmWvqXFRMZUiNPvmd7BSG1rGOlergv8pNCWzOioaGcj3P9MnYocAloiiT9mYXnQiZePZlCBQfd9_84JPpVdUZachLZ_eVzaW7QMLJ8ToWCW6mYqkVBk_eT2Ei-9vSk6zhC0LQPIR9nsui2hepL_tlUR05TqLiFekmXRyNLs4UuPjrYAJMtjJPzBCu_1IQRE9yq7WIld5OUvo7lSeZ0"></a></div></div><div class="px-space-md pb-space-xs flex items-center justify-between"><h1 class="font-headline-md text-headline-md text-primary font-bold">Orders Ledger</h1><span class="font-code-sm text-code-sm text-on-surface-variant tracking-wider uppercase">Merchant Mode</span></div></header><main class="flex flex-col relative w-full pt-28 pb-28 bg-surface px-space-md"><div class="flex flex-col w-full space-y-space-md">
-<!-- Status Strip & Quick Action -->
-<div class="flex flex-col gap-space-sm">
-<div class="flex items-center justify-between gap-space-sm">
-<div class="flex items-center gap-space-xs">
-<span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
-<span class="font-headline-sm text-headline-sm text-primary font-semibold">Store Orders & Inwarding</span>
-</div>
-<button onclick="SmartStock.openNewPOModal()" class="h-9 px-space-md bg-primary text-on-primary rounded-lg font-label-md text-label-md flex items-center gap-1.5 shadow-sm active:scale-95 transition-transform cursor-pointer">
-<span class="material-symbols-outlined text-[18px]">add</span>
-<span class="">New PO</span>
-</button>
-</div>
-<!-- Filter Tabs (Horizontal Scrollable) -->
-<div class="flex items-center gap-1.5 overflow-x-auto py-1 no-scrollbar text-nowrap">
-<button class="px-3 py-1.5 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold shadow-sm">All (0)</button>
-<button class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant">Ordered (0)</button>
-<button class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant">In Transit (0)</button>
-<button class="px-3 py-1.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm active:bg-surface-variant">Completed (0)</button>
-</div>
-</div>
-<div class="bg-surface-container-lowest rounded-2xl p-8 text-center border border-outline/10 space-y-3 mt-4">
-  <span class="material-symbols-outlined text-[36px] text-outline">receipt_long</span>
-  <h3 class="font-bold text-base text-on-surface">No Purchase Orders Placed</h3>
-  <p class="text-xs text-on-surface-variant max-w-sm mx-auto">
-    When AI Replenishment generates stock orders or you create a PO, they will appear here. Track shipments and receive products directly into inventory.
-  </p>
-  <div class="flex items-center justify-center gap-2 pt-2">
-    <a href="05_replenishment.html" class="px-4 py-2 bg-primary text-on-primary rounded-lg font-semibold text-xs shadow-xs active:scale-95 transition-all flex items-center gap-1">
-      <span class="material-symbols-outlined text-[16px]">auto_awesome</span>
-      <span>AI Replenishment</span>
-    </a>
-  </div>
-</div>
-</div></main><nav class="fixed bottom-0 w-full z-40 pb-safe bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(41,46,43,0.06)]" data-active-classes="text-primary font-bold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="overview" href="02_overview.html"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-sm text-label-sm">Overview</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="inventory" href="03_inventory.html"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-sm text-label-sm">Stock</span></a><a class="flex flex-col items-center justify-center min-w-[48px] h-11 px-2 -mt-4 text-on-primary" data-path="scan-barcode" href="03_inventory.html"><div class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-[0_4px_12px_rgba(36,72,61,0.28)] active:scale-95 transition-transform"><span class="material-symbols-outlined text-[24px]">barcode_scanner</span></div></a><a aria-current="page" class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 transition-colors text-primary font-bold" data-path="orders" href="05_purchase_orders.html"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-sm text-label-sm">Orders</span></a><a class="flex flex-col items-center justify-center gap-0.5 min-w-[44px] h-11 px-2 text-on-surface-variant transition-colors" data-path="ai-insights-&-replenishment" href="05_replenishment.html"><span class="material-symbols-outlined text-[22px]">auto_awesome</span><span class="font-label-sm text-label-sm">AI Replenish</span></a></div></nav>
+  <div class="ed-layout">
+    <main class="ed-main-shell px-4 md:px-7">
+      <div id="po-main" class="max-w-7xl w-full mx-auto py-6 space-y-6">
 
-</body></html>
+        <!-- Procurement Desk Masthead -->
+        <section class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b ed-rule">
+          <div>
+            <span class="ed-kicker">Supplier Orders &amp; Inward Receiving</span>
+            <h2 class="font-editorial text-2xl sm:text-3xl font-semibold mt-0.5" style="color:var(--text-primary);">Procurement &amp; Orders Desk</h2>
+            <p class="biz-only text-xs sm:text-sm mt-0.5" style="color:var(--text-secondary);">Create purchase orders, track deliveries in transit, and receive inward stock directly into shelf inventory.</p>
+            <p class="tech-only text-xs font-tabular mt-0.5" style="color:var(--text-secondary);">State machine: ordered → in_transit → completed (PATCH /api/v1/user/purchase-orders/{id}/status)</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2 shrink-0">
+            <a href="05_replenishment.html" class="ed-btn-secondary">
+              <span class="material-symbols-outlined text-[17px]">auto_awesome</span>
+              <span>AI Replenish Plan</span>
+            </a>
+            <button type="button" onclick="SmartStock.openNewPOModal()" class="ed-btn-primary">
+              <span class="material-symbols-outlined text-[17px]">add</span>
+              <span>New Purchase Order</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Pipeline Summary Metrics -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div class="ed-sheet p-4">
+            <span class="ed-kicker block mb-1">Open Pipeline</span>
+            <p id="po-stat-open" class="font-editorial text-2xl sm:text-3xl font-semibold" style="color:var(--text-primary);">0</p>
+            <p id="po-stat-open-amt" class="text-xs font-tabular mt-0.5" style="color:var(--text-secondary);">₹0.00 committed</p>
+          </div>
+          <div class="ed-sheet p-4">
+            <span class="ed-kicker block mb-1">In Transit</span>
+            <p id="po-stat-transit" class="font-editorial text-2xl sm:text-3xl font-semibold" style="color:var(--accent-secondary);">0</p>
+            <p class="text-xs mt-0.5" style="color:var(--text-secondary);">Awaiting gate inward</p>
+          </div>
+          <div class="ed-sheet p-4">
+            <span class="ed-kicker block mb-1">Completed Receipts</span>
+            <p id="po-stat-completed" class="font-editorial text-2xl sm:text-3xl font-semibold" style="color:var(--status-success);">0</p>
+            <p class="text-xs mt-0.5" style="color:var(--text-secondary);">Stocked into inventory</p>
+          </div>
+          <div class="ed-sheet p-4">
+            <span class="ed-kicker block mb-1">Unordered Low Stock</span>
+            <p id="po-stat-draft-items" class="font-editorial text-2xl sm:text-3xl font-semibold" style="color:var(--status-warning);">0</p>
+            <p class="text-xs mt-0.5" style="color:var(--text-secondary);">Need reorder draft</p>
+          </div>
+        </section>
+
+        <!-- Filter Tabs -->
+        <section id="po-filter-bar" class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar"></section>
+
+        <!-- Draft Opportunity Alert Banner -->
+        <section id="po-draft-banner"></section>
+
+        <!-- Purchase Order Ledger Cards -->
+        <section id="po-ledger-container" class="space-y-4"></section>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    SmartStockEditorial.renderShell({
+      pageId: 'orders',
+      title: 'Purchase Orders',
+      subtitle: 'Supplier tracking, transit status updates, and inward stock receiving'
+    });
+
+    function setPoFilterTab(tabId) {
+      localStorage.setItem('smartstock_po_filter', tabId);
+      renderEditorialPOs(window._poProductsCache || []);
+    }
+
+    async function handleStatusAdvance(poId, nextStatus) {
+      if (!window.SmartStock || typeof window.SmartStock.updatePOStatus !== 'function') return;
+      await window.SmartStock.updatePOStatus(poId, nextStatus);
+      renderEditorialPOs(await SmartStock.getProducts());
+    }
+
+    function renderEditorialPOs(products) {
+      window._poProductsCache = Array.isArray(products) ? products : [];
+      const purchaseOrders = SmartStock.getPurchaseOrders() || [];
+      const activeFilter = localStorage.getItem('smartstock_po_filter') || 'all';
+
+      // Find items already in active POs
+      const activeOrders = purchaseOrders.filter(function(po) {
+        return po.status === 'ordered' || po.status === 'in_transit';
+      });
+      const orderedIds = new Set();
+      activeOrders.forEach(function(po) {
+        if (Array.isArray(po.items)) {
+          po.items.forEach(function(it) {
+            if (it.product_id) orderedIds.add(String(it.product_id));
+            if (it.name) orderedIds.add(String(it.name).toLowerCase().trim());
+          });
+        }
+      });
+
+      const unreplenishedLow = products.filter(function(p) {
+        const rop = Number(p.reorder_point ?? 10);
+        const low = (Number(p.stock_on_hand) || 0) <= rop;
+        const covered = orderedIds.has(String(p.id)) || orderedIds.has((p.name || '').toLowerCase().trim());
+        return low && !covered;
+      });
+
+      const orderedList = purchaseOrders.filter(function(po) { return po.status === 'ordered'; });
+      const transitList = purchaseOrders.filter(function(po) { return po.status === 'in_transit'; });
+      const completedList = purchaseOrders.filter(function(po) { return po.status === 'completed'; });
+      const cancelledList = purchaseOrders.filter(function(po) { return po.status === 'cancelled'; });
+
+      const openAmt = activeOrders.reduce(function(acc, po) { return acc + (Number(po.total_amount ?? po.total_cost) || 0); }, 0);
+      document.getElementById('po-stat-open').textContent = String(activeOrders.length);
+      document.getElementById('po-stat-open-amt').textContent = `${SmartStock.formatINR(openAmt)} committed`;
+      document.getElementById('po-stat-transit').textContent = String(transitList.length);
+      document.getElementById('po-stat-completed').textContent = String(completedList.length);
+      document.getElementById('po-stat-draft-items').textContent = String(unreplenishedLow.length);
+
+      const tabs = [
+        { id: 'all', label: `All Orders (${purchaseOrders.length})` },
+        { id: 'ordered', label: `Ordered (${orderedList.length})` },
+        { id: 'in_transit', label: `In Transit (${transitList.length})` },
+        { id: 'completed', label: `Completed (${completedList.length})` },
+        { id: 'cancelled', label: `Cancelled (${cancelledList.length})` }
+      ];
+
+      const tabBar = document.getElementById('po-filter-bar');
+      if (tabBar) {
+        tabBar.innerHTML = tabs.map(function(t) {
+          const active = activeFilter === t.id;
+          return `<button type="button" onclick="setPoFilterTab('${t.id}')"
+            class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap border ed-rule cursor-pointer"
+            style="background:${active ? 'var(--accent-primary)' : 'var(--bg-surface)'}; color:${active ? 'var(--accent-primary-ink)' : 'var(--text-secondary)'};">
+            ${t.label}
+          </button>`;
+        }).join('');
+      }
+
+      // Draft opportunity alert banner
+      const bannerEl = document.getElementById('po-draft-banner');
+      if (bannerEl) {
+        if (unreplenishedLow.length > 0) {
+          const e = SmartStock.escapeHtml.bind(SmartStock);
+          const namesPreview = unreplenishedLow.slice(0, 3).map(function(p) { return e(p.name); }).join(', ');
+          bannerEl.innerHTML = `
+            <div class="ed-sheet p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4" style="border-left:3px solid var(--accent-secondary);">
+              <div class="space-y-1">
+                <span class="ed-badge ed-badge-warning">Auto-Replenishment Draft Ready</span>
+                <h3 class="font-semibold text-sm" style="color:var(--text-primary);">${unreplenishedLow.length} low-stock SKU(s) are not covered by an active PO</h3>
+                <p class="text-xs" style="color:var(--text-secondary);">Includes: ${namesPreview}${unreplenishedLow.length > 3 ? ` and ${unreplenishedLow.length - 3} more` : ''}.</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button type="button" onclick="SmartStock.issueDraftPO()" class="ed-btn-primary text-xs">
+                  <span class="material-symbols-outlined text-[16px]">send</span>
+                  <span>Issue Draft PO Now</span>
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          bannerEl.innerHTML = '';
+        }
+      }
+
+      const ledgerEl = document.getElementById('po-ledger-container');
+      if (!ledgerEl) return;
+
+      const filtered = activeFilter === 'all'
+        ? purchaseOrders
+        : purchaseOrders.filter(function(po) { return po.status === activeFilter; });
+
+      if (filtered.length === 0) {
+        ledgerEl.innerHTML = `
+          <div class="ed-sheet p-10 text-center space-y-3">
+            <span class="material-symbols-outlined text-[36px]" style="color:var(--text-muted);">receipt_long</span>
+            <h3 class="font-editorial text-xl font-semibold" style="color:var(--text-primary);">No Purchase Orders in "${SmartStock.escapeHtml(activeFilter.replace('_', ' '))}"</h3>
+            <p class="text-xs max-w-sm mx-auto" style="color:var(--text-secondary);">Create a manual purchase order or generate one from the AI Replenishment Engine.</p>
+            <div class="flex flex-wrap justify-center gap-2 pt-1">
+              <button type="button" onclick="SmartStock.openNewPOModal()" class="ed-btn-primary text-xs">+ New PO</button>
+              <a href="05_replenishment.html" class="ed-btn-secondary text-xs">Open AI Replenishment</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      const e = SmartStock.escapeHtml.bind(SmartStock);
+      ledgerEl.innerHTML = filtered.map(function(po) {
+        const st = po.status || 'ordered';
+        const poIdAttr = SmartStock.escapeJsAttr(po.id);
+        const dt = po.created_at ? new Date(po.created_at).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Recent';
+        const amt = Number(po.total_amount ?? po.total_cost) || 0;
+        const badgeClass = st === 'completed'
+          ? 'ed-badge-success'
+          : (st === 'cancelled' ? 'ed-badge-danger' : (st === 'in_transit' ? 'ed-badge-warning' : 'ed-badge-neutral'));
+        const badgeLabel = st === 'completed'
+          ? 'Completed • Stocked'
+          : (st === 'cancelled' ? 'Cancelled' : (st === 'in_transit' ? 'In Transit' : 'Ordered'));
+
+        const itemsHtml = Array.isArray(po.items) && po.items.length > 0
+          ? po.items.map(function(it) {
+              const units = Number(it.units || it.qty || 0);
+              const cost = Number(it.total_cost ?? (units * (Number(it.unit_cost) || 0)));
+              return `<li class="flex items-center justify-between text-xs py-1 border-b ed-rule last:border-b-0">
+                <span><strong style="color:var(--text-primary);">${e(it.name || 'Item')}</strong> <span class="font-tabular" style="color:var(--text-muted);">(${units} units)</span></span>
+                <span class="font-tabular font-semibold" style="color:var(--text-primary);">${SmartStock.formatINR(cost)}</span>
+              </li>`;
+            }).join('')
+          : `<li class="text-xs" style="color:var(--text-secondary);">Single-batch order summary</li>`;
+
+        let actionButtons = '';
+        if (st === 'ordered') {
+          actionButtons = `
+            <button type="button" onclick="handleStatusAdvance('${poIdAttr}', 'in_transit')" class="ed-btn-secondary py-1.5 px-3 text-xs">Mark In Transit</button>
+            <button type="button" onclick="SmartStock.receivePO('${poIdAttr}')" class="ed-btn-primary py-1.5 px-3 text-xs">Receive Stock Now</button>
+            <button type="button" onclick="handleStatusAdvance('${poIdAttr}', 'cancelled')" class="ed-btn-secondary py-1.5 px-3 text-xs" style="color:var(--status-danger);">Cancel</button>
+          `;
+        } else if (st === 'in_transit') {
+          actionButtons = `
+            <button type="button" onclick="SmartStock.receivePO('${poIdAttr}')" class="ed-btn-primary py-1.5 px-3 text-xs">Receive Inward Delivery</button>
+            <button type="button" onclick="handleStatusAdvance('${poIdAttr}', 'cancelled')" class="ed-btn-secondary py-1.5 px-3 text-xs" style="color:var(--status-danger);">Cancel</button>
+          `;
+        } else {
+          actionButtons = `<span class="text-xs font-tabular" style="color:var(--text-muted);">${st === 'completed' ? 'Inventory inward completed' : 'Order closed'}</span>`;
+        }
+
+        return `
+          <article class="ed-sheet p-5 space-y-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="font-tabular text-sm font-bold" style="color:var(--text-primary);">${e(po.po_number || po.id)}</h3>
+                  <span class="ed-badge ${badgeClass}">${badgeLabel}</span>
+                  ${po.is_ai_generated ? '<span class="ed-badge ed-badge-neutral">AI Generated</span>' : ''}
+                </div>
+                <p class="text-xs mt-1" style="color:var(--text-secondary);">
+                  Supplier: <strong style="color:var(--text-primary);">${e(po.supplier || 'Wholesale Hub')}</strong> • ${e(dt)}
+                </p>
+              </div>
+              <div class="text-right">
+                <span class="ed-kicker block">Order Total</span>
+                <strong class="font-editorial text-2xl font-semibold font-tabular" style="color:var(--accent-primary);">${SmartStock.formatINR(amt)}</strong>
+              </div>
+            </div>
+
+            <!-- 3-Step Visual Progress Stepper -->
+            <div class="grid grid-cols-3 gap-2 text-center font-tabular text-[10.5px]">
+              <div class="ed-well py-1.5 px-2" style="${st !== 'cancelled' ? 'border-color:var(--accent-primary); color:var(--accent-primary); font-weight:700;' : ''}">1. Ordered</div>
+              <div class="ed-well py-1.5 px-2" style="${(st === 'in_transit' || st === 'completed') ? 'border-color:var(--accent-primary); color:var(--accent-primary); font-weight:700;' : ''}">2. In Transit</div>
+              <div class="ed-well py-1.5 px-2" style="${st === 'completed' ? 'border-color:var(--status-success); color:var(--status-success); font-weight:700;' : ''}">3. Stocked In</div>
+            </div>
+
+            <ul class="ed-well px-3.5 py-2">${itemsHtml}</ul>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <span class="text-[11px]" style="color:var(--text-muted);">${e(po.notes || '')}</span>
+              <div class="flex flex-wrap items-center gap-2">${actionButtons}</div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    window.SmartStockPageRender = function(products) {
+      renderEditorialPOs(products);
+    };
+  </script>
+</body>
+</html>

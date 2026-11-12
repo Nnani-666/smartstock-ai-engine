@@ -58,6 +58,7 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
         close_after = True
 
     try:
+        conn.execute("PRAGMA journal_mode=WAL;")
         cursor = conn.cursor()
         
         # 1. Sales Table
@@ -157,6 +158,12 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
                 idempotency_key TEXT
             );
         """)
+
+        # Migration: ensure category_name exists on app_products
+        cursor.execute("PRAGMA table_info(app_products);")
+        prod_cols = [row[1] for row in cursor.fetchall()]
+        if "category_name" not in prod_cols:
+            cursor.execute("ALTER TABLE app_products ADD COLUMN category_name TEXT DEFAULT 'Groceries & Household';")
 
         # Migration: ensure unit_cost and idempotency_key columns exist on older tables
         cursor.execute("PRAGMA table_info(app_sales);")
