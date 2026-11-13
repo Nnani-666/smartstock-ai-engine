@@ -221,7 +221,10 @@ For SKU $i \in S_A$:
 
 $$s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}, \qquad \bar{s} = \frac{1}{N} \sum_{i=1}^N s(i)$$
 
-- **Empirical Optimum**: Verified at $K=2$ with $\bar{s} = \mathbf{0.5847}$, substantially higher than $K=3$ ($\bar{s} = 0.5124$) and $K=4$ ($\bar{s} = 0.5135$).
+- **Empirical Optimum**:
+  - *Benchmark Feature Set* $[Z(\mu_d), Z(CV)]$: Verified at $K=2$ with $\bar{s} = \mathbf{0.5754}$ (versus 0.5124 for $K=3$, 0.5135 for $K=4$, 0.5012 for $K=5$, 0.4626 for $K=6$), matching committed artifact `artifacts/phase3/results/segmentation_evaluation.json` and Figure 8.
+  - *Service Pipeline Fallback Feature Set* $[Z(\log(1 + \mu_d)), Z(CV)]$: Verified at $K=2$ with $\bar{s} = \mathbf{0.5847}$ (versus 0.5349 for $K=3$, 0.5123 for $K=4$, 0.4994 for $K=5$, 0.4945 for $K=6$).
+  - Under both linear and log-scaled standardization, $K=2$ is the unambiguous global optimum exceeding the $\ge 0.50$ benchmark.
 
 ### 5.3 Mathematical Explanation of Empirical 9-Box Contingency Matrix
 

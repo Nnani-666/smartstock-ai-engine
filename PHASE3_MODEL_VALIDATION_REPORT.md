@@ -19,7 +19,7 @@ This report presents the comprehensive empirical validation of the four algorith
 | **DS-2: Anomaly Detection** | Parametric & Non-Parametric Filter | Recall $\ge 90\%$, FPR $\le 2.0\%$ | **Recall: 99.80%**, **FPR: 0.73%** ($N=9,129$ spikes)<br>(Union filter cleansing, F1: 0.7328) | **PASSED** |
 | **AI-1: Dynamic Replenishment** | Continuous Review $(s, S)$ with Lead Time Std | $>30\%$ Stockout Reduction | **54.03% Stockout Reduction** (1,351 $\to$ 621 SKU-days) | **PASSED** |
 | **AI-1: Service Level** | Normal Quantile Buffer ($Z_{\alpha} \cdot \sigma_{LTD}$) | Target Fill Rate $\ge 98.5\%$ | **99.18% Order Fill Rate** (+15,211 fulfilled units) | **PASSED** |
-| **AI-2: SKU Segmentation** | K-Means Unsupervised Clustering | Silhouette Score $> 0.50$ | **Optimal $K=2$, Silhouette Score = 0.5847** | **PASSED** |
+| **AI-2: SKU Segmentation** | K-Means Unsupervised Clustering | Silhouette Score $> 0.50$ | **Optimal $K=2$, Silhouette Score = 0.5754 (Benchmark) / 0.5847 (Pipeline)** | **PASSED** |
 
 ---
 
@@ -128,13 +128,15 @@ A continuous inventory simulation was conducted over the 91-day out-of-sample ho
 
 Unsupervised clustering was applied to standardized demand velocity ($\mu$) and coefficient of variation ($CV$). K-sweep analysis confirmed $K = 2$ as the structural optimum:
 
-| Cluster Count ($K$) | Mean Silhouette Score | Interpretation |
-| :---: | :---: | :--- |
-| **$K = 2$** | **0.5847** | **Optimal Separation (Core Stable vs. Fast Velocity)** |
-| $K = 3$ | 0.5124 | Secondary tier breakdown |
-| $K = 4$ | 0.5135 | Marginal cluster separation |
-| $K = 5$ | 0.5012 | Over-segmentation of mid-tier |
-| $K = 6$ | 0.4626 | Sub-optimal cluster overlap |
+| Cluster Count ($K$) | Linear Scaling $[Z(\mu_d), Z(CV)]$ (Benchmark) | Log Scaling $[Z(\log(1+\mu_d)), Z(CV)]$ (Pipeline) | Interpretation |
+| :---: | :---: | :---: | :--- |
+| **$K = 2$** | **0.5754** | **0.5847** | **Optimal Separation (Core Stable vs. Fast Velocity)** |
+| $K = 3$ | 0.5124 | 0.5349 | Secondary tier breakdown |
+| $K = 4$ | 0.5135 | 0.5123 | Marginal cluster separation |
+| $K = 5$ | 0.5012 | 0.4994 | Over-segmentation of mid-tier |
+| $K = 6$ | 0.4626 | 0.4945 | Sub-optimal cluster overlap |
+
+*Methodological Reconciliation*: The benchmark score of **0.5754** (recorded in `artifacts/phase3/results/segmentation_evaluation.json` and Figure 8) is obtained from standardizing raw mean daily demand and $CV$. The score of **0.5847** is obtained in `app/services/segmentation.py` when standardizing log-transformed mean demand ($\log(1 + \mu_d)$). Both evaluations independently confirm $K=2$ as the structural optimum and surpass the $\ge 0.50$ requirement.
 
 - **Centroid 0 (Core Volume)**: $\mu = 65.4$ units/day, $CV = 0.24$ (364 SKUs).
 - **Centroid 1 (High Velocity / High Variance)**: $\mu = 32.1$ units/day, $CV = 0.38$ (136 SKUs).

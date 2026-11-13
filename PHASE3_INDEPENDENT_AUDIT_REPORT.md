@@ -29,7 +29,7 @@ All four core analytical modules (DS-1 Forecasting, DS-2 Anomaly Detection, AI-1
 | DS-1: Forecasting    | 100% Reproducible  | >20% RMSE red. (7d) | 27.80% vs Naive | PASS (Defects:0)
 | DS-2: Anomaly Det.   | 100% Reproducible  | Rec >=90%, FPR<=2%  | 99.80%, 0.73%   | PASS (Defects:0)
 | AI-1: Replenishment  | Verified $(s, S)$  | Stockout red. >30%  | -54.03% (730 d) | PASS (Defects:0)
-| AI-2: Segmentation   | Verified K-Means   | Silhouette >=0.50   | 0.5847 (K=2)    | PASS (Defects:0)
+| AI-2: Segmentation   | Verified K-Means   | Silhouette >=0.50   | 0.5754 / 0.5847 | PASS (Defects:0)
 | App Integration      | 13/13 Workflows OK | Full Parity         | 100% Operational| PASS (Defects:0)
 | Automated Tests      | 118 Tests Passed   | 118 Target, 85% cov | 118/118, 85% cov| PASS (Defects:0)
 | Data Leakage Audit   | Zero Leakage       | Shift(1) Guard      | 0 Future Leaks  | PASS (Defects:0)
@@ -45,7 +45,7 @@ Prior to conducting any computational verification or re-execution, the integrit
 
 1. **Active Branch**: Created dedicated audit branch `feature/phase3-independent-verification` based on commit `aad5aaf`.
 2. **Protected Branches and Tags**:
-   - `recovery-baseline-v0` (Tag `6bb7882`): Verified intact.
+   - `recovery-baseline-v0` (Tag `c81a1fe`): Verified intact pointing directly to original baseline commit `c81a1fe`.
    - `recovery-phase0-baseline` (Branch): Verified intact.
    - `feature/phase1-security-hardening` (Commit `3c12e1d`): Preserved unchanged.
    - `feature/phase2-premium-editorial-ui` (Commit `e7c281b`): Preserved unchanged.
@@ -113,8 +113,11 @@ Prior to conducting any computational verification or re-execution, the integrit
   - **Average Stock on Hand**: 242.63 units $\to$ 262.08 units (+19.45 units strategic buffer)
 
 ### 3.4 Module AI-2: SKU Segmentation
-- **Codebase Path**: `app/services/segmentation.py`
-- **Clustering**: K-Means clustering on standardized $[\log(1 + \mu_d), CV]$. K-sweep confirmed optimal Silhouette Score of **0.5847** at $K=2$ (exceeds 0.50 threshold).
+- **Codebase Path**: `app/services/segmentation.py`, `scripts/run_phase3_validation.py`
+- **Clustering & Silhouette Score Reconciliation**:
+  - **Evaluation A (Primary Benchmark, Linear Scaling)**: Computed in `scripts/run_phase3_validation.py` using standardized raw mean daily demand and $CV$ ($[Z(\mu_d), Z(CV)]$). Yields optimal **$K=2$ with Silhouette Score = 0.5754**, matching `artifacts/phase3/results/segmentation_evaluation.json` and Figure 8.
+  - **Evaluation B (Service Pipeline Fallback, Log Scaling)**: Computed in `app/services/segmentation.py` using standardized log-transformed demand and $CV$ ($[Z(\log(1 + \mu_d)), Z(CV)]$). Yields optimal **$K=2$ with Silhouette Score = 0.5847**.
+  - **Reconciliation Verdict**: Both preprocessing methodologies confirm $K=2$ as the indisputable global optimum, both exceed the Phase 3 academic threshold ($\ge 0.50$), and both assign identical cluster memberships and identical ABC-XYZ 9-box allocations.
 - **Pareto Volume (ABC)**: Class A = 364 SKUs (80% volume), Class B = 96 SKUs (15% volume), Class C = 40 SKUs (5% volume).
 - **Demand Volatility (XYZ Tertiles)**: Class X = 167 SKUs, Class Y = 166 SKUs, Class Z = 167 SKUs.
 - **Audit Clarification (Finding 2)**:

@@ -41,7 +41,7 @@ In accordance with Phase 3 Section 13 Acceptance Protocol, each of the ten manda
 - **Module DS-1 (Forecasting)**: Holt-Winters additive seasonal smoothing and Random Forest multi-step regressor verified. Additive equations, non-negativity bounds, and out-of-sample metrics audited.
 - **Module DS-2 (Anomaly Detection)**: Grouped parametric Z-score ($|Z| > 3.0$) and non-parametric IQR ($IQR > 1.5$) verified. Winsorization logic preserves raw transaction ledgers while cleansing training features.
 - **Module AI-1 (Replenishment Engine)**: Rigorous mathematical proof of lead-time demand variance ($\sigma_{DL} = \sqrt{\mu_L \sigma_d^2 + \mu_d^2 \sigma_L^2}$) confirmed. Dynamic safety stock formulation evaluated and confirmed dimensionally consistent.
-- **Module AI-2 (SKU Segmentation)**: K-Means clustering ($K=2$, Silhouette $0.5847$) and ABC/XYZ tertile partitioning verified.
+- **Module AI-2 (SKU Segmentation)**: K-Means clustering ($K=2$, Silhouette 0.5754 linear benchmark / 0.5847 log pipeline fallback) and ABC/XYZ tertile partitioning verified.
 - **Verdict**: **CRITERION SATISFIED (PASS)**
 
 ---
@@ -50,7 +50,7 @@ In accordance with Phase 3 Section 13 Acceptance Protocol, each of the ten manda
 - **DS-1 Forecasting**: All 16 walk-forward evaluation metric tuples matched committed JSON results with 100% precision across 7d, 14d, 21d, and 28d horizons.
 - **DS-2 Anomaly Spike Injection**: 9,129 spikes re-evaluated: 9,111 TP, 99.80% recall, 57.87% precision, 0.73% FPR, 0.7328 F1 matched identically.
 - **AI-1 Inventory Simulation**: 1,351 static stockout days $\to$ 621 dynamic stockout days (-54.03%), 98.08% $\to$ 99.18% fill rate (+15,211 fulfilled units) matched identically.
-- **AI-2 Segmentation**: Silhouette score 0.5847, ABC counts 364/96/40, XYZ tertiles 167/166/167 matched identically.
+- **AI-2 Segmentation**: Silhouette score 0.5754 (linear) / 0.5847 (log), ABC counts 364/96/40, XYZ tertiles 167/166/167 matched identically.
 - **Verdict**: **CRITERION SATISFIED (PASS)**
 
 ---
@@ -135,7 +135,7 @@ In accordance with Phase 3 Section 13 Acceptance Protocol, each of the ten manda
 ---
 
 ### Criterion 10: Recovery Assets & Database Integrity Intact
-- **Recovery Baseline**: Tag `recovery-baseline-v0` intact.
+- **Recovery Baseline**: Tag `recovery-baseline-v0` intact at commit `c81a1fe`. Verified via `git rev-parse recovery-baseline-v0` $\to$ `c81a1feae9174b90631c0c5925cb9ec0d7aca1e4`.
 - **Protected Historical Branches**: All Phase 1, Phase 2, and Phase 3 branches preserved untouched.
 - **Database Backup**: `data/supply_chain_backup_phase3_start.db` verified intact.
 - **Integrity Check**: SQLite `PRAGMA integrity_check` returned `ok`.
