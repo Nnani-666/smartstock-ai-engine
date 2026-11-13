@@ -58,7 +58,7 @@ Paired two-tailed Student's $t$-tests on squared prediction errors confirm that 
 ### 3.1 Experimental Protocol
 - **Spike Injection Rate**: $5\%$ of test-window observations ($N = 9,129$ injected spikes across 500 series).
 - **Spike Multiplier**: Uniformly sampled from $[2.5, 4.5] \times$ group median demand.
-- **Evaluation Criteria**: Detection requires consensus: $Z > 3.0 \land y > Q_3 + 1.5 \cdot IQR$.
+- **Evaluation Criteria**: Evaluated using the production cleansing filter ($Z > 3.0 \lor y > Q_3 + 1.5 \cdot IQR$).
 
 ### 3.2 Detection Contingency Matrix
 
@@ -75,13 +75,14 @@ Nominal (Flag=0)                   18 (FN)             897,238 (TN)
 - **F1-Score**: $\mathbf{73.28\%}$
 
 *Analysis*: The extremely low False Positive Rate (0.73%) ensures that normal retail variance (e.g. standard weekend shopping volume) is almost never misclassified as an anomaly. The 99.80% recall guarantees that severe promotional spikes and bulk purchasing outliers are intercepted before corrupting downstream forecasting.
+*Filter Distinction*: In baseline historical data, the Union cleansing filter ($Z \lor IQR$) accounts for 7,655 rows (0.84%), while the strict Consensus Intersection ($Z \land IQR$) isolates 2,486 extreme outliers (0.27%).
 
 ---
 
-## 4. Experiment AI-1: 90-Day Closed-Loop Inventory Simulation
+## 4. Experiment AI-1: 91-Day Closed-Loop Inventory Simulation
 
 ### 4.1 Experimental Protocol
-- **Cohort**: All 500 catalog items modeled over the 92-day out-of-sample holdout ($46,000$ SKU-days).
+- **Cohort**: All 500 catalog items modeled over the exact 91-day out-of-sample holdout from 2017-10-02 to 2017-12-31 ($500 \times 91 = 45,500$ simulation SKU-days).
 - **Lead Times**: Stochastic supplier lead times with uniform mean $L_{\mu} \in [3, 7]$ days and $\sigma_L \in [0.5, 1.5]$ days.
 - **Total Incurred Demand**: 1,386,097 units.
 
@@ -89,7 +90,7 @@ Nominal (Flag=0)                   18 (FN)             897,238 (TN)
 
 | Dimension | Static $(s, Q)$ Policy | SmartStock Dynamic $(s, S)$ Policy | Relative Impact |
 | :--- | :---: | :---: | :---: |
-| **Total Stockout Days** | 1,351 days | 621 days | **-54.03% stockouts** |
+| **Total Stockout SKU-Days** | 1,351 days | 621 days | **-54.03% stockouts** |
 | **Fulfilled Customer Units** | 1,359,495 units | 1,374,706 units | **+15,211 purchases fulfilled** |
 | **Order Fill Rate ($\alpha$)** | 98.08% | 99.18% | **+1.10% absolute gain** |
 | **Average Inventory on Hand** | 242.63 units | 262.08 units | +8.0% buffer investment |
@@ -105,7 +106,7 @@ Nominal (Flag=0)                   18 (FN)             897,238 (TN)
 
 | $K$ | Silhouette Score | Calinski-Harabasz Index | Davies-Bouldin Index | Cluster Description |
 | :---: | :---: | :---: | :---: | :--- |
-| **2** | **0.5754** | **684.2** | **0.682** | **Optimal: Core Stable vs. Velocity** |
+| **2** | **0.5847** | **684.2** | **0.682** | **Optimal: Core Stable vs. Velocity** |
 | 3 | 0.5124 | 542.1 | 0.741 | Splits mid-velocity items |
 | 4 | 0.5135 | 489.8 | 0.795 | Sub-segments Class A volume |
 | 5 | 0.5012 | 431.2 | 0.842 | Over-partitions tail items |
@@ -114,12 +115,14 @@ Nominal (Flag=0)                   18 (FN)             897,238 (TN)
 ### 5.2 ABC-XYZ 9-Box Empirical Distribution ($N = 500$ SKUs)
 
 ```
-       X (Low Volatility)    Y (Moderate)       Z (High Volatility)     Total
-A (80% Vol)  128 SKUs (25.6%)   124 SKUs (24.8%)    112 SKUs (22.4%)      364 SKUs (72.8%)
-B (15% Vol)   32 SKUs ( 6.4%)    34 SKUs ( 6.8%)     30 SKUs ( 6.0%)       96 SKUs (19.2%)
-C ( 5% Vol)    7 SKUs ( 1.4%)     8 SKUs ( 1.6%)     25 SKUs ( 5.0%)       40 SKUs ( 8.0%)
-Total        167 SKUs (33.4%)   166 SKUs (33.2%)    167 SKUs (33.4%)      500 SKUs (100%)
+             X (Low Volatility)    Y (Moderate)       Z (High Volatility)     Total
+A (80% Vol)        167 (33.4%)        165 (33.0%)          32 ( 6.4%)       364 SKUs (72.8%)
+B (15% Vol)          0 ( 0.0%)          1 ( 0.2%)          95 (19.0%)        96 SKUs (19.2%)
+C ( 5% Vol)          0 ( 0.0%)          0 ( 0.0%)          40 ( 8.0%)        40 SKUs ( 8.0%)
+Total              167 (33.4%)        166 (33.2%)         167 (33.4%)       500 SKUs (100%)
 ```
+
+*Empirical Note*: The empirical concentration of Class B and C SKUs in tertile Z stems directly from the definition of the coefficient of variation ($CV = \sigma_d / \mu_d$). For slow-moving items, low mean demand $\mu_d$ inflates $CV > 0.40$, whereas high-volume Class A items exhibit higher $\mu_d$ which lowers $CV$ into tertiles X and Y.
 
 ---
 
