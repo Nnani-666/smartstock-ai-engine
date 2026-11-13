@@ -186,6 +186,22 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
             );
         """)
 
+        # 8. User-Scoped Suppliers Table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS app_suppliers (
+                id TEXT PRIMARY KEY,
+                user_email TEXT NOT NULL,
+                name TEXT NOT NULL,
+                category TEXT DEFAULT 'General Wholesale',
+                phone TEXT DEFAULT '+91 98000 00000',
+                email TEXT DEFAULT 'orders@distributor.in',
+                hub TEXT DEFAULT 'Regional Logistics Hub',
+                lead_time_days INTEGER DEFAULT 3,
+                is_verified INTEGER DEFAULT 1,
+                created_at TEXT NOT NULL
+            );
+        """)
+
         # Indexes for fast lookup
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_sales_store_item ON sales(store, item);")
@@ -194,6 +210,7 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_products_user ON app_products(user_email);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_po_user ON app_purchase_orders(user_email);")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_sales_user ON app_sales(user_email);")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_suppliers_user ON app_suppliers(user_email);")
         cursor.execute("DROP INDEX IF EXISTS idx_app_sales_idempotency;")
         cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_app_sales_user_idempotency ON app_sales(user_email, idempotency_key) WHERE idempotency_key IS NOT NULL;")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_app_sessions_token ON app_sessions(token);")
@@ -220,6 +237,23 @@ def init_db(conn: sqlite3.Connection | None = None) -> None:
                     INSERT INTO app_products (id, user_email, sku, name, description, unit_price, unit_cost, stock_on_hand, safety_stock, reorder_point, lead_time_days, supplier, status, created_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
                 """, p[:13])
+
+        # Seed default verified suppliers for demo store if none exist
+        cursor.execute("SELECT id FROM app_suppliers WHERE user_email = 'owner@sharmakirana.in'")
+        if not cursor.fetchone():
+            demo_suppliers = [
+                ('supp-itc', 'owner@sharmakirana.in', 'ITC Limited', 'Packaged Foods & Staples', '+91 80 2839 4000', 'distributors@itclimited.in', 'Peenya Wholesale Depot, Bengaluru', 3, 1),
+                ('supp-adani', 'owner@sharmakirana.in', 'Adani Wilmar', 'Edible Oils & Grains', '+91 79 2656 5555', 'customercare@adaniwilmar.in', 'Hosur Distribution Center', 4, 1),
+                ('supp-parle', 'owner@sharmakirana.in', 'Parle Products', 'Biscuits & Confectionery', '+91 22 6691 6911', 'sales@parle.biz', 'Whitefield Depot, Bengaluru', 3, 1),
+                ('supp-reckitt', 'owner@sharmakirana.in', 'Reckitt Benckiser', 'Hygiene & Health', '+91 124 402 8000', 'b2b.india@reckitt.com', 'Nelamangala Logistics Hub', 5, 1),
+                ('supp-hul', 'owner@sharmakirana.in', 'Hindustan Unilever', 'Home & Personal Care', '+91 22 5043 0000', 'levercare@unilever.com', 'Bommasandra Industrial Area', 4, 1),
+                ('supp-metro', 'owner@sharmakirana.in', 'Metro Wholesale', 'Cash & Carry Regional Hub', '+91 80 4344 1234', 'support@metro-wholesale.in', 'Yeshwanthpur Center, Bengaluru', 2, 1),
+            ]
+            for s in demo_suppliers:
+                cursor.execute("""
+                    INSERT INTO app_suppliers (id, user_email, name, category, phone, email, hub, lead_time_days, is_verified, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                """, s)
 
         conn.commit()
     finally:

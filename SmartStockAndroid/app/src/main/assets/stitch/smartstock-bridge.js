@@ -441,7 +441,7 @@
                 } else {
                     const errData = await resp.json().catch(() => ({}));
                     backendErrMsg = errData.detail || 'Invalid email or password.';
-                    if (resp.status === 401 || resp.status === 403) {
+                    if (resp.status === 401 || resp.status === 403 || resp.status === 429) {
                         backendAuthRejected = true;
                     }
                 }
@@ -464,6 +464,13 @@
                 this.saveStoreToRegistry(cleanEmail, userObj);
                 this.config.activeStoreName = userObj.store;
                 return { data: { user: userObj }, error: null };
+            }
+
+            // Production mode guard: refuse local-only authentication fallback
+            const isProduction = (window.__SMARTSTOCK_CONFIG__ && window.__SMARTSTOCK_CONFIG__.ENVIRONMENT === 'production') ||
+                                 localStorage.getItem('smartstock_production_mode') === 'true';
+            if (isProduction && !backendSuccess) {
+                return { data: null, error: { message: backendErrMsg || 'Backend authentication required in production mode.' } };
             }
 
             // 2. Strict verification against local accounts registry (offline fallback)
@@ -509,8 +516,8 @@
             if (!cleanEmail || !password) {
                 return { data: null, error: { message: 'Email and password are required.' } };
             }
-            if (password.length < 4) {
-                return { data: null, error: { message: 'Password must be at least 4 characters.' } };
+            if (password.length < 8) {
+                return { data: null, error: { message: 'Password must be at least 8 characters.' } };
             }
             const shopName = storeName && storeName.trim() ? storeName.trim() : 'My Store';
             const userObj = {
@@ -962,6 +969,26 @@
         // -------------------------------------------------------------
         // SUPPLIERS DIRECTORY & MANAGEMENT
         // -------------------------------------------------------------
+        async syncSuppliersFromBackend() {
+            const token = this.getAuthToken();
+            if (!token) return this.getSuppliers();
+            try {
+                const resp = await fetch(`${API_BASE_URL}/api/v1/user/suppliers`, {
+                    headers: this.getAuthHeaders()
+                });
+                if (resp.ok) {
+                    const serverSuppliers = await resp.json();
+                    if (Array.isArray(serverSuppliers)) {
+                        this.saveSuppliers(serverSuppliers);
+                        return serverSuppliers;
+                    }
+                }
+            } catch (e) {
+                console.warn('Backend suppliers sync unavailable:', e);
+            }
+            return this.getSuppliers();
+        },
+
         getSuppliers() {
             const key = this.getUserKey('smartstock_suppliers');
             let customSuppliers = [];
@@ -1095,7 +1122,7 @@
             localStorage.setItem(key, JSON.stringify(suppliers));
         },
 
-        addSupplier(suppData) {
+        async addSupplier(suppData) {
             const key = this.getUserKey('smartstock_suppliers');
             let customSuppliers = [];
             try { customSuppliers = JSON.parse(localStorage.getItem(key) || '[]'); } catch(e){}
@@ -1103,15 +1130,49 @@
                 id: 'supp-' + Date.now(),
                 name: suppData.name.trim(),
                 category: suppData.category ? suppData.category.trim() : 'General Wholesale',
-                phone: suppData.phone ? suppData.phone.trim() : '+91 98765 00000',
+                phone: suppData.phone ? suppData.phone.trim() : '+91 98000 00000',
                 email: suppData.email ? suppData.email.trim() : 'orders@distributor.in',
-                hub: suppData.hub ? suppData.hub.trim() : 'Regional Logistics Hub',
+                hub: suppData.hub ? suppData.hub.trim() : 'Wholesale Logistics Hub',
                 lead_time_days: parseInt(suppData.lead_time_days, 10) || 3,
                 is_verified: true
             };
+
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    const resp = await fetch(`${API_BASE_URL}/api/v1/user/suppliers`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify(newSupp)
+                    });
+                    if (resp.ok) {
+                        const saved = await resp.json();
+                        if (saved && saved.id) newSupp.id = saved.id;
+                    }
+                } catch (e) {
+                    console.warn('Backend add supplier error:', e);
+                }
+            }
+
+            customSuppliers = customSuppliers.filter(s => s.id !== newSupp.id && s.name.toLowerCase() !== newSupp.name.toLowerCase());
             customSuppliers.push(newSupp);
             this.saveSuppliers(customSuppliers);
             return newSupp;
+        },
+
+        async deleteSupplier(supplierId) {
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    await fetch(`${API_BASE_URL}/api/v1/user/suppliers/${encodeURIComponent(supplierId)}`, {
+                        method: 'DELETE',
+                        headers: this.getAuthHeaders()
+                    });
+                } catch (e) {}
+            }
+            const current = this.getSuppliers().filter(s => String(s.id) !== String(supplierId));
+            this.saveSuppliers(current);
+            return true;
         },
 
         openSuppliersModal() {
@@ -1482,6 +1543,40 @@
             this.showToast('Blank CSV template downloaded.', 'info');
         },
 
+        parseCSVLine(line) {
+            const result = [];
+            let cur = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const c = line[i];
+                if (c === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        cur += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (c === ',' && !inQuotes) {
+                    result.push(cur.trim());
+                    cur = '';
+                } else {
+                    cur += c;
+                }
+            }
+            result.push(cur.trim());
+            return result;
+        },
+
+        sanitizeCsvFormula(val) {
+            if (typeof val !== 'string') return val;
+            const trimmed = val.trim();
+            // RFC / OWASP CSV formula injection mitigation: prepend single quote if starting with formula triggers
+            if (/^[=+\-@\t\r]/.test(trimmed)) {
+                return "'" + trimmed;
+            }
+            return trimmed;
+        },
+
         async importCSV(file) {
             const reader = new FileReader();
             reader.onload = async (e) => {
@@ -1493,8 +1588,8 @@
                         return;
                     }
 
-                    // Parse header row to locate column indices dynamically
-                    const headerCols = lines[0].split(',').map(c => c.trim().toLowerCase().replace(/^"|"$/g, ''));
+                    // Parse header row dynamically with quote support
+                    const headerCols = this.parseCSVLine(lines[0]).map(c => c.toLowerCase().replace(/^"|"$/g, ''));
                     let nameIdx = -1;
                     let priceIdx = -1;
                     let costIdx = -1;
@@ -1520,19 +1615,26 @@
                     if (stockIdx === -1) stockIdx = headerCols.length > 3 ? 3 : -1;
                     if (reorderIdx === -1) reorderIdx = headerCols.length > 4 ? 4 : -1;
 
-                    let count = 0;
+                    const validItems = [];
+                    const rowErrors = [];
+
                     for (let i = 1; i < lines.length; i++) {
-                        const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-                        const name = nameIdx >= 0 ? cols[nameIdx] : '';
-                        if (!name) continue;
+                        const cols = this.parseCSVLine(lines[i]);
+                        const rawName = nameIdx >= 0 && cols[nameIdx] ? cols[nameIdx] : '';
+                        const name = this.sanitizeCsvFormula(rawName.replace(/^"|"$/g, '').trim());
+
+                        if (!name) {
+                            rowErrors.push(`Row ${i + 1}: Missing product name`);
+                            continue;
+                        }
 
                         const rawPrice = priceIdx >= 0 ? parseFloat(cols[priceIdx]) : 0;
                         const rawCost = costIdx >= 0 ? parseFloat(cols[costIdx]) : 0;
                         const rawStock = stockIdx >= 0 ? parseInt(cols[stockIdx], 10) : 0;
                         let rawReorder = reorderIdx >= 0 ? parseInt(cols[reorderIdx], 10) : 10;
 
-                        const unitPrice = isNaN(rawPrice) ? 0 : rawPrice;
-                        const unitCost = isNaN(rawCost) || rawCost === 0 ? Math.round(unitPrice * 0.85) : rawCost;
+                        const unitPrice = isNaN(rawPrice) ? 0 : Math.max(0, rawPrice);
+                        const unitCost = isNaN(rawCost) || rawCost === 0 ? Math.round(unitPrice * 0.85) : Math.max(0, rawCost);
                         const stockOnHand = isNaN(rawStock) ? 0 : Math.max(0, rawStock);
 
                         // Protect against shifted columns: Kirana reorder point should never be > 30 units
@@ -1540,22 +1642,57 @@
                             rawReorder = Math.min(20, Math.max(5, Math.round(stockOnHand * 0.15) || 10));
                         }
 
-                        const category = categoryIdx >= 0 && cols[categoryIdx] ? cols[categoryIdx] : 'Groceries & Household';
+                        const category = categoryIdx >= 0 && cols[categoryIdx] ? this.sanitizeCsvFormula(cols[categoryIdx].replace(/^"|"$/g, '').trim()) : 'Groceries & Household';
+                        const sku = skuIdx >= 0 && cols[skuIdx] ? this.sanitizeCsvFormula(cols[skuIdx].replace(/^"|"$/g, '').trim()) : `SKU-${Date.now().toString(36).slice(-4).toUpperCase()}-${i}`;
 
-                        await this.addProduct({
-                            name: name,
+                        validItems.push({
+                            name,
+                            sku,
                             unit_price: unitPrice,
                             unit_cost: unitCost,
                             stock_on_hand: stockOnHand,
                             reorder_point: rawReorder,
+                            safety_stock: Math.round(rawReorder * 0.5),
+                            lead_time_days: 3,
+                            supplier: 'General Wholesale',
                             category_name: category
                         });
-                        count++;
                     }
-                    this.showToast(`Imported ${count} items with calibrated reorder levels.`, 'success');
+
+                    if (validItems.length === 0) {
+                        this.showToast('No valid products found in CSV. ' + (rowErrors[0] || ''), 'error');
+                        return;
+                    }
+
+                    let importedCount = 0;
+                    try {
+                        const res = await fetch(`${API_BASE_URL}/api/v1/user/products/bulk-import`, {
+                            method: 'POST',
+                            headers: this.getAuthHeaders(),
+                            body: JSON.stringify({ products: validItems })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            importedCount = data.imported_count || validItems.length;
+                        } else {
+                            throw new Error('Backend import returned ' + res.status);
+                        }
+                    } catch (err) {
+                        // Fallback to local storage persistence
+                        for (const item of validItems) {
+                            await this.addProduct(item);
+                            importedCount++;
+                        }
+                    }
+
+                    let toastMsg = `Imported ${importedCount} items atomically.`;
+                    if (rowErrors.length > 0) {
+                        toastMsg += ` (${rowErrors.length} skipped rows)`;
+                    }
+                    this.showToast(toastMsg, 'success');
                     setTimeout(() => window.location.reload(), 600);
                 } catch (err) {
-                    this.showToast('Error reading CSV file format.', 'error');
+                    this.showToast('Error reading CSV file format: ' + err.message, 'error');
                 }
             };
             reader.readAsText(file);
@@ -2725,6 +2862,58 @@
             await this.bindLivePageData();
         },
 
+        async createManualPO(data = {}) {
+            const purchaseOrders = this.getPurchaseOrders();
+            const year = new Date().getFullYear();
+            const count = (purchaseOrders.length + 1).toString().padStart(3, '0');
+            const poNumber = data.poNumber || `PO-${year}-${count}`;
+            const items = (data.items || []).map(it => ({
+                product_id: it.product_id || it.id || 'prod-custom',
+                name: it.name || it.product_name || 'General Inventory SKU',
+                sku: it.sku || 'SKU-PO-ITEM',
+                units: Number(it.units ?? it.quantity ?? 10),
+                unit_cost: Number(it.cost ?? it.unit_cost ?? 50),
+                total_cost: Number(it.units ?? it.quantity ?? 10) * Number(it.cost ?? it.unit_cost ?? 50)
+            }));
+            const totalAmount = data.totalAmount || items.reduce((acc, it) => acc + it.total_cost, 0);
+
+            const newPO = {
+                id: data.id || ('po-' + Date.now()),
+                po_number: poNumber,
+                created_at: new Date().toISOString(),
+                status: data.status || 'ordered',
+                supplier: data.supplier || 'Metro Cash & Carry',
+                expected_date: data.expectedDate || '',
+                items: items,
+                total_amount: totalAmount,
+                is_ai_generated: false,
+                notes: data.notes || 'Manual Purchase Order'
+            };
+
+            purchaseOrders.unshift(newPO);
+            this.savePurchaseOrders(purchaseOrders);
+
+            const token = this.getAuthToken();
+            if (token) {
+                try {
+                    await fetch(`${API_BASE_URL}/api/v1/user/purchase-orders`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({
+                            id: newPO.id,
+                            po_number: poNumber,
+                            supplier: newPO.supplier,
+                            status: newPO.status,
+                            total_amount: newPO.total_amount,
+                            items: newPO.items
+                        })
+                    });
+                } catch (e) {}
+            }
+            await this.bindLivePageData();
+            return newPO;
+        },
+
         async updatePOStatus(poId, newStatus) {
             const purchaseOrders = this.getPurchaseOrders();
             const po = purchaseOrders.find(o => String(o.id) === String(poId) || o.po_number === poId);
@@ -3388,22 +3577,39 @@
             this.onItemSelectChange();
         },
 
-        async bulkDelete() {
-            const checkedBoxes = Array.from(document.querySelectorAll('.item-checkbox:checked'));
-            if (checkedBoxes.length === 0) return;
-            const count = checkedBoxes.length;
-            if (!confirm(`Delete ${count} selected item${count === 1 ? '' : 's'} from inventory?`)) return;
+        async bulkDelete(explicitIds = null) {
+            let ids = [];
+            let count = 0;
+            if (Array.isArray(explicitIds) && explicitIds.length > 0) {
+                ids = explicitIds.map(String);
+                count = ids.length;
+            } else {
+                const checkedBoxes = Array.from(document.querySelectorAll('.item-checkbox:checked'));
+                if (checkedBoxes.length === 0) return;
+                count = checkedBoxes.length;
+                if (!confirm(`Delete ${count} selected item${count === 1 ? '' : 's'} from inventory?`)) return;
+                ids = checkedBoxes.map(cb => cb.getAttribute('data-id')).filter(Boolean);
+            }
 
-            const ids = checkedBoxes.map(cb => cb.getAttribute('data-id')).filter(Boolean);
+            if (ids.length === 0) return;
+
             const token = this.getAuthToken();
             if (token) {
-                for (const id of ids) {
-                    try {
-                        await fetch(`${API_BASE_URL}/api/v1/user/products/${encodeURIComponent(id)}`, {
-                            method: 'DELETE',
-                            headers: this.getAuthHeaders()
-                        });
-                    } catch (e) {}
+                try {
+                    await fetch(`${API_BASE_URL}/api/v1/user/products/bulk-delete`, {
+                        method: 'POST',
+                        headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
+                        body: JSON.stringify({ product_ids: ids })
+                    });
+                } catch (e) {
+                    for (const id of ids) {
+                        try {
+                            await fetch(`${API_BASE_URL}/api/v1/user/products/${encodeURIComponent(id)}`, {
+                                method: 'DELETE',
+                                headers: this.getAuthHeaders()
+                            });
+                        } catch (err) {}
+                    }
                 }
             }
             const client = this.client();
@@ -4242,6 +4448,20 @@
             if (currentPage === '01_signin.html' && parsedUser && parsedUser.email) {
                 window.location.href = '02_overview.html';
                 return;
+            }
+
+            // Sync backend data on page load for authenticated sessions
+            if (parsedUser && parsedUser.email) {
+                try {
+                    await this.syncPurchaseOrdersFromBackend();
+                } catch (poErr) {
+                    // Non-fatal PO sync fallback
+                }
+                try {
+                    await this.syncSuppliersFromBackend();
+                } catch (supErr) {
+                    // Non-fatal supplier sync fallback
+                }
             }
 
             const products = await this.getProducts();
@@ -5196,7 +5416,9 @@
         // Analytical & Assistant API Helpers for Phase 2 Screens
         async fetchBackendMetrics() {
             try {
-                const res = await fetch(`${API_BASE_URL}/metrics`);
+                const res = await fetch(`${API_BASE_URL}/metrics`, {
+                    headers: this.getAuthHeaders()
+                });
                 if (res.ok) return await res.json();
             } catch (e) {}
             return null;
@@ -5204,7 +5426,9 @@
 
         async fetchBackendSegmentsSummary() {
             try {
-                const res = await fetch(`${API_BASE_URL}/segments/summary`);
+                const res = await fetch(`${API_BASE_URL}/segments/summary`, {
+                    headers: this.getAuthHeaders()
+                });
                 if (res.ok) return await res.json();
             } catch (e) {}
             return null;
@@ -5216,7 +5440,9 @@
                 Object.entries(filters).forEach(([k, v]) => {
                     if (v !== undefined && v !== null && v !== '') q.set(k, String(v));
                 });
-                const res = await fetch(`${API_BASE_URL}/skus?${q.toString()}`);
+                const res = await fetch(`${API_BASE_URL}/skus?${q.toString()}`, {
+                    headers: this.getAuthHeaders()
+                });
                 if (res.ok) return await res.json();
             } catch (e) {}
             return null;
@@ -5224,9 +5450,10 @@
 
         async fetchBackendForecast(store = 1, item = 1, horizonDays = 14, granularity = 'daily', model = 'best') {
             try {
+                const headers = { 'Content-Type': 'application/json', ...this.getAuthHeaders() };
                 const res = await fetch(`${API_BASE_URL}/forecast`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
                     body: JSON.stringify({ store, item, horizon_days: horizonDays, granularity, model })
                 });
                 if (res.ok) return await res.json();
@@ -5237,7 +5464,9 @@
         async fetchBackendAnomalies(store = 1, item = 1, method = 'any') {
             try {
                 const q = new URLSearchParams({ store: String(store), item: String(item), method });
-                const res = await fetch(`${API_BASE_URL}/anomalies?${q.toString()}`);
+                const res = await fetch(`${API_BASE_URL}/anomalies?${q.toString()}`, {
+                    headers: this.getAuthHeaders()
+                });
                 if (res.ok) return await res.json();
             } catch (e) {}
             return null;

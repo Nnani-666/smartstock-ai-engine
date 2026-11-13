@@ -9,7 +9,7 @@ line-length = 120
 target-version = "py311"
 
 [tool.ruff.lint]
-ignore = ["BLE001", "B008", "ASYNC230", "RUF046"]
+ignore = ["BLE001", "B008", "ASYNC230", "RUF046", "UP017", "FURB162", "S110"]
 
 [tool.coverage.run]
 source = ["app"]

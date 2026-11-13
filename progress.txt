@@ -150,3 +150,49 @@ Baseline Tag: recovery-baseline-v0
     - Verified full suite post-final-edits: **80/80 pytest**, **17/17 node:test**, **10/10 Playwright** (**107/107** total passing).
     - Published `PHASE2_IMPLEMENTATION_REPORT.md` and `PHASE2_TEST_REPORT.md`.
 
+---
+
+## 5. Phase 2 Closure Audit & Defect Resolution (COMPLETED & VERIFIED)
+
+[x] Protected Baseline & Branch Setup
+    - Verified parent Phase 2 commit `e7c281b` on `feature/phase2-premium-editorial-ui`.
+    - Created dedicated closure branch `feature/phase2-closure-fixes` preserving original branch and recovery assets (`recovery-baseline-v0`).
+    - Verified hot backup `data/supply_chain_backup_phase2.db` (`PRAGMA integrity_check` -> `ok`).
+
+[x] Priority A: Purchase Orders Parity & Lifecycle Hardening
+    - Idempotent PO creation: `POST /api/v1/user/purchase-orders` handles retry requests returning `"replayed": True` without duplicates.
+    - Exactly-once stock inwarding: `POST /api/v1/user/purchase-orders/{id}/receive` atomically sets `completed`, increments stock, and blocks subsequent receive attempts idempotently.
+    - Status locks: Completed and cancelled orders are immutable against illegal transitions.
+    - Client synchronization: Added `SmartStock.syncPurchaseOrdersFromBackend()` and `SmartStock.createManualPO()` with server await.
+
+[x] Priority B: Supplier Directory Subsystem
+    - Added `app_suppliers` table schema and index `idx_app_suppliers_user` in `app/db.py`.
+    - Seeded 6 verified wholesale suppliers for `owner@sharmakirana.in` in `init_db()`.
+    - Implemented full tenant-isolated CRUD: `GET`, `POST`, `PUT`, `DELETE /api/v1/user/suppliers`.
+    - Referential safety: Supplier deletion retains historical purchase order records.
+    - Updated `stitch/screens/12_suppliers.html` with backend sync and supplier delete controls.
+
+[x] Priority C: CSV & Bulk Operations
+    - Implemented RFC 4180 quote-aware CSV line parser (`parseCSVLine`).
+    - Sanitized CSV formula injection triggers (`=`, `+`, `-`, `@`).
+    - Implemented atomic `POST /api/v1/user/products/bulk-delete` with `BEGIN IMMEDIATE`.
+    - Implemented atomic `POST /api/v1/user/products/bulk-import` with row-level validation.
+    - Upgraded `bulkDelete()` to accept explicit ID arrays and call the atomic bulk-delete API.
+
+[x] Priority D: Security Hardening & Tenant Isolation
+    - Updated `verify_api_key` to support dual authentication: Bearer session token OR `X-API-Key`.
+    - Enforced fail-closed HTTP 503 in production mode when credentials are not configured.
+    - Tested cross-tenant isolation matrix across products, POs, suppliers, and sales.
+
+[x] Priority E & F: Asset Sync, Linting & Full Test Suite Execution
+    - Synchronized all updated web assets to iOS (`SmartStock/stitch/`) and Android (`SmartStockAndroid/app/src/main/assets/stitch/`).
+    - Fixed ruff configuration and lint errors: `All checks passed!`
+    - Created `tests/test_closure_audit.py` (10 tests).
+    - Expanded `tests/e2e/smartstock.spec.js` (Test 11).
+    - Final Test Results:
+      * **Pytest: 90/90 PASSED** (100% pass, 85% coverage).
+      * **Node unit tests: 17/17 PASSED** (100% pass).
+      * **Playwright E2E: 11/11 PASSED** (100% pass).
+      * **Total: 118/118 passing**.
+    - Published reports: `PHASE2_CLOSURE_AUDIT.md`, `PHASE2_CLOSURE_FIX_REPORT.md`, `PHASE2_CLOSURE_TEST_REPORT.md`, and updated `PHASE2_FEATURE_UI_MATRIX.md`.
+

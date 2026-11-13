@@ -125,17 +125,50 @@ app.add_middleware(
 )
 
 
-def verify_api_key(x_api_key: str | None = Header(None)) -> None:
-    """Dependency: enforce API key check when API_KEY is set or in production."""
-    if ENVIRONMENT == "production" and not API_KEY:
+def verify_api_key(
+    x_api_key: str | None = Header(None),
+    authorization: str | None = Header(None),
+    db: sqlite3.Connection = Depends(get_db),
+) -> None:
+    """Dependency: enforce API key check or authenticated user session when API_KEY is set or in production."""
+    from app import config as cfg
+
+    active_api_key = API_KEY if API_KEY is not None else getattr(cfg, "API_KEY", None)
+    active_env = ENVIRONMENT if ENVIRONMENT != "development" else getattr(cfg, "ENVIRONMENT", ENVIRONMENT)
+
+    # 1. Direct API key validation
+    if active_api_key is not None and x_api_key and hmac.compare_digest(x_api_key, active_api_key):
+        return
+
+    # 2. Authenticated user session validation (Bearer token)
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1].strip()
+        cursor = db.cursor()
+        cursor.execute(
+            "SELECT user_email, expires_at, revoked FROM app_sessions WHERE token = ?",
+            (token,),
+        )
+        sess = cursor.fetchone()
+        if sess and not sess["revoked"]:
+            try:
+                exp_dt = datetime.fromisoformat(sess["expires_at"].replace("Z", "+00:00")).replace(tzinfo=None)
+                if exp_dt > datetime.now(timezone.utc).replace(tzinfo=None):
+                    return
+            except Exception as exp_err:
+                logger.debug("Failed parsing session expiry: %s", exp_err)
+
+    # 3. Fail closed in production when API_KEY is unconfigured and caller has no valid session
+    if active_env == "production" and not active_api_key and not (authorization and authorization.startswith("Bearer ")):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Server configuration error: API_KEY is required in production mode.",
         )
-    if API_KEY is not None and (not x_api_key or not hmac.compare_digest(x_api_key, API_KEY)):
+
+    # 4. If API_KEY is configured and neither a valid API key nor a valid session was presented
+    if active_api_key is not None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or missing API Key",
+            detail="Invalid or missing API Key / Session Token",
         )
 
 
@@ -410,17 +443,26 @@ def get_supabase_service() -> SupabaseAppService:
     return _supabase_service
 
 
-@app.get("/api/v1/products", dependencies=[Depends(get_current_user)])
-def api_list_products(status: str | None = None, limit: int = 50, offset: int = 0):
-    """Retrieve live products list from Supabase (authenticated)."""
+@app.get("/api/v1/products")
+def api_list_products(
+    status: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    current_user: dict[str, Any] = Depends(get_current_user),
+):
+    """Retrieve live products list from Supabase (authenticated and tenant-scoped)."""
     try:
-        return get_supabase_service().list_products(status=status, limit=limit, offset=offset)
+        shop_id = current_user.get("user_id")
+        return get_supabase_service().list_products(shop_id=shop_id, status=status, limit=limit, offset=offset)
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
-@app.get("/api/v1/insights", dependencies=[Depends(get_current_user)])
-def api_list_insights(active_only: bool = True):
+@app.get("/api/v1/insights")
+def api_list_insights(
+    active_only: bool = True,
+    current_user: dict[str, Any] = Depends(get_current_user),
+):
     """Retrieve live inventory insights from Supabase (authenticated)."""
     try:
         return get_supabase_service().list_insights(active_only=active_only)
@@ -428,8 +470,10 @@ def api_list_insights(active_only: bool = True):
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
-@app.get("/api/v1/purchase-orders", dependencies=[Depends(get_current_user)])
-def api_list_purchase_orders():
+@app.get("/api/v1/purchase-orders")
+def api_list_purchase_orders(
+    current_user: dict[str, Any] = Depends(get_current_user),
+):
     """Retrieve purchase orders from Supabase (authenticated)."""
     try:
         return get_supabase_service().list_purchase_orders()
@@ -437,8 +481,11 @@ def api_list_purchase_orders():
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
 
-@app.get("/api/v1/shop", dependencies=[Depends(get_current_user)])
-def api_get_shop(code: str = "STORE-402"):
+@app.get("/api/v1/shop")
+def api_get_shop(
+    code: str = "STORE-402",
+    current_user: dict[str, Any] = Depends(get_current_user),
+):
     """Retrieve current shop profile from Supabase (authenticated)."""
     try:
         shop = get_supabase_service().get_shop_by_code(code)
@@ -505,13 +552,42 @@ class BulkStockRequest(BaseModel):
     delta: int = Field(..., ge=-10000, le=10000)
 
 
+class BulkDeleteRequest(BaseModel):
+    product_ids: list[str] = Field(..., min_length=1, max_length=500)
+
+
+class BulkImportRequest(BaseModel):
+    products: list[ProductCreateRequest] = Field(..., min_length=1, max_length=1000)
+
+
+class SupplierCreateRequest(BaseModel):
+    id: str | None = None
+    name: str = Field(..., min_length=1, max_length=200)
+    category: str | None = Field("General Wholesale", max_length=100)
+    phone: str | None = Field("+91 98000 00000", max_length=50)
+    email: str | None = Field("orders@distributor.in", max_length=100)
+    hub: str | None = Field("Regional Logistics Hub", max_length=200)
+    lead_time_days: int = Field(3, ge=1, le=120)
+    is_verified: bool = True
+
+
+class SupplierUpdateRequest(BaseModel):
+    name: str | None = Field(None, min_length=1, max_length=200)
+    category: str | None = Field(None, max_length=100)
+    phone: str | None = Field(None, max_length=50)
+    email: str | None = Field(None, max_length=100)
+    hub: str | None = Field(None, max_length=200)
+    lead_time_days: int | None = Field(None, ge=1, le=120)
+    is_verified: bool | None = None
+
+
 class POCreateRequest(BaseModel):
     user_email: str | None = None
     id: str | None = None
-    po_number: str = Field(..., min_length=1, max_length=100)
+    po_number: str | None = Field(None, max_length=100)
     supplier: str = Field(..., min_length=1, max_length=200)
     status: Literal["ordered", "in_transit", "draft", "pending"] = "ordered"
-    total_amount: float = Field(..., ge=0)
+    total_amount: float | None = Field(None, ge=0)
     items: list[dict[str, Any]]
 
 
@@ -809,6 +885,74 @@ def bulk_update_stock(
     return {"status": "ok", "updated_count": len(updated_ids), "updated_ids": updated_ids}
 
 
+@app.post("/api/v1/user/products/bulk-delete")
+def bulk_delete_products(
+    req: BulkDeleteRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Atomically delete multiple products belonging to the authenticated merchant."""
+    clean_email = current_user["email"]
+    unique_ids = list(dict.fromkeys(req.product_ids))
+    cursor = db.cursor()
+    deleted_ids: list[str] = []
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        for pid in unique_ids:
+            cursor.execute(
+                "DELETE FROM app_products WHERE id = ? AND user_email = ?",
+                (pid, clean_email),
+            )
+            if cursor.rowcount == 1:
+                deleted_ids.append(pid)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error("Bulk delete error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error during bulk delete")
+
+    return {"status": "ok", "deleted_count": len(deleted_ids), "deleted_ids": deleted_ids}
+
+
+@app.post("/api/v1/user/products/bulk-import")
+def bulk_import_products(
+    req: BulkImportRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Atomically import multiple products into the authenticated user's catalog."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+    imported_ids: list[str] = []
+    errors: list[str] = []
+
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        for idx, p in enumerate(req.products):
+            if not p.name or not p.name.strip():
+                errors.append(f"Row {idx + 1}: Name cannot be empty")
+                continue
+            prod_id = p.id or str(uuid.uuid4())
+            sku = p.sku or f"SKU-{str(uuid.uuid4())[:6].upper()}"
+            stock = max(0, p.stock_on_hand)
+            rop = p.reorder_point if p.reorder_point is not None else 5
+            status_str = "out_of_stock" if stock <= 0 else ("low_stock" if stock <= rop else "active")
+            cursor.execute(
+                """INSERT OR REPLACE INTO app_products (id, user_email, sku, name, description, unit_price, unit_cost, stock_on_hand, safety_stock, reorder_point, lead_time_days, supplier, category_name, status, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (prod_id, clean_email, sku, p.name.strip(), p.description or "", p.unit_price, p.unit_cost, stock, p.safety_stock, rop, p.lead_time_days, p.supplier or "General Wholesale", p.category_name or "Groceries & Household", status_str, now_iso),
+            )
+            imported_ids.append(prod_id)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.error("Bulk import error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error during bulk import")
+
+    return {"status": "ok", "imported_count": len(imported_ids), "imported_ids": imported_ids, "errors": errors}
+
+
 @app.get("/api/v1/user/purchase-orders")
 def get_user_pos(
     email: str | None = Query(None),
@@ -845,7 +989,7 @@ def create_user_po(
     current_user: dict[str, Any] = Depends(get_current_user),
     db: sqlite3.Connection = Depends(get_write_db),
 ):
-    """Create a new purchase order for the authenticated merchant."""
+    """Create a new purchase order for the authenticated merchant with idempotency support."""
     clean_email = current_user["email"]
     if req.user_email and req.user_email.strip().lower() != clean_email:
         raise HTTPException(
@@ -853,29 +997,74 @@ def create_user_po(
             detail="Forbidden: You cannot create purchase orders for another merchant.",
         )
 
-    cursor = db.cursor()
-    po_id = str(uuid.uuid4())
-    if req.id:
-        cursor.execute("SELECT user_email FROM app_purchase_orders WHERE id = ?", (req.id,))
-        if not cursor.fetchone():
-            po_id = req.id
-    now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+    # Validate items
+    for it in req.items:
+        if not isinstance(it, dict):
+            raise HTTPException(status_code=400, detail="Each purchase order item must be an object")
+        units = it.get("units") if it.get("units") is not None else it.get("quantity")
+        if units is not None:
+            try:
+                int(units)
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail="Item quantity must be a valid number")
 
-    cursor.execute(
-        """INSERT INTO app_purchase_orders (id, user_email, po_number, supplier, status, total_amount, items_json, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (po_id, clean_email, req.po_number, req.supplier, req.status, req.total_amount, json.dumps(req.items), now_iso),
-    )
-    db.commit()
+    cursor = db.cursor()
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        if req.id:
+            cursor.execute("SELECT * FROM app_purchase_orders WHERE id = ?", (req.id,))
+            existing = cursor.fetchone()
+            if existing:
+                if existing["user_email"] != clean_email:
+                    db.rollback()
+                    raise HTTPException(status_code=403, detail="Forbidden: Purchase order ID collision.")
+                d = dict(existing)
+                try:
+                    d["items"] = json.loads(d["items_json"])
+                except Exception:
+                    d["items"] = []
+                d["replayed"] = True
+                db.rollback()
+                return d
+            po_id = req.id
+        else:
+            po_id = str(uuid.uuid4())
+
+        po_num = req.po_number or f"PO-{datetime.now(timezone.utc).strftime('%y%m%d')}-{str(uuid.uuid4())[:4].upper()}"
+        if req.total_amount is not None:
+            total_amt = float(req.total_amount)
+        else:
+            total_amt = sum(
+                float(it.get("quantity") or it.get("units") or 0) * float(it.get("unit_cost") or it.get("cost") or 0)
+                for it in req.items
+            )
+
+        now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+        cursor.execute(
+            """INSERT INTO app_purchase_orders (id, user_email, po_number, supplier, status, total_amount, items_json, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (po_id, clean_email, po_num, req.supplier, req.status, total_amt, json.dumps(req.items), now_iso),
+        )
+        db.commit()
+    except HTTPException:
+        raise
+    except sqlite3.IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Purchase order with this ID already exists")
+    except Exception as exc:
+        db.rollback()
+        logger.error("Create PO error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error during purchase order creation")
 
     return {
         "id": po_id,
-        "po_number": req.po_number,
+        "po_number": po_num,
         "status": req.status,
         "supplier": req.supplier,
-        "total_amount": req.total_amount,
+        "total_amount": total_amt,
         "items": req.items,
         "created_at": now_iso,
+        "replayed": False,
     }
 
 
@@ -1011,6 +1200,113 @@ def receive_user_po(
         raise HTTPException(status_code=500, detail="Database error during PO receipt")
 
     return {"status": "ok", "po_id": po_id, "inwarded_at": now_iso}
+
+
+@app.get("/api/v1/user/suppliers")
+def get_user_suppliers(
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """List suppliers for the authenticated merchant."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    cursor.execute(
+        "SELECT * FROM app_suppliers WHERE user_email = ? ORDER BY created_at ASC",
+        (clean_email,),
+    )
+    rows = cursor.fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/v1/user/suppliers")
+def create_user_supplier(
+    req: SupplierCreateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Create a new supplier for the authenticated merchant."""
+    clean_email = current_user["email"]
+    supp_id = req.id or f"supp-{uuid.uuid4().hex[:8]}"
+    now_iso = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
+    cursor = db.cursor()
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        cursor.execute(
+            """INSERT INTO app_suppliers (id, user_email, name, category, phone, email, hub, lead_time_days, is_verified, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (supp_id, clean_email, req.name.strip(), req.category or "General Wholesale", req.phone or "+91 98000 00000", req.email or "orders@distributor.in", req.hub or "Regional Logistics Hub", req.lead_time_days, 1 if req.is_verified else 0, now_iso),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Supplier with this ID already exists")
+    except Exception as exc:
+        db.rollback()
+        logger.error("Create supplier error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error creating supplier")
+
+    cursor.execute("SELECT * FROM app_suppliers WHERE id = ? AND user_email = ?", (supp_id, clean_email))
+    return dict(cursor.fetchone())
+
+
+@app.put("/api/v1/user/suppliers/{supplier_id}")
+def update_user_supplier(
+    supplier_id: str,
+    req: SupplierUpdateRequest,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Update supplier details for the authenticated merchant."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    try:
+        cursor.execute("BEGIN IMMEDIATE")
+        cursor.execute("SELECT * FROM app_suppliers WHERE id = ? AND user_email = ?", (supplier_id, clean_email))
+        row = cursor.fetchone()
+        if not row:
+            db.rollback()
+            raise HTTPException(status_code=404, detail="Supplier not found")
+        cur = dict(row)
+        new_name = req.name.strip() if req.name is not None else cur["name"]
+        new_cat = req.category if req.category is not None else cur["category"]
+        new_phone = req.phone if req.phone is not None else cur["phone"]
+        new_email = req.email if req.email is not None else cur["email"]
+        new_hub = req.hub if req.hub is not None else cur["hub"]
+        new_lt = req.lead_time_days if req.lead_time_days is not None else cur["lead_time_days"]
+        new_ver = (1 if req.is_verified else 0) if req.is_verified is not None else cur["is_verified"]
+
+        cursor.execute(
+            """UPDATE app_suppliers
+               SET name = ?, category = ?, phone = ?, email = ?, hub = ?, lead_time_days = ?, is_verified = ?
+               WHERE id = ? AND user_email = ?""",
+            (new_name, new_cat, new_phone, new_email, new_hub, new_lt, new_ver, supplier_id, clean_email),
+        )
+        db.commit()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        db.rollback()
+        logger.error("Update supplier error: %s", exc)
+        raise HTTPException(status_code=500, detail="Database error updating supplier")
+
+    cursor.execute("SELECT * FROM app_suppliers WHERE id = ? AND user_email = ?", (supplier_id, clean_email))
+    return dict(cursor.fetchone())
+
+
+@app.delete("/api/v1/user/suppliers/{supplier_id}")
+def delete_user_supplier(
+    supplier_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+    db: sqlite3.Connection = Depends(get_write_db),
+):
+    """Delete a supplier for the authenticated merchant without corrupting historical POs."""
+    clean_email = current_user["email"]
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM app_suppliers WHERE id = ? AND user_email = ?", (supplier_id, clean_email))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Supplier not found")
+    db.commit()
+    return {"status": "ok", "deleted_id": supplier_id}
 
 
 @app.post("/api/v1/user/sales")

@@ -239,5 +239,79 @@ test.describe('SmartStock Kirana Retail Web App - End-to-End Suite', () => {
 
       expect(errors).toEqual([]);
     });
+
+    test('11. Priority A/B/C Closure: PO persistence across reload, supplier persistence, and bulk operations', async ({ page }) => {
+      const errors = [];
+      page.on('pageerror', (err) => errors.push(err.message));
+      await page.setViewportSize({ width: 1440, height: 900 });
+
+      // 1. PO Creation and Persistence across page reload
+      await page.goto('/screens/05_purchase_orders.html');
+      await expect(page.locator('#po-main')).toBeVisible();
+      
+      const createdPO = await page.evaluate(async () => {
+        return await window.SmartStock.createManualPO({
+          supplier: 'Metro Cash & Carry',
+          expectedDate: '2026-11-28',
+          items: [{ name: 'Parle-G 250g', sku: 'SKU-E2E-PO', units: 30, cost: 20 }]
+        });
+      });
+      expect(createdPO).toBeTruthy();
+
+      // Reload page and assert PO still persists
+      await page.reload();
+      await expect(page.locator('#po-ledger-container')).toContainText('Metro Cash & Carry');
+
+      // 2. Supplier Addition and Persistence across page reload
+      await page.goto('/screens/12_suppliers.html');
+      await expect(page.locator('#sup-grid')).toBeVisible();
+      
+      await page.evaluate(async () => {
+        await window.SmartStock.addSupplier({
+          name: 'Bengaluru Spice Traders',
+          category: 'Spices & Seasoning',
+          phone: '+91 98888 77777',
+          hub: 'APMC Yard 4',
+          lead_time_days: 3
+        });
+      });
+
+      await page.reload();
+      await expect(page.locator('#sup-grid')).toContainText('Bengaluru Spice Traders');
+
+      // 3. Inventory Bulk Operations
+      await page.goto('/screens/03_inventory.html');
+      await expect(page.locator('#inventory-list')).toBeVisible();
+      const initialCount = await page.locator('#inventory-list .inventory-card').count();
+      expect(initialCount).toBeGreaterThan(0);
+
+      // Add a temporary item and then bulk delete it
+      await page.evaluate(async () => {
+        await window.SmartStock.addProduct({
+          name: 'Bulk Deletion Test SKU',
+          sku: 'SKU-BULK-DEL-1',
+          unit_price: 99,
+          unit_cost: 75,
+          stock_on_hand: 10,
+          reorder_point: 5,
+          category_name: 'Test'
+        });
+      });
+      await page.reload();
+      await expect(page.locator('#inventory-list')).toContainText('Bulk Deletion Test SKU');
+
+      // Execute bulk delete on test item
+      await page.evaluate(async () => {
+        const prods = await window.SmartStock.getProducts();
+        const testItem = prods.find(p => p.sku === 'SKU-BULK-DEL-1' || p.name === 'Bulk Deletion Test SKU');
+        if (testItem) {
+          await window.SmartStock.bulkDelete([testItem.id]);
+        }
+      });
+      await page.reload();
+      await expect(page.locator('#inventory-list')).not.toContainText('Bulk Deletion Test SKU');
+
+      expect(errors).toEqual([]);
+    });
   });
 });

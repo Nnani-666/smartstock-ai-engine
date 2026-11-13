@@ -16,6 +16,9 @@ xcuserdata/
 
 # Database
 *.db
+*.db-shm
+*.db-wal
+data/*.db*
 *.sqlite
 *.sqlite3
 smartstock.db

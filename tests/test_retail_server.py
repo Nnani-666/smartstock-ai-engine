@@ -3,6 +3,7 @@ from __future__ import annotations
 """Server-side integration and unit tests for retail transactions, stock deductions, and accounting."""
 
 import sqlite3
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -73,7 +74,7 @@ def retail_client(temp_db):
         finally:
             c.close()
 
-    from app.db import get_write_db, get_db
+    from app.db import get_db, get_write_db
     app.dependency_overrides[get_write_db] = override_write_db
     app.dependency_overrides[get_db] = override_read_db
 
