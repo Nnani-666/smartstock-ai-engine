@@ -14,11 +14,12 @@ DerivedData/
 xcuserdata/
 *.xcscmblueprint
 
-# Database
+# Database & Runtime State
 *.db
 *.db-shm
 *.db-wal
 data/*.db*
+data/*.json
 *.sqlite
 *.sqlite3
 smartstock.db

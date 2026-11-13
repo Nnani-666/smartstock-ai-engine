@@ -159,9 +159,14 @@
             </div>
           `;
         }
-        const srcLabel = (msg.source === 'gemini-2.5-flash' || msg.source === 'gemini_live')
-          ? 'Gemini Server Proxy'
-          : (msg.source === 'local_heuristic' ? 'Local Store Engine' : (msg.source === 'rate_limit' ? 'Rate Limit Guard' : 'Advisor Ready'));
+        let srcLabel = 'Advisor Ready';
+        if (msg.source === 'gemini' || (msg.source && msg.source.startsWith('gemini'))) {
+          srcLabel = msg.model ? `Gemini (${msg.model})` : 'Gemini Server Proxy';
+        } else if (msg.source === 'local_heuristic') {
+          srcLabel = 'Local Store Engine (Fallback)';
+        } else if (msg.source === 'rate_limit') {
+          srcLabel = 'Rate Limit Guard';
+        }
         return `
           <div class="flex justify-start">
             <div class="max-w-[88%] ed-well p-4 space-y-2">
@@ -209,6 +214,7 @@
         thread.push({
           role: 'assistant',
           source: res?.source || 'local_heuristic',
+          model: res?.model,
           text: res?.analysis || res?.reply || 'Unable to generate advisor response.'
         });
       } catch (err) {

@@ -5567,20 +5567,28 @@
             // Local heuristic scoped strictly to active store catalog
             const q = (promptText || '').toLowerCase();
             let reply = '';
-            if (q.includes('reorder') || q.includes('buy') || q.includes('out')) {
+            if (/\b(hi|hello|hey|namaste|good morning)\b/.test(q)) {
+                reply = `Namaste! I am your store advisor. I can help you analyze urgent reorders, top-selling items, slow-moving stock, or pending purchase orders across your ${products.length} catalog SKUs. What would you like to review?`;
+            } else if (/\b(supplier|suppliers|vendor|distributor)\b/.test(q)) {
+                const pending = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
+                reply = `You have ${orders.length} total recorded purchase orders (${pending.length} pending delivery). Registered suppliers include Metro Wholesale and regional distribution depots.`;
+            } else if (/\b(slow|slowly|not selling|dead stock)\b/.test(q)) {
+                const soldNames = new Set(sales.map(s => s.product_name));
+                const unsold = products.filter(p => !soldNames.has(p.name));
+                reply = unsold.length > 0
+                    ? `Found ${unsold.length} item(s) with no recent sales recorded: ${unsold.slice(0, 3).map(p => p.name).join(', ')}.`
+                    : `All ${products.length} products have recorded sales activity in the ledger.`;
+            } else if (/\b(reorder|urgently|urgent|buy)\b/.test(q)) {
                 if (outItems.length + lowItems.length === 0) {
                     reply = `All ${products.length} catalog items are currently stocked above reorder points. No urgent purchases needed today.`;
                 } else {
                     const topUrgent = [...outItems, ...lowItems].slice(0, 4).map(p => `${p.name} (${p.stock_on_hand} left, reorder at ${p.reorder_point || 5})`).join('; ');
                     reply = `${outItems.length} out-of-stock and ${lowItems.length} low-stock items require attention: ${topUrgent}. Open Replenishment Engine to dispatch draft purchase orders.`;
                 }
-            } else if (q.includes('sale') || q.includes('revenue') || q.includes('profit')) {
+            } else if (/\b(sale|sales|revenue|profit|fast|fastest|top)\b/.test(q)) {
                 reply = `Today's recorded revenue is ${this.formatINR(summaryToday.revenue)} across ${summaryToday.count} transactions (${summaryToday.totalUnits} units). Total historical sales logged: ${sales.length}.`;
-            } else if (q.includes('order') || q.includes('po') || q.includes('supplier')) {
-                const pending = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
-                reply = `You currently have ${pending.length} active purchase order(s) awaiting delivery and ${orders.length} total recorded orders.`;
             } else {
-                reply = `Store Catalog: ${products.length} SKUs (${outItems.length} out of stock, ${lowItems.length} low stock). Today's sales: ${this.formatINR(summaryToday.revenue)}. Ask about reorders, daily revenue, or pending supplier deliveries.`;
+                reply = `Store Catalog: ${products.length} SKUs (${outItems.length} out of stock, ${lowItems.length} low stock). Today's sales: ${this.formatINR(summaryToday.revenue)}. Ask about reorders, daily revenue, slow-moving items, or pending supplier deliveries.`;
             }
 
             return {

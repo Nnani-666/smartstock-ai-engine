@@ -79,6 +79,9 @@ API_VERSION: str = "1.0.0"
 ENVIRONMENT: str = os.getenv("SMARTSTOCK_ENV", "development").strip().lower()
 API_KEY: str | None = os.getenv("API_KEY") or None
 GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY") or None
+GEMINI_PRIMARY_MODEL: str = os.getenv("GEMINI_PRIMARY_MODEL", "gemini-3.5-flash-lite")
+GEMINI_SECONDARY_MODEL: str = os.getenv("GEMINI_SECONDARY_MODEL", "gemini-3.1-flash-lite")
+MODEL_STATUS_FILE = DATA_DIR / "gemini_model_status.json"
 RATE_LIMIT_AUTH_PER_MIN: int = int(os.getenv("RATE_LIMIT_AUTH_PER_MIN", "30"))
 RATE_LIMIT_AI_PER_MIN: int = int(os.getenv("RATE_LIMIT_AI_PER_MIN", "20"))
 

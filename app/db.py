@@ -19,9 +19,9 @@ def get_db_connection(read_only: bool = True) -> sqlite3.Connection:
     """
     if read_only:
         uri = f"file:{DB_PATH}?mode=ro"
-        conn = sqlite3.connect(uri, uri=True, timeout=10.0)
+        conn = sqlite3.connect(uri, uri=True, timeout=10.0, check_same_thread=False)
     else:
-        conn = sqlite3.connect(str(DB_PATH), timeout=30.0)
+        conn = sqlite3.connect(str(DB_PATH), timeout=30.0, check_same_thread=False)
     
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON;")
