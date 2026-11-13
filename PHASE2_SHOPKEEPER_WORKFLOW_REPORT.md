@@ -26,7 +26,7 @@ The scenario models a Kirana shopkeeper (**Gopal Krishna** of **Shree Krishna Pr
   - Owner Email: `shopkeeper_test_[timestamp]@kiranamart.in`
   - Mobile Number: `+91 99887 66554`
   - Password: `StrongP@ssword2026!`
-- **Result**: **SUCCESS**. Backend issued JWT Bearer token and initialized isolated merchant tenant. Frontend redirected immediately to `/screens/02_overview.html`.
+- **Result**: **SUCCESS**. Backend issued opaque 256-bit cryptographic Bearer session token and initialized isolated merchant tenant. Frontend redirected immediately to `/screens/02_overview.html`.
 - **Live Verification**: Overview dashboard header rendered dynamic store greeting:  
   `"Welcome, Shree Krishna Provisions"` with `0 active SKUs` and `₹0.00` starting valuation.
 
@@ -143,7 +143,7 @@ The scenario models a Kirana shopkeeper (**Gopal Krishna** of **Shree Krishna Pr
 - **Action**: Tested cross-tenant isolation and security boundaries:
   1. Signed out of `Shree Krishna Provisions` session.
   2. Registered a hostile competitor account (`attacker_tenant_[timestamp]@competitor.in`, Store: `Competitor Mart`).
-  3. Extracted attacker JWT token and executed direct HTTP penetration attacks against victim's resources:
+  3. Extracted attacker Bearer session token and executed direct HTTP penetration attacks against victim's resources:
      - **Attack 1 (Data Exfiltration)**: `GET /api/v1/user/products?email=victim`  
        *Result*: **403 Forbidden** (Blocked).
      - **Attack 2 (Resource Tampering)**: `DELETE /api/v1/user/products/[victim_prod_id]`  

@@ -71,7 +71,7 @@ During this final acceptance phase:
 
 | # | Capability | Implementation & Architecture | Acceptance Verification | Status |
 |---|---|---|---|---|
-| **1** | **Multi-Tenant Merchant Authentication** | JWT Bearer authentication with SHA-256 password hashing and isolated store register catalogs. | Verified via Step 1 registration and Step 12 defense tests. | **VERIFIED** |
+| **1** | **Multi-Tenant Merchant Authentication** | PBKDF2-HMAC-SHA256 password hashing (600,000 iterations, 16-byte random salts) with opaque 256-bit cryptographic Bearer session tokens stored in `app_sessions` with 7-day expiration, revocation on logout, and isolated store register catalogs. | Verified via Step 1 registration and Step 12 defense tests. | **VERIFIED** |
 | **2** | **Kirana Ledger Catalog Management** | Full CRUD for retail SKUs with selling prices, purchase costs, current stock, and custom reorder points. | Verified adding 5 items, editing prices/costs, and checking stock. | **VERIFIED** |
 | **3** | **Product Editing & Details Modal** | Dedicated `#edit-item-modal` in `smartstock-bridge.js` allowing instant inline updates to item name, price, cost, and ROP. | Tested updating *Fortune Sunflower Oil (Refined)*. Persisted to SQLite. | **VERIFIED** |
 | **4** | **Instant Catalog Search & Filter** | Sub-string SKU and product search with category pill filters (`input[placeholder*="Search by SKU"]`). | Tested searching for `'Atta'`; instantly filtered to 1 matching item. | **VERIFIED** |
@@ -93,7 +93,7 @@ During this final acceptance phase:
 | **20** | **Single-Click Inward Delivery Receiving** | Instant inventory credit (`stock_on_hand += units`) directly from completed purchase orders. | Received PO-2026-001; Basmati Rice stock increased from 25 to 45. | **VERIFIED** |
 | **21** | **Idempotent PO Receiving Guard** | Protection against double-counting inventory when receiving a previously completed purchase order. | Attempted duplicate receive; replayed cleanly without stock change. | **VERIFIED** |
 | **22** | **Suppliers Directory & Lead Times** | Supplier management tracking APMC wholesale hubs, contact details, and lead-time days. | Created *Karnataka Spice Growers Co-Op* and verified in grid. | **VERIFIED** |
-| **23** | **Conversational AI Assistant Copilot** | Decision-support assistant answering natural language questions with contextual inventory guidance. | Tested query on reorders; returned low-stock alert & revenue context. | **VERIFIED** |
+| **23** | **Conversational AI Assistant Copilot** | Server-side proxied AI advisor (`POST /api/v1/ai/assistant`) using Gemini 2.5 Flash when `GEMINI_API_KEY` is configured, with intelligent tenant-scoped local heuristic fallback when key is unset. | Tested query on reorders; returned low-stock alert & revenue context (`source: local_heuristic`). | **VERIFIED** |
 | **24** | **Two-Level Intelligence Interface** | Instant toggle between Shopkeeper Plain-English (`biz-only`) and Technical Telemetry (`tech-only`). | Inspected toggle across dashboard, forecasts, anomalies, and analytics. | **VERIFIED** |
 
 ---
