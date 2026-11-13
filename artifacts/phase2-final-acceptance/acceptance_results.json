@@ -1,0 +1,1576 @@
+{
+  "timestamp": "2026-11-13T07:34:57.586Z",
+  "visualInspection": [
+    {
+      "screen": "hub",
+      "title": "SmartStock Editorial Hub",
+      "url": "/index.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "signin",
+      "title": "Sign In / Register",
+      "url": "/screens/01_signin.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "overview",
+      "title": "Store Overview Dashboard",
+      "url": "/screens/02_overview.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "inventory",
+      "title": "Inventory Ledger",
+      "url": "/screens/03_inventory.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "forecasts",
+      "title": "Demand Forecasting",
+      "url": "/screens/04_forecasts.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "purchase_orders",
+      "title": "Purchase Orders",
+      "url": "/screens/05_purchase_orders.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "replenishment",
+      "title": "Dynamic Replenishment",
+      "url": "/screens/05_replenishment.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "settings",
+      "title": "Store Settings",
+      "url": "/screens/06_settings.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "sales",
+      "title": "POS Terminal & Register",
+      "url": "/screens/07_sales.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "anomalies",
+      "title": "Anomaly Monitor",
+      "url": "/screens/08_anomalies.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "segmentation",
+      "title": "SKU Segmentation",
+      "url": "/screens/09_segmentation.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "assistant",
+      "title": "AI Assistant Copilot",
+      "url": "/screens/10_assistant.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "analytics",
+      "title": "Financials & Simulation",
+      "url": "/screens/11_analytics.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "screen": "suppliers",
+      "title": "Suppliers Directory",
+      "url": "/screens/12_suppliers.html",
+      "viewports": [
+        {
+          "viewport": "desktop",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "desktop",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "tablet",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "light",
+          "overflow": false,
+          "errors": []
+        },
+        {
+          "viewport": "mobile",
+          "theme": "dark",
+          "overflow": false,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "workflowSteps": [
+    {
+      "step": 1,
+      "title": "Account Registration & Dashboard Binding",
+      "success": true,
+      "details": {
+        "store": "Shree Krishna Provisions",
+        "email": "shopkeeper_test_1794555297588@kiranamart.in",
+        "greeting": "Welcome, Shree Krishna Provisions"
+      }
+    },
+    {
+      "step": 2,
+      "title": "Inventory Catalog & Bulk Operations",
+      "success": true,
+      "details": {
+        "initialItems": 5,
+        "searchMatches": 1,
+        "editConfirmed": true,
+        "deleteConfirmed": true
+      }
+    },
+    {
+      "step": 3,
+      "title": "POS Terminal & Stock Deductions",
+      "success": true,
+      "details": {
+        "initialStock": 60,
+        "finalStock": 57,
+        "exactDeduction": true,
+        "oversellBlocked": true
+      }
+    },
+    {
+      "step": 4,
+      "title": "Demand Forecasting Workbench",
+      "success": true,
+      "details": {
+        "target": "Retail Demand — Store #1, Item #1",
+        "horizonTested": "28d",
+        "model": "holt_winters"
+      }
+    },
+    {
+      "step": 5,
+      "title": "Anomaly Detection Engine",
+      "success": true,
+      "details": {
+        "renderedAnomalies": 13
+      }
+    },
+    {
+      "step": 6,
+      "title": "SKU Segmentation Matrix",
+      "success": true,
+      "details": {
+        "activeCell": "Segment AX SKUs"
+      }
+    },
+    {
+      "step": 7,
+      "title": "Dynamic Replenishment Engine",
+      "success": true,
+      "details": {
+        "r1": "0",
+        "r2": "2",
+        "r3": "3"
+      }
+    },
+    {
+      "step": 8,
+      "title": "Purchase Order Inwarding & Stock Increment",
+      "success": true,
+      "details": {
+        "poNumber": "PO-2026-001",
+        "receivedUnits": 20,
+        "stockBefore": 25,
+        "stockAfter": 45,
+        "idempotent": true
+      }
+    },
+    {
+      "step": 9,
+      "title": "Suppliers Directory CRUD",
+      "success": true,
+      "details": {
+        "created": "Karnataka Spice Growers Co-Op",
+        "verifiedInGrid": true,
+        "deletedCleanly": true
+      }
+    },
+    {
+      "step": 10,
+      "title": "Smart Assistant Copilot",
+      "success": true,
+      "details": {
+        "source": "local_heuristic",
+        "snippet": "Replenishment Warning: 2 product(s) have reached reorder thresholds. • Recent re"
+      }
+    },
+    {
+      "step": 11,
+      "title": "Analytics Financials & Simulation Reports",
+      "success": true,
+      "details": {
+        "liveRevenue": "₹84"
+      }
+    },
+    {
+      "step": 12,
+      "title": "Multi-Tenant Defense & Attack Rejection",
+      "success": true,
+      "details": {
+        "crossProductsQuery": 403,
+        "crossProductDelete": 404,
+        "crossPOReceive": 404
+      }
+    }
+  ],
+  "tenantDefense": [
+    {
+      "crossProductsQuery": 403,
+      "crossProductDelete": 404,
+      "crossPOReceive": 404
+    }
+  ],
+  "screenshots": [
+    {
+      "screen": "hub",
+      "title": "SmartStock Editorial Hub",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/hub_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "hub",
+      "title": "SmartStock Editorial Hub",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/hub_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "hub",
+      "title": "SmartStock Editorial Hub",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/hub_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "hub",
+      "title": "SmartStock Editorial Hub",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/hub_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "hub",
+      "title": "SmartStock Editorial Hub",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/hub_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "hub",
+      "title": "SmartStock Editorial Hub",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/hub_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "signin",
+      "title": "Sign In / Register",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/signin_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "signin",
+      "title": "Sign In / Register",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/signin_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "signin",
+      "title": "Sign In / Register",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/signin_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "signin",
+      "title": "Sign In / Register",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/signin_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "signin",
+      "title": "Sign In / Register",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/signin_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "signin",
+      "title": "Sign In / Register",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/signin_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "overview",
+      "title": "Store Overview Dashboard",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/overview_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "overview",
+      "title": "Store Overview Dashboard",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/overview_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "overview",
+      "title": "Store Overview Dashboard",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/overview_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "overview",
+      "title": "Store Overview Dashboard",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/overview_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "overview",
+      "title": "Store Overview Dashboard",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/overview_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "overview",
+      "title": "Store Overview Dashboard",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/overview_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "inventory",
+      "title": "Inventory Ledger",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/inventory_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "inventory",
+      "title": "Inventory Ledger",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/inventory_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "inventory",
+      "title": "Inventory Ledger",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/inventory_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "inventory",
+      "title": "Inventory Ledger",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/inventory_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "inventory",
+      "title": "Inventory Ledger",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/inventory_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "inventory",
+      "title": "Inventory Ledger",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/inventory_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "forecasts",
+      "title": "Demand Forecasting",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/forecasts_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "forecasts",
+      "title": "Demand Forecasting",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/forecasts_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "forecasts",
+      "title": "Demand Forecasting",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/forecasts_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "forecasts",
+      "title": "Demand Forecasting",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/forecasts_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "forecasts",
+      "title": "Demand Forecasting",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/forecasts_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "forecasts",
+      "title": "Demand Forecasting",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/forecasts_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "purchase_orders",
+      "title": "Purchase Orders",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/purchase_orders_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "purchase_orders",
+      "title": "Purchase Orders",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/purchase_orders_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "purchase_orders",
+      "title": "Purchase Orders",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/purchase_orders_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "purchase_orders",
+      "title": "Purchase Orders",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/purchase_orders_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "purchase_orders",
+      "title": "Purchase Orders",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/purchase_orders_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "purchase_orders",
+      "title": "Purchase Orders",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/purchase_orders_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "replenishment",
+      "title": "Dynamic Replenishment",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/replenishment_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "replenishment",
+      "title": "Dynamic Replenishment",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/replenishment_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "replenishment",
+      "title": "Dynamic Replenishment",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/replenishment_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "replenishment",
+      "title": "Dynamic Replenishment",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/replenishment_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "replenishment",
+      "title": "Dynamic Replenishment",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/replenishment_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "replenishment",
+      "title": "Dynamic Replenishment",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/replenishment_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "settings",
+      "title": "Store Settings",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/settings_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "settings",
+      "title": "Store Settings",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/settings_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "settings",
+      "title": "Store Settings",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/settings_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "settings",
+      "title": "Store Settings",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/settings_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "settings",
+      "title": "Store Settings",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/settings_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "settings",
+      "title": "Store Settings",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/settings_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "sales",
+      "title": "POS Terminal & Register",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/sales_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "sales",
+      "title": "POS Terminal & Register",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/sales_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "sales",
+      "title": "POS Terminal & Register",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/sales_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "sales",
+      "title": "POS Terminal & Register",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/sales_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "sales",
+      "title": "POS Terminal & Register",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/sales_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "sales",
+      "title": "POS Terminal & Register",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/sales_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "anomalies",
+      "title": "Anomaly Monitor",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/anomalies_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "anomalies",
+      "title": "Anomaly Monitor",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/anomalies_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "anomalies",
+      "title": "Anomaly Monitor",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/anomalies_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "anomalies",
+      "title": "Anomaly Monitor",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/anomalies_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "anomalies",
+      "title": "Anomaly Monitor",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/anomalies_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "anomalies",
+      "title": "Anomaly Monitor",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/anomalies_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "segmentation",
+      "title": "SKU Segmentation",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/segmentation_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "segmentation",
+      "title": "SKU Segmentation",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/segmentation_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "segmentation",
+      "title": "SKU Segmentation",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/segmentation_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "segmentation",
+      "title": "SKU Segmentation",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/segmentation_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "segmentation",
+      "title": "SKU Segmentation",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/segmentation_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "segmentation",
+      "title": "SKU Segmentation",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/segmentation_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "assistant",
+      "title": "AI Assistant Copilot",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/assistant_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "assistant",
+      "title": "AI Assistant Copilot",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/assistant_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "assistant",
+      "title": "AI Assistant Copilot",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/assistant_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "assistant",
+      "title": "AI Assistant Copilot",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/assistant_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "assistant",
+      "title": "AI Assistant Copilot",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/assistant_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "assistant",
+      "title": "AI Assistant Copilot",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/assistant_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "analytics",
+      "title": "Financials & Simulation",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/analytics_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "analytics",
+      "title": "Financials & Simulation",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/analytics_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "analytics",
+      "title": "Financials & Simulation",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/analytics_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "analytics",
+      "title": "Financials & Simulation",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/analytics_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "analytics",
+      "title": "Financials & Simulation",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/analytics_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "analytics",
+      "title": "Financials & Simulation",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/analytics_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "suppliers",
+      "title": "Suppliers Directory",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/suppliers_desktop_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "suppliers",
+      "title": "Suppliers Directory",
+      "viewport": "desktop",
+      "dimensions": "1440x900",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/suppliers_desktop_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "suppliers",
+      "title": "Suppliers Directory",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/suppliers_tablet_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "suppliers",
+      "title": "Suppliers Directory",
+      "viewport": "tablet",
+      "dimensions": "768x1024",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/suppliers_tablet_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "suppliers",
+      "title": "Suppliers Directory",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "light",
+      "path": "artifacts/phase2-final-acceptance/screenshots/suppliers_mobile_light.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    },
+    {
+      "screen": "suppliers",
+      "title": "Suppliers Directory",
+      "viewport": "mobile",
+      "dimensions": "390x844",
+      "theme": "dark",
+      "path": "artifacts/phase2-final-acceptance/screenshots/suppliers_mobile_dark.png",
+      "hasOverflow": false,
+      "consoleErrors": 0
+    }
+  ],
+  "errors": []
+}

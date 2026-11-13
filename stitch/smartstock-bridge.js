@@ -3737,6 +3737,73 @@
                 </div>
             </div>
 
+            <!-- Edit Product Modal -->
+            <div id="edit-item-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
+                <div class="bg-surface-container-lowest w-full max-w-md rounded-xl shadow-xl overflow-hidden flex flex-col border border-outline/20">
+                    <div class="p-4 bg-surface-container-high border-b border-outline/10 flex items-center justify-between">
+                        <h3 class="font-bold text-sm text-on-surface">Edit Product</h3>
+                        <button type="button" onclick="SmartStock.closeEditProductModal()" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-variant cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                    </div>
+
+                    <form id="edit-product-form" onsubmit="event.preventDefault(); SmartStock.saveEditProduct();" class="p-4 space-y-3">
+                        <input id="edit-prod-id" type="hidden" />
+                        <div>
+                            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Product Name</label>
+                            <input id="edit-item-name" type="text" required placeholder="Product Name"
+                                class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-sm border border-outline/20 focus:border-primary focus:outline-none" />
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Selling Price (₹)</label>
+                                <input id="edit-item-price" type="number" step="0.5" required placeholder="100"
+                                    class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-sm border border-outline/20 focus:border-primary focus:outline-none font-medium" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Purchase Cost (₹)</label>
+                                <input id="edit-item-cost" type="number" step="0.5" placeholder="85"
+                                    class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-sm border border-outline/20 focus:border-primary focus:outline-none font-medium" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Stock on Hand</label>
+                                <input id="edit-item-stock" type="number" required placeholder="10"
+                                    class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-sm border border-outline/20 focus:border-primary focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-on-surface-variant mb-1">Reorder Point</label>
+                                <input id="edit-item-reorder" type="number" placeholder="5" value="5"
+                                    class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-sm border border-outline/20 focus:border-primary focus:outline-none" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-on-surface-variant mb-1">Category</label>
+                            <select id="edit-item-category" class="w-full h-10 px-3 bg-surface-container-low rounded-lg text-sm border border-outline/20 focus:border-primary focus:outline-none">
+                                <option value="Groceries & Grains">Groceries & Grains</option>
+                                <option value="Edible Oils">Edible Oils</option>
+                                <option value="Oils & Spices">Oils & Spices</option>
+                                <option value="Packaged Foods & Dairy">Packaged Foods & Dairy</option>
+                                <option value="Personal & Home Care">Personal & Home Care</option>
+                            </select>
+                        </div>
+
+                        <div class="pt-3 flex items-center justify-end gap-2 border-t border-outline/10">
+                            <button type="button" onclick="SmartStock.closeEditProductModal()" class="px-3 h-9 rounded-lg text-xs font-medium text-on-surface-variant hover:bg-surface-container cursor-pointer">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 h-9 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:opacity-90 cursor-pointer">
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <!-- Import CSV Modal -->
             <div id="import-csv-modal" class="fixed inset-0 bg-black/60 z-50 hidden items-center justify-center p-4">
                 <div class="bg-surface-container-lowest w-full max-w-md rounded-xl shadow-xl overflow-hidden flex flex-col border border-outline/20">
