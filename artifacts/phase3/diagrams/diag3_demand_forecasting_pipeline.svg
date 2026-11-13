@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 500" width="100%" height="100%">
+  <rect width="980" height="500" fill="#FBF8F3"/>
+  <text x="490" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#1B4332" text-anchor="middle">SmartStock DS-1: Demand Forecasting Pipeline</text>
+  <text x="490" y="58" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#4A5568" text-anchor="middle">From Raw Sales Ingestion to Recursive Multi-Horizon Forecast Generation</text>
+
+  <!-- Step 1 -->
+  <rect x="40" y="90" width="270" height="90" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="55" y="115" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332">1. Data Ingestion &amp; Prep</text>
+  <text x="55" y="135" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• 913,000 records (2013–2017)</text>
+  <text x="55" y="152" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Train/Val/Test temporal split</text>
+  <text x="55" y="169" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• 500 series zero/gap checking</text>
+
+  <!-- Step 2 -->
+  <rect x="355" y="90" width="270" height="90" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="1.5"/>
+  <text x="370" y="115" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#C85A32">2. DS-2 Anomaly Cleansing</text>
+  <text x="370" y="135" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Group-level Z-Score &amp; IQR filtering</text>
+  <text x="370" y="152" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Outliers winsorized to median</text>
+  <text x="370" y="169" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Produces stable 'sales_clean' series</text>
+
+  <!-- Step 3 -->
+  <rect x="670" y="90" width="270" height="90" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="685" y="115" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#2D6A4F">3. Feature Engineering</text>
+  <text x="685" y="135" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Lag features (t-1, t-7, t-14, t-28)</text>
+  <text x="685" y="152" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Rolling 7d &amp; 28d mean and std</text>
+  <text x="685" y="169" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Day of week &amp; month indicators</text>
+
+  <!-- Connectors Row 1 -->
+  <line x1="310" y1="135" x2="355" y2="135" stroke="#1B4332" stroke-width="2"/>
+  <line x1="625" y1="135" x2="670" y2="135" stroke="#1B4332" stroke-width="2"/>
+  <line x1="805" y1="180" x2="805" y2="230" stroke="#1B4332" stroke-width="2"/>
+
+  <!-- Step 4 -->
+  <rect x="670" y="230" width="270" height="105" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="685" y="255" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#2D6A4F">4. Multi-Model Estimation</text>
+  <text x="685" y="275" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Baseline 1: Naive &amp; Seasonal Naive</text>
+  <text x="685" y="292" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Statistical: Holt-Winters (M-Trend/M-Seas)</text>
+  <text x="685" y="309" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• ML: Random Forest Regressor (100 Trees)</text>
+  <text x="685" y="326" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Parallel multi-series training</text>
+
+  <!-- Step 5 -->
+  <rect x="355" y="230" width="270" height="105" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="1.5"/>
+  <text x="370" y="255" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#C85A32">5. Multi-Horizon Walk-Forward</text>
+  <text x="370" y="275" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• 7-Day short horizon (WMAPE: ~12%)</text>
+  <text x="370" y="292" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• 14-Day supplier lead time window</text>
+  <text x="370" y="309" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• 21-Day tactical reorder horizon</text>
+  <text x="370" y="326" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• 28-Day monthly planning cycle</text>
+
+  <!-- Step 6 -->
+  <rect x="40" y="230" width="270" height="105" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="55" y="255" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332">6. Production Delivery</text>
+  <text x="55" y="275" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Serialized forecasts to REST endpoints</text>
+  <text x="55" y="292" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Feeds AI-1 Dynamic Replenishment ROP</text>
+  <text x="55" y="309" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Telemetry stored for drift tracking</text>
+  <text x="55" y="326" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Interactive Workbench visualization</text>
+
+  <!-- Connectors Row 2 -->
+  <line x1="670" y1="280" x2="625" y2="280" stroke="#1B4332" stroke-width="2"/>
+  <line x1="355" y1="280" x2="310" y2="280" stroke="#1B4332" stroke-width="2"/>
+
+  <!-- Footer Banner -->
+  <rect x="40" y="375" width="900" height="85" rx="8" fill="#1B4332"/>
+  <text x="490" y="405" font-family="system-ui, -apple-system, sans-serif" font-size="12.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">SUMMARY EVALUATION ON 45,500 OUT-OF-SAMPLE TEST OBSERVATIONS (Q4 2017)</text>
+  <text x="490" y="426" font-family="monospace" font-size="11" fill="#E2E8F0" text-anchor="middle">Random Forest: WMAPE 12.38% | RMSE 6.54 | MAE 4.88  •  Holt-Winters: WMAPE 15.62% | RMSE 7.62 | MAE 5.92</text>
+  <text x="490" y="445" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#D4AF37" text-anchor="middle">Defeats Naive Baseline (WMAPE 22.84%) and Seasonal Naive (WMAPE 17.51%) with statistical significance.</text>
+</svg>

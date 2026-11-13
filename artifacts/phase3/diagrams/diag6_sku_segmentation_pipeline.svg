@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 480" width="100%" height="100%">
+  <rect width="980" height="480" fill="#FBF8F3"/>
+  <text x="490" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#1B4332" text-anchor="middle">SmartStock AI-2: SKU Segmentation &amp; 9-Box Matrix Pipeline</text>
+  <text x="490" y="58" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#4A5568" text-anchor="middle">Unsupervised K-Means Clustering Combined with ABC Pareto &amp; XYZ Volatility Classification</text>
+
+  <!-- Series Feature Extraction -->
+  <rect x="40" y="90" width="260" height="120" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="55" y="116" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332">1. SKU Statistical Extraction</text>
+  <text x="55" y="138" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Aggregate 913k daily transactions</text>
+  <text x="55" y="154" font-family="monospace" font-size="10" fill="#2D6A4F">• Mean Daily Demand: μ = E[y]</text>
+  <text x="55" y="170" font-family="monospace" font-size="10" fill="#2D6A4F">• Std Deviation: σ = Std(y)</text>
+  <text x="55" y="186" font-family="monospace" font-size="10" fill="#2D6A4F">• Coeff. of Variation: CV = σ / μ</text>
+  <text x="55" y="202" font-family="monospace" font-size="10" fill="#2D6A4F">• Seasonality Amplitude Index</text>
+
+  <!-- Tri-Branch Analytics -->
+  <rect x="350" y="80" width="280" height="65" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="365" y="104" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold" fill="#2D6A4F">Branch A: Pareto ABC Volume Analysis</text>
+  <text x="365" y="122" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Class A (Top 80%) • Class B (Next 15%) • Class C (Tail 5%)</text>
+  <text x="365" y="138" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Cumulative unit volume sorting across 500 catalog items</text>
+
+  <rect x="350" y="155" width="280" height="65" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="1.5"/>
+  <text x="365" y="179" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold" fill="#C85A32">Branch B: Predictability XYZ Classification</text>
+  <text x="365" y="197" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">X: Low Volatility (CV ≤ 0.15) — Highly predictable</text>
+  <text x="365" y="213" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Y: Moderate (0.15 &lt; CV ≤ 0.25) • Z: Sporadic (CV &gt; 0.25)</text>
+
+  <rect x="350" y="230" width="280" height="65" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="365" y="254" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold" fill="#1B4332">Branch C: Unsupervised K-Means</text>
+  <text x="365" y="272" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Features: Standardized [μ, CV] matrix</text>
+  <text x="365" y="288" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Optimal K=2 (Silhouette Score: 0.548) vs K=3..6</text>
+
+  <!-- Connectors -->
+  <line x1="300" y1="150" x2="350" y2="112" stroke="#1B4332" stroke-width="1.5"/>
+  <line x1="300" y1="150" x2="350" y2="187" stroke="#1B4332" stroke-width="1.5"/>
+  <line x1="300" y1="150" x2="350" y2="262" stroke="#1B4332" stroke-width="1.5"/>
+
+  <!-- Synthesis Matrix -->
+  <rect x="680" y="80" width="260" height="215" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="2"/>
+  <text x="695" y="106" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332">3. 9-Box Matrix Strategy</text>
+  <text x="695" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="bold" fill="#2D6A4F">• AX / AY / AZ (Strategic Core):</text>
+  <text x="705" y="146" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">High service level (98%), daily automated ROP review</text>
+  <text x="695" y="170" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="bold" fill="#D4AF37">• BX / BY / BZ (Mid-Tier Standard):</text>
+  <text x="705" y="186" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Service level (95%), bi-weekly reviews, standard EOQ</text>
+  <text x="695" y="210" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="bold" fill="#C85A32">• CX / CY / CZ (Tail &amp; Sporadic):</text>
+  <text x="705" y="226" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Service level (90%), on-demand order, lean holding</text>
+  <text x="695" y="250" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="bold" fill="#1B4332">• Fast-Mover vs Steady Clustering:</text>
+  <text x="705" y="266" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">Cluster 0: Core Volume | Cluster 1: High Velocity</text>
+
+  <line x1="630" y1="112" x2="680" y2="150" stroke="#1B4332" stroke-width="1.5"/>
+  <line x1="630" y1="187" x2="680" y2="187" stroke="#1B4332" stroke-width="1.5"/>
+  <line x1="630" y1="262" x2="680" y2="220" stroke="#1B4332" stroke-width="1.5"/>
+
+  <!-- Footer Banner -->
+  <rect x="40" y="325" width="900" height="120" rx="8" fill="#1B4332"/>
+  <text x="490" y="355" font-family="system-ui, -apple-system, sans-serif" font-size="12.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">DATABASE INTEGRATION IN SQLITE sku_master TABLE</text>
+  <text x="490" y="380" font-family="monospace" font-size="10.5" fill="#E2E8F0" text-anchor="middle">Columns: store, item, mean_daily, cv, seasonality_amp, lead_time_days, lead_time_std, abc, xyz, tier, cluster</text>
+  <text x="490" y="405" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#D4AF37" text-anchor="middle">Pre-computed across all 500 SKUs enabling sub-10ms REST query response on /segments endpoint.</text>
+  <text x="490" y="425" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#FFFFFF" text-anchor="middle">Directly drives dynamic replenishment safety stocks and purchase order automation policies.</text>
+</svg>

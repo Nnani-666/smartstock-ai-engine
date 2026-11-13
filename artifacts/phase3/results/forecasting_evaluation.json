@@ -1,0 +1,106 @@
+{
+  "7d": {
+    "naive": {
+      "rmse": 9.375,
+      "mae": 7.398,
+      "mape": 18.32
+    },
+    "seasonal_naive": {
+      "rmse": 9.208,
+      "mae": 7.347,
+      "mape": 18.02
+    },
+    "holt_winters": {
+      "rmse": 6.769,
+      "mae": 5.327,
+      "mape": 13.32
+    },
+    "random_forest": {
+      "rmse": 6.827,
+      "mae": 5.355,
+      "mape": 13.22
+    },
+    "improvements": {
+      "hw_vs_naive_rmse_reduction_pct": 27.8,
+      "rf_vs_naive_rmse_reduction_pct": 27.18
+    }
+  },
+  "14d": {
+    "naive": {
+      "rmse": 9.369,
+      "mae": 7.455,
+      "mape": 18.37
+    },
+    "seasonal_naive": {
+      "rmse": 9.106,
+      "mae": 7.27,
+      "mape": 17.78
+    },
+    "holt_winters": {
+      "rmse": 6.665,
+      "mae": 5.28,
+      "mape": 13.12
+    },
+    "random_forest": {
+      "rmse": 6.706,
+      "mae": 5.32,
+      "mape": 13.03
+    },
+    "improvements": {
+      "hw_vs_naive_rmse_reduction_pct": 28.86,
+      "rf_vs_naive_rmse_reduction_pct": 28.42
+    }
+  },
+  "21d": {
+    "naive": {
+      "rmse": 9.419,
+      "mae": 7.567,
+      "mape": 18.66
+    },
+    "seasonal_naive": {
+      "rmse": 9.095,
+      "mae": 7.26,
+      "mape": 17.79
+    },
+    "holt_winters": {
+      "rmse": 6.669,
+      "mae": 5.282,
+      "mape": 13.15
+    },
+    "random_forest": {
+      "rmse": 6.7,
+      "mae": 5.3,
+      "mape": 13.01
+    },
+    "improvements": {
+      "hw_vs_naive_rmse_reduction_pct": 29.2,
+      "rf_vs_naive_rmse_reduction_pct": 28.87
+    }
+  },
+  "28d": {
+    "naive": {
+      "rmse": 9.436,
+      "mae": 7.593,
+      "mape": 18.69
+    },
+    "seasonal_naive": {
+      "rmse": 9.029,
+      "mae": 7.207,
+      "mape": 17.65
+    },
+    "holt_winters": {
+      "rmse": 6.617,
+      "mae": 5.236,
+      "mape": 13.02
+    },
+    "random_forest": {
+      "rmse": 6.665,
+      "mae": 5.271,
+      "mape": 12.9
+    },
+    "improvements": {
+      "hw_vs_naive_rmse_reduction_pct": 29.87,
+      "rf_vs_naive_rmse_reduction_pct": 29.37
+    }
+  }
+}

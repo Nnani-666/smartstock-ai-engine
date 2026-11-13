@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 500" width="100%" height="100%">
+  <rect width="980" height="500" fill="#FBF8F3"/>
+  <text x="490" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#1B4332" text-anchor="middle">SmartStock Two-Level Intelligence Architecture</text>
+  <text x="490" y="58" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#4A5568" text-anchor="middle">Bifurcated Decision-Support: Intuitive Merchant Directives vs. Deep Telemetry</text>
+
+  <!-- Core ML Pipeline State Box -->
+  <rect x="50" y="90" width="880" height="80" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="490" y="118" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#2D6A4F" text-anchor="middle">SHARED AI ENGINE STATE (FORECASTING, ANOMALY DETECTION, REORDER CALCULATION)</text>
+  <text x="490" y="142" font-family="monospace" font-size="11" fill="#4A5568" text-anchor="middle">{ sku_id: 1, y_hat: [24, 26, 28], z_score: 3.42, rop: 184, ss: 42, urgency: "R1", wmape: 0.124 }</text>
+
+  <!-- Toggle Switch Representation -->
+  <rect x="390" y="195" width="200" height="42" rx="21" fill="#1B4332"/>
+  <circle cx="415" cy="216" r="15" fill="#D4AF37"/>
+  <text x="500" y="222" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold" fill="#FFFFFF" text-anchor="middle">UI MODE TOGGLE</text>
+
+  <!-- Branch Left: Shopkeeper Mode (Level 1) -->
+  <rect x="50" y="260" width="415" height="210" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="2"/>
+  <rect x="50" y="260" width="415" height="34" rx="8" fill="#2D6A4F"/>
+  <text x="257" y="282" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">LEVEL 1: SHOPKEEPER PERSPECTIVE</text>
+  <text x="70" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#1B4332">• Clear Directives &amp; Action Urgency</text>
+  <text x="85" y="333" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">"Reorder 45 units immediately. Stock will exhaust in 2 days."</text>
+  <text x="70" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#1B4332">• Plain-English Explanations</text>
+  <text x="85" y="378" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">"Sudden sales surge detected on Saturday (3x normal volume)."</text>
+  <text x="70" y="405" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#1B4332">• Financial Impact &amp; PO Pre-Fill</text>
+  <text x="85" y="423" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">"Estimated order cost: ₹5,400 from Primary Supplier."</text>
+  <text x="70" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="bold" fill="#2D6A4F">Target: Non-technical retail store manager &amp; staff</text>
+
+  <!-- Branch Right: Technical Telemetry Mode (Level 2) -->
+  <rect x="515" y="260" width="415" height="210" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="2"/>
+  <rect x="515" y="260" width="415" height="34" rx="8" fill="#C85A32"/>
+  <text x="722" y="282" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#FFFFFF" text-anchor="middle">LEVEL 2: DATA SCIENCE TELEMETRY</text>
+  <text x="535" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#C85A32">• Statistical Metrics &amp; Loss Indicators</text>
+  <text x="550" y="333" font-family="monospace" font-size="10.5" fill="#4A5568">WMAPE: 12.4% | RMSE: 5.82 | MAE: 4.19 | Loss: L1</text>
+  <text x="535" y="360" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#C85A32">• Exact Anomaly Envelopes &amp; Z-Scores</text>
+  <text x="550" y="378" font-family="monospace" font-size="10.5" fill="#4A5568">Z: +3.42σ | Q3+1.5·IQR: 41.5u | Status: Outlier Confirmed</text>
+  <text x="535" y="405" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#C85A32">• Inventory Equation Parameters</text>
+  <text x="550" y="423" font-family="monospace" font-size="10.5" fill="#4A5568">ROP = d·L + z·σ_L = (25·4) + (2.054·12.2) = 125 units</text>
+  <text x="535" y="450" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="bold" fill="#C85A32">Target: Operations research analyst &amp; data scientist</text>
+</svg>

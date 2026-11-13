@@ -1,0 +1,19 @@
+{
+  "synthetic_injection_experiment": {
+    "recall": 0.998,
+    "precision": 0.5787,
+    "false_positive_rate": 0.0073,
+    "injected_count": 9129,
+    "true_positives": 9111,
+    "false_positives": 6633,
+    "false_negatives": 18,
+    "passed": true
+  },
+  "historical_detection_summary": {
+    "total_observations": 913000,
+    "z_score_exclusive_flags": 39,
+    "iqr_exclusive_flags": 5130,
+    "dual_consensus_anomalies": 2486,
+    "consensus_rate_pct": 0.2723
+  }
+}

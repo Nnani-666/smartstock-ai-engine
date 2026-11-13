@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 520" width="100%" height="100%">
+  <rect width="980" height="520" fill="#FBF8F3"/>
+  <text x="490" y="35" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#1B4332" text-anchor="middle">SmartStock Database Schema &amp; Entity Relationships</text>
+  <text x="490" y="52" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#4A5568" text-anchor="middle">Relational Multi-Tenant Model + High-Performance Analytical Benchmarks</text>
+
+  <!-- Table 1: app_users -->
+  <rect x="40" y="70" width="220" height="195" rx="6" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <rect x="40" y="70" width="220" height="28" rx="6" fill="#1B4332"/>
+  <text x="150" y="89" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">app_users</text>
+  <text x="55" y="118" font-family="monospace" font-size="10.5" fill="#1A202C">PK id (UUID)</text>
+  <text x="55" y="136" font-family="monospace" font-size="10.5" fill="#1A202C">U  email (VARCHAR)</text>
+  <text x="55" y="154" font-family="monospace" font-size="10.5" fill="#1A202C">   password_hash (PBKDF2)</text>
+  <text x="55" y="172" font-family="monospace" font-size="10.5" fill="#1A202C">   store_name (VARCHAR)</text>
+  <text x="55" y="190" font-family="monospace" font-size="10.5" fill="#1A202C">   phone, manager</text>
+  <text x="55" y="208" font-family="monospace" font-size="10.5" fill="#1A202C">   created_at (ISO)</text>
+  <text x="55" y="226" font-family="monospace" font-size="10.5" fill="#1A202C">   settings (JSON)</text>
+
+  <!-- Table 2: app_sessions -->
+  <rect x="360" y="70" width="230" height="165" rx="6" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <rect x="360" y="70" width="230" height="28" rx="6" fill="#1B4332"/>
+  <text x="475" y="89" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">app_sessions</text>
+  <text x="375" y="118" font-family="monospace" font-size="10.5" fill="#1A202C">PK token (256-bit Hex)</text>
+  <text x="375" y="136" font-family="monospace" font-size="10.5" fill="#1A202C">FK user_id -&gt; app_users</text>
+  <text x="375" y="154" font-family="monospace" font-size="10.5" fill="#1A202C">   user_email (VARCHAR)</text>
+  <text x="375" y="172" font-family="monospace" font-size="10.5" fill="#1A202C">   created_at (ISO)</text>
+  <text x="375" y="190" font-family="monospace" font-size="10.5" fill="#1A202C">   expires_at (7-Day)</text>
+  <text x="375" y="208" font-family="monospace" font-size="10.5" fill="#1A202C">   revoked (BOOLEAN)</text>
+
+  <!-- Table 3: app_products -->
+  <rect x="680" y="70" width="260" height="205" rx="6" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <rect x="680" y="70" width="260" height="28" rx="6" fill="#1B4332"/>
+  <text x="810" y="89" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">app_products</text>
+  <text x="695" y="118" font-family="monospace" font-size="10.5" fill="#1A202C">PK id (VARCHAR)</text>
+  <text x="695" y="136" font-family="monospace" font-size="10.5" fill="#1A202C">FK user_email -&gt; app_users</text>
+  <text x="695" y="154" font-family="monospace" font-size="10.5" fill="#1A202C">   name, sku, category_name</text>
+  <text x="695" y="172" font-family="monospace" font-size="10.5" fill="#1A202C">   unit_price, unit_cost</text>
+  <text x="695" y="190" font-family="monospace" font-size="10.5" fill="#1A202C">   stock_on_hand, reorder_pt</text>
+  <text x="695" y="208" font-family="monospace" font-size="10.5" fill="#1A202C">   status, supplier</text>
+  <text x="695" y="226" font-family="monospace" font-size="10.5" fill="#1A202C">   created_at, updated_at</text>
+
+  <!-- Table 4: sales (Analytical 913k records) -->
+  <rect x="40" y="300" width="250" height="195" rx="6" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <rect x="40" y="300" width="250" height="28" rx="6" fill="#2D6A4F"/>
+  <text x="165" y="319" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">sales (913k Historical Core)</text>
+  <text x="55" y="348" font-family="monospace" font-size="10.5" fill="#1A202C">PK (store, item, date)</text>
+  <text x="55" y="366" font-family="monospace" font-size="10.5" fill="#1A202C">   sales (INTEGER)</text>
+  <text x="55" y="384" font-family="monospace" font-size="10.5" fill="#1A202C">   sales_clean (FLOAT)</text>
+  <text x="55" y="402" font-family="monospace" font-size="10.5" fill="#1A202C">   z_score (FLOAT)</text>
+  <text x="55" y="420" font-family="monospace" font-size="10.5" fill="#1A202C">   z_flag (TINYINT)</text>
+  <text x="55" y="438" font-family="monospace" font-size="10.5" fill="#1A202C">   iqr_flag (TINYINT)</text>
+  <text x="55" y="456" font-family="monospace" font-size="10.5" fill="#1A202C">   is_anomaly (BOOLEAN)</text>
+
+  <!-- Table 5: sku_master (500 series) -->
+  <rect x="360" y="300" width="260" height="195" rx="6" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <rect x="360" y="300" width="260" height="28" rx="6" fill="#2D6A4F"/>
+  <text x="490" y="319" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">sku_master (500 Series)</text>
+  <text x="375" y="348" font-family="monospace" font-size="10.5" fill="#1A202C">PK (store, item)</text>
+  <text x="375" y="366" font-family="monospace" font-size="10.5" fill="#1A202C">   mean_daily, cv, amp</text>
+  <text x="375" y="384" font-family="monospace" font-size="10.5" fill="#1A202C">   lead_time_days, lead_std</text>
+  <text x="375" y="402" font-family="monospace" font-size="10.5" fill="#1A202C">   abc, xyz, tier</text>
+  <text x="375" y="420" font-family="monospace" font-size="10.5" fill="#1A202C">   cluster (K-Means K=2)</text>
+  <text x="375" y="438" font-family="monospace" font-size="10.5" fill="#1A202C">   reorder_point, safety_stock</text>
+
+  <!-- Table 6: app_purchase_orders -->
+  <rect x="680" y="300" width="260" height="195" rx="6" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <rect x="680" y="300" width="260" height="28" rx="6" fill="#1B4332"/>
+  <text x="810" y="319" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">app_purchase_orders</text>
+  <text x="695" y="348" font-family="monospace" font-size="10.5" fill="#1A202C">PK id (VARCHAR)</text>
+  <text x="695" y="366" font-family="monospace" font-size="10.5" fill="#1A202C">   po_number (PO-YYYY-NNN)</text>
+  <text x="695" y="384" font-family="monospace" font-size="10.5" fill="#1A202C">FK user_email -&gt; app_users</text>
+  <text x="695" y="402" font-family="monospace" font-size="10.5" fill="#1A202C">   supplier, total_amount</text>
+  <text x="695" y="420" font-family="monospace" font-size="10.5" fill="#1A202C">   status (DRAFT/PLACED/RCVD)</text>
+  <text x="695" y="438" font-family="monospace" font-size="10.5" fill="#1A202C">   items (JSON Line Items)</text>
+</svg>

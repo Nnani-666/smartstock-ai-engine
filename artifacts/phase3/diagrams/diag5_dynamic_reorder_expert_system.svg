@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 500" width="100%" height="100%">
+  <rect width="980" height="500" fill="#FBF8F3"/>
+  <text x="490" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#1B4332" text-anchor="middle">SmartStock AI-1: Dynamic (s, S) Replenishment Expert System</text>
+  <text x="490" y="58" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#4A5568" text-anchor="middle">Lead-Time Uncertainty Sizing, Urgency Triage &amp; Automated Purchase Orders</text>
+
+  <!-- Inventory State Calculation -->
+  <rect x="40" y="90" width="270" height="110" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="55" y="116" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332">1. Net Inventory Position</text>
+  <text x="55" y="140" font-family="monospace" font-size="11" fill="#2D6A4F">I_pos = SOH + OPO - BO</text>
+  <text x="55" y="162" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• SOH: Live Stock on Hand</text>
+  <text x="55" y="179" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• OPO: Open Purchase Orders in transit</text>
+  <text x="55" y="194" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• BO: Committed Backorders</text>
+
+  <!-- Reorder Point Math -->
+  <rect x="355" y="90" width="270" height="110" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="370" y="116" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#2D6A4F">2. Buffer &amp; Reorder Point (ROP)</text>
+  <text x="370" y="138" font-family="monospace" font-size="10.5" fill="#1B4332">SS = Z_α · √(L·σ_d² + d²·σ_L²)</text>
+  <text x="370" y="158" font-family="monospace" font-size="11" fill="#1B4332">ROP = (d_lead_mean · L) + SS</text>
+  <text x="370" y="178" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Z_α: Class A (98%), B (95%), C (90%)</text>
+  <text x="370" y="193" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Incorporates supplier lead time variability</text>
+
+  <!-- Urgency Triage -->
+  <rect x="670" y="90" width="270" height="110" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="1.5"/>
+  <text x="685" y="116" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#C85A32">3. Urgency Lane Assignment</text>
+  <text x="685" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="bold" fill="#C85A32">• R1 CRITICAL: I_pos ≤ 0 (Stockout)</text>
+  <text x="685" y="160" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="bold" fill="#D4AF37">• R2 WARNING: 0 &lt; I_pos ≤ SS</text>
+  <text x="685" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="bold" fill="#2D6A4F">• R3 ECONOMIC: SS &lt; I_pos ≤ ROP</text>
+  <text x="685" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568">• HEALTHY: I_pos &gt; ROP (No order)</text>
+
+  <!-- Connectors Row 1 -->
+  <line x1="310" y1="145" x2="355" y2="145" stroke="#1B4332" stroke-width="2"/>
+  <line x1="625" y1="145" x2="670" y2="145" stroke="#1B4332" stroke-width="2"/>
+  <line x1="805" y1="200" x2="805" y2="245" stroke="#1B4332" stroke-width="2"/>
+
+  <!-- Order Sizing & Fulfillment Row -->
+  <rect x="670" y="245" width="270" height="110" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="685" y="271" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332">4. Order Quantity (EOQ / Target S)</text>
+  <text x="685" y="293" font-family="monospace" font-size="10.5" fill="#2D6A4F">Q = max(0, S_target - I_pos)</text>
+  <text x="685" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• S_target = ROP + EOQ</text>
+  <text x="685" y="332" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Respects vendor MOQ &amp; pack size</text>
+  <text x="685" y="348" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Minimizes total carrying + order costs</text>
+
+  <rect x="355" y="245" width="270" height="110" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="370" y="271" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#2D6A4F">5. Automated Purchase Order</text>
+  <text x="370" y="293" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Direct pre-population of Draft PO</text>
+  <text x="370" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Supplier assignment from sku_master</text>
+  <text x="370" y="327" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Instant 1-click PO approval &amp; tracking</text>
+  <text x="370" y="344" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Full multi-tenant isolation guard</text>
+
+  <rect x="40" y="245" width="270" height="110" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="55" y="271" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332">6. Inward Delivery &amp; Sync</text>
+  <text x="55" y="293" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Supplier delivers physical goods</text>
+  <text x="55" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• PO marked RECEIVED in application</text>
+  <text x="55" y="327" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• Stock on Hand credited idempotently</text>
+  <text x="55" y="344" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#4A5568">• POS &amp; Overview instantly reflect stock</text>
+
+  <!-- Connectors Row 2 -->
+  <line x1="670" y1="300" x2="625" y2="300" stroke="#1B4332" stroke-width="2"/>
+  <line x1="355" y1="300" x2="310" y2="300" stroke="#1B4332" stroke-width="2"/>
+
+  <!-- Footer Stats -->
+  <rect x="40" y="380" width="900" height="80" rx="8" fill="#1B4332"/>
+  <text x="490" y="410" font-family="system-ui, -apple-system, sans-serif" font-size="12.5" font-weight="bold" fill="#FFFFFF" text-anchor="middle">CONTINUOUS SIMULATION RESULTS (500 SKUs × 90 TEST DAYS)</text>
+  <text x="490" y="432" font-family="monospace" font-size="11" fill="#E2E8F0" text-anchor="middle">Stockout Days: 1,351 (Static Baseline) → 621 (Dynamic Policy)  |  Reduction: -54.03%  |  Fill Rate: 98.08% → 99.18%</text>
+</svg>

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 480" width="100%" height="100%">
+  <rect width="980" height="480" fill="#FBF8F3"/>
+  <text x="490" y="36" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold" fill="#1B4332" text-anchor="middle">SmartStock DS-2: Dual-Filter Anomaly Detection Architecture</text>
+  <text x="490" y="58" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#4A5568" text-anchor="middle">Parametric (Z-Score) and Non-Parametric (IQR) Dual-Gate Validation</text>
+
+  <!-- Input Node -->
+  <rect x="40" y="100" width="180" height="90" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="1.5"/>
+  <text x="130" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1B4332" text-anchor="middle">Daily Transaction</text>
+  <text x="130" y="152" font-family="monospace" font-size="11" fill="#4A5568" text-anchor="middle">y(store, item, t)</text>
+  <text x="130" y="170" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" fill="#4A5568" text-anchor="middle">POS or Batch Record</text>
+
+  <!-- Group Baseline Fitting Node -->
+  <rect x="260" y="100" width="200" height="90" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="360" y="125" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#2D6A4F" text-anchor="middle">Group Conditioning</text>
+  <text x="360" y="145" font-family="monospace" font-size="10" fill="#4A5568" text-anchor="middle">Key: (store, item, d_w)</text>
+  <text x="360" y="162" font-family="monospace" font-size="10" fill="#4A5568" text-anchor="middle">Mean μ, Std σ, Med M</text>
+  <text x="360" y="178" font-family="monospace" font-size="10" fill="#4A5568" text-anchor="middle">Q1, Q3, IQR = Q3 - Q1</text>
+
+  <!-- Dual Test Branches -->
+  <rect x="500" y="80" width="200" height="60" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="1.5"/>
+  <text x="600" y="103" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold" fill="#C85A32" text-anchor="middle">Gate 1: Z-Score Test</text>
+  <text x="600" y="123" font-family="monospace" font-size="10.5" fill="#1B4332" text-anchor="middle">|y - μ| / σ &gt; 3.0</text>
+
+  <rect x="500" y="155" width="200" height="60" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="1.5"/>
+  <text x="600" y="178" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold" fill="#C85A32" text-anchor="middle">Gate 2: IQR Test</text>
+  <text x="600" y="198" font-family="monospace" font-size="10.5" fill="#1B4332" text-anchor="middle">y &gt; Q3 + 1.5·IQR</text>
+
+  <!-- Consensus Classifier -->
+  <rect x="740" y="115" width="200" height="65" rx="8" fill="#FFFFFF" stroke="#1B4332" stroke-width="2"/>
+  <text x="840" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="11.5" font-weight="bold" fill="#1B4332" text-anchor="middle">Consensus Decision</text>
+  <text x="840" y="160" font-family="monospace" font-size="10.5" fill="#C85A32" text-anchor="middle">z_flag ∧ iqr_flag == 1</text>
+
+  <!-- Connectors -->
+  <line x1="220" y1="145" x2="260" y2="145" stroke="#1B4332" stroke-width="2"/>
+  <line x1="460" y1="145" x2="500" y2="110" stroke="#1B4332" stroke-width="2"/>
+  <line x1="460" y1="145" x2="500" y2="185" stroke="#1B4332" stroke-width="2"/>
+  <line x1="700" y1="110" x2="740" y2="140" stroke="#1B4332" stroke-width="2"/>
+  <line x1="700" y1="185" x2="740" y2="155" stroke="#1B4332" stroke-width="2"/>
+
+  <!-- Decision Outcomes -->
+  <line x1="840" y1="180" x2="840" y2="240" stroke="#1B4332" stroke-width="2"/>
+
+  <rect x="520" y="240" width="420" height="100" rx="8" fill="#FFFFFF" stroke="#C85A32" stroke-width="1.5"/>
+  <text x="540" y="268" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#C85A32">ANOMALOUS INCIDENT (is_anomaly = 1)</text>
+  <text x="540" y="290" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">• Outlier flagged in telemetry and UI anomaly review queue</text>
+  <text x="540" y="308" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">• Series cleansed to group median: sales_clean = Median(store, item, d_w)</text>
+  <text x="540" y="326" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">• Prevents forecast model distortion from one-off bulk purchases</text>
+
+  <rect x="50" y="240" width="430" height="100" rx="8" fill="#FFFFFF" stroke="#2D6A4F" stroke-width="1.5"/>
+  <text x="70" y="268" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#2D6A4F">NOMINAL DEMAND (is_anomaly = 0)</text>
+  <text x="70" y="290" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">• Observation verified within normal ±3.0σ distribution envelope</text>
+  <text x="70" y="308" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">• Passed unaltered to forecasting engine: sales_clean = raw_sales</text>
+  <text x="70" y="326" font-family="system-ui, -apple-system, sans-serif" font-size="10.5" fill="#4A5568">• False Positive Rate strictly controlled at 0.73% on test dataset</text>
+
+  <!-- Empirical Performance Footer -->
+  <rect x="50" y="370" width="890" height="70" rx="8" fill="#1B4332"/>
+  <text x="495" y="398" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">EMPIRICAL BENCHMARK (9,129 SYNTHETIC SPIKES INJECTED)</text>
+  <text x="495" y="420" font-family="monospace" font-size="11" fill="#E2E8F0" text-anchor="middle">Recall: 99.80% (9,111 / 9,129 detected) • Precision: 57.87% • F1-Score: 73.28% • False Positive Rate: 0.73%</text>
+</svg>

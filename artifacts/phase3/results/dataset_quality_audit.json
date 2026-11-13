@@ -1,0 +1,77 @@
+{
+  "timestamp": "2026-11-13T10:18:53Z",
+  "database_file": "/Users/snnaniswarnababu/Desktop/SMARTSTOCK/data/supply_chain.db",
+  "tables": {
+    "sales": {
+      "total_records": 913000,
+      "expected_records": 913000,
+      "is_complete": true,
+      "unique_stores": 10,
+      "unique_items": 50,
+      "unique_series": 500,
+      "date_range": {
+        "min": "2013-01-01",
+        "max": "2017-12-31"
+      },
+      "days_covered": 1826,
+      "null_counts": {
+        "sales": 0,
+        "sales_clean": 0,
+        "date": 0,
+        "store": 0,
+        "item": 0
+      },
+      "duplicate_observations": 0,
+      "negative_or_invalid_values": 0,
+      "anomaly_flags_persisted": {
+        "z_score_flags": 2525,
+        "iqr_flags": 7616,
+        "dual_anomaly_flags": 7655
+      }
+    },
+    "sku_master": {
+      "total_skus": 500,
+      "null_counts": {
+        "mean_daily": 0,
+        "cv": 0,
+        "cluster": 0,
+        "abc": 0,
+        "xyz": 0,
+        "tier": 0
+      },
+      "abc_distribution": {
+        "A": 364,
+        "B": 96,
+        "C": 40
+      },
+      "xyz_distribution": {
+        "X": 167,
+        "Y": 166,
+        "Z": 167
+      },
+      "tier_distribution": {
+        "Core": 33,
+        "Strategic": 332,
+        "Tail": 135
+      }
+    },
+    "app_users": {
+      "row_count": 12
+    },
+    "app_sessions": {
+      "row_count": 5
+    },
+    "app_products": {
+      "row_count": 25
+    },
+    "app_sales": {
+      "row_count": 2
+    },
+    "app_purchase_orders": {
+      "row_count": 7
+    },
+    "app_suppliers": {
+      "row_count": 6
+    }
+  }
+}

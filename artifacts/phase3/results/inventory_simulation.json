@@ -1,0 +1,19 @@
+{
+  "static_policy": {
+    "total_stockout_days": 1351,
+    "fill_rate": 0.9808,
+    "mean_on_hand": 242.63,
+    "total_demand": 1386097,
+    "total_fulfilled": 1359495
+  },
+  "dynamic_policy": {
+    "total_stockout_days": 621,
+    "fill_rate": 0.9918,
+    "mean_on_hand": 262.08,
+    "total_demand": 1386097,
+    "total_fulfilled": 1374706
+  },
+  "stockout_days_reduction": 0.5403,
+  "inventory_delta": 19.45,
+  "passed": true
+}

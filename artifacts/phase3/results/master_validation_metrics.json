@@ -1,0 +1,122 @@
+{
+  "validation_timestamp": "2026-11-13T10:19:05Z",
+  "dataset_audit": {
+    "total_records": 913000,
+    "expected_records": 913000,
+    "is_complete": true,
+    "unique_stores": 10,
+    "unique_items": 50,
+    "unique_series": 500,
+    "date_range": {
+      "min": "2013-01-01",
+      "max": "2017-12-31"
+    },
+    "days_covered": 1826,
+    "null_counts": {
+      "sales": 0,
+      "sales_clean": 0,
+      "date": 0,
+      "store": 0,
+      "item": 0
+    },
+    "duplicate_observations": 0,
+    "negative_or_invalid_values": 0,
+    "anomaly_flags_persisted": {
+      "z_score_flags": 2525,
+      "iqr_flags": 7616,
+      "dual_anomaly_flags": 7655
+    }
+  },
+  "sku_audit": {
+    "total_skus": 500,
+    "null_counts": {
+      "mean_daily": 0,
+      "cv": 0,
+      "cluster": 0,
+      "abc": 0,
+      "xyz": 0,
+      "tier": 0
+    },
+    "abc_distribution": {
+      "A": 364,
+      "B": 96,
+      "C": 40
+    },
+    "xyz_distribution": {
+      "X": 167,
+      "Y": 166,
+      "Z": 167
+    },
+    "tier_distribution": {
+      "Core": 33,
+      "Strategic": 332,
+      "Tail": 135
+    }
+  },
+  "forecasting_summary": {
+    "naive": {
+      "rmse": 9.375,
+      "mae": 7.398,
+      "mape": 18.32
+    },
+    "seasonal_naive": {
+      "rmse": 9.208,
+      "mae": 7.347,
+      "mape": 18.02
+    },
+    "holt_winters": {
+      "rmse": 6.769,
+      "mae": 5.327,
+      "mape": 13.32
+    },
+    "random_forest": {
+      "rmse": 6.827,
+      "mae": 5.355,
+      "mape": 13.22
+    },
+    "improvements": {
+      "hw_vs_naive_rmse_reduction_pct": 27.8,
+      "rf_vs_naive_rmse_reduction_pct": 27.18
+    }
+  },
+  "anomaly_summary": {
+    "recall": 0.998,
+    "precision": 0.5787,
+    "false_positive_rate": 0.0073,
+    "injected_count": 9129,
+    "true_positives": 9111,
+    "false_positives": 6633,
+    "false_negatives": 18,
+    "passed": true
+  },
+  "simulation_summary": {
+    "static_policy": {
+      "total_stockout_days": 1351,
+      "fill_rate": 0.9808,
+      "mean_on_hand": 242.63,
+      "total_demand": 1386097,
+      "total_fulfilled": 1359495
+    },
+    "dynamic_policy": {
+      "total_stockout_days": 621,
+      "fill_rate": 0.9918,
+      "mean_on_hand": 262.08,
+      "total_demand": 1386097,
+      "total_fulfilled": 1374706
+    },
+    "stockout_days_reduction": 0.5403,
+    "inventory_delta": 19.45,
+    "passed": true
+  },
+  "segmentation_summary": {
+    "silhouette_score": 0.5754,
+    "optimal_k": 2,
+    "k_scores": {
+      "2": 0.5754,
+      "3": 0.5124,
+      "4": 0.5135,
+      "5": 0.5012,
+      "6": 0.4626
+    }
+  }
+}
