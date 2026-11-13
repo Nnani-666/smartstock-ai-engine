@@ -5,8 +5,11 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # Base Paths
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 DATA_DIR = BASE_DIR / "data"
 RAW_DATA_DIR = DATA_DIR / "raw"
 DB_PATH = DATA_DIR / "supply_chain.db"
@@ -74,8 +77,8 @@ DEFAULT_SERVICE_LEVELS = {
 API_TITLE: str = "Supply Chain Demand & Inventory Optimization Engine"
 API_VERSION: str = "1.0.0"
 ENVIRONMENT: str = os.getenv("SMARTSTOCK_ENV", "development").strip().lower()
-API_KEY: str | None = os.getenv("API_KEY", None)
-GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY", None)
+API_KEY: str | None = os.getenv("API_KEY") or None
+GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY") or None
 RATE_LIMIT_AUTH_PER_MIN: int = int(os.getenv("RATE_LIMIT_AUTH_PER_MIN", "30"))
 RATE_LIMIT_AI_PER_MIN: int = int(os.getenv("RATE_LIMIT_AI_PER_MIN", "20"))
 

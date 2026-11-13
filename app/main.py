@@ -5,6 +5,7 @@ from __future__ import annotations
 import hmac
 import json
 import logging
+import os
 import sqlite3
 import uuid
 from contextlib import asynccontextmanager
@@ -1558,32 +1559,92 @@ def ai_assistant_endpoint(
     cursor = db.cursor()
 
     # Query only the authenticated merchant's products
-    cursor.execute("SELECT * FROM app_products WHERE user_email = ?", (clean_email,))
+    cursor.execute("SELECT * FROM app_products WHERE user_email = ? ORDER BY name ASC", (clean_email,))
     products = [dict(r) for r in cursor.fetchall()]
 
     # Query only the authenticated merchant's sales
     cursor.execute("SELECT * FROM app_sales WHERE user_email = ? ORDER BY timestamp DESC LIMIT 50", (clean_email,))
     sales = [dict(r) for r in cursor.fetchall()]
 
+    # Query merchant purchase orders
+    cursor.execute("SELECT * FROM app_purchase_orders WHERE user_email = ? ORDER BY created_at DESC LIMIT 10", (clean_email,))
+    orders = [dict(r) for r in cursor.fetchall()]
+
+    # Query suppliers
+    cursor.execute("SELECT * FROM app_suppliers WHERE user_email = ? OR user_email IS NULL ORDER BY name ASC", (clean_email,))
+    suppliers = [dict(r) for r in cursor.fetchall()]
+
     total_prods = len(products)
-    out_of_stock = sum(1 for p in products if p.get("stock_on_hand", 0) <= 0)
-    low_stock = sum(1 for p in products if 0 < p.get("stock_on_hand", 0) <= p.get("reorder_point", 5))
+    out_of_stock_items = [p for p in products if p.get("stock_on_hand", 0) <= 0]
+    low_stock_items = [p for p in products if 0 < p.get("stock_on_hand", 0) <= p.get("reorder_point", 5)]
+    out_of_stock = len(out_of_stock_items)
+    low_stock = len(low_stock_items)
     total_sales_amt = sum(float(s.get("sale_amount", 0)) for s in sales)
     store_name = current_user.get("store_name", "My Store")
 
-    def build_local_fallback() -> dict[str, Any]:
+    # Aggregate sales by product
+    sales_summary_map: dict[str, dict[str, Any]] = {}
+    for s in sales:
+        pname = s.get("product_name", "Unknown")
+        units = int(s.get("units", 1))
+        amt = float(s.get("sale_amount", 0))
+        if pname not in sales_summary_map:
+            sales_summary_map[pname] = {"units": 0, "revenue": 0.0}
+        sales_summary_map[pname]["units"] += units
+        sales_summary_map[pname]["revenue"] += amt
+
+    top_sales_lines: list[str] = []
+    for pname, data in sorted(sales_summary_map.items(), key=lambda x: x[1]["revenue"], reverse=True)[:5]:
+        top_sales_lines.append(f"- {pname}: {data['units']} units sold, Revenue: ₹{data['revenue']:,.2f}")
+
+    def build_local_fallback(reason: str = "local_heuristic") -> dict[str, Any]:
         advice_points = []
-        if out_of_stock > 0:
-            advice_points.append(f"Immediate Action: {out_of_stock} product(s) are completely out of stock. Place replenishment orders.")
-        if low_stock > 0:
-            advice_points.append(f"Replenishment Warning: {low_stock} product(s) have reached reorder thresholds.")
+        user_q = (req.prompt or "").lower()
+
+        if "reorder" in user_q or "order" in user_q:
+            reorder_items = [p.get("name") for p in low_stock_items + out_of_stock_items if p.get("name")]
+            if reorder_items:
+                advice_points.append(f"Reorder needed for: {', '.join(reorder_items)}. Stock is at or below reorder threshold.")
+            else:
+                advice_points.append("All products currently have stock above their reorder points.")
+        elif "low" in user_q or "out" in user_q or "run" in user_q:
+            if out_of_stock_items:
+                advice_points.append(f"Out of stock: {', '.join(p.get('name') for p in out_of_stock_items if p.get('name'))}.")
+            if low_stock_items:
+                advice_points.append(f"Low stock: {', '.join(p.get('name') for p in low_stock_items if p.get('name'))}.")
+            if not out_of_stock_items and not low_stock_items:
+                advice_points.append("All products currently have healthy inventory levels.")
+        elif "sales" in user_q or "revenue" in user_q or "highest" in user_q or "top" in user_q:
+            if top_sales_lines:
+                advice_points.append(f"Top sales performance: {top_sales_lines[0].replace('- ', '')}.")
+            else:
+                advice_points.append("No sales transactions currently recorded in the ledger.")
+        elif "diwali" in user_q or "festival" in user_q or "season" in user_q:
+            advice_points.append("Festive preparation: Cooking oils, flour (atta), and packaged biscuits experience 40-70% festive surges. Order with suppliers at least 5-7 days before peak festivities.")
+        elif "slow" in user_q or "not selling" in user_q or "well" in user_q:
+            sold_names = set(sales_summary_map.keys())
+            unsold = [p.get("name") for p in products if p.get("name") not in sold_names]
+            if unsold:
+                advice_points.append(f"Slow-moving items with no recent sales: {', '.join(unsold[:3])}.")
+            else:
+                advice_points.append("All products have recorded sales activity.")
+
+        # Default summary if no specific topic matched or generic summary requested
         if not advice_points:
-            advice_points.append("All inventory levels are currently in a healthy operational state.")
-        if total_sales_amt > 0:
-            advice_points.append(f"Recent revenue recorded: ₹{total_sales_amt:,.2f} across {len(sales)} transaction(s).")
+            if out_of_stock > 0:
+                advice_points.append(f"Immediate Action: {out_of_stock} product(s) are completely out of stock. Place replenishment orders.")
+            if low_stock > 0:
+                sample_low = ", ".join(p.get("name") for p in low_stock_items[:2] if p.get("name"))
+                advice_points.append(f"Replenishment Warning: {low_stock} product(s) have reached reorder thresholds ({sample_low}).")
+            if not advice_points:
+                advice_points.append("All inventory levels are currently in a healthy operational state.")
+            if total_sales_amt > 0:
+                advice_points.append(f"Recent revenue recorded: ₹{total_sales_amt:,.2f} across {len(sales)} transaction(s).")
+
         return {
             "status": "ok",
             "source": "local_heuristic",
+            "fallback_reason": reason,
             "store_name": store_name,
             "analysis": " • ".join(advice_points),
             "metrics": {
@@ -1594,36 +1655,82 @@ def ai_assistant_endpoint(
             },
         }
 
-    gemini_key = GEMINI_API_KEY
+    gemini_key = os.getenv("GEMINI_API_KEY") or GEMINI_API_KEY
     if not gemini_key:
-        return build_local_fallback()
+        return build_local_fallback(reason="key_unset")
 
     try:
         import httpx
-        system_context = (
-            f"You are the AI retail advisor for store '{store_name}'. "
-            f"Active catalog: {total_prods} products. "
-            f"Out of stock: {out_of_stock}. Low stock: {low_stock}. "
-            f"Recent sales revenue: ₹{total_sales_amt:,.2f}. "
-            "Provide 2-3 concise, actionable bullet points for the storekeeper in plain business language."
+
+        # Build grounded inventory context
+        catalog_lines = []
+        for p in products:
+            pname = p.get("name", "Unknown")
+            psku = p.get("sku", "")
+            pcat = p.get("category_name") or "General"
+            stock = p.get("stock_on_hand", 0)
+            rop = p.get("reorder_point", 5)
+            ss = p.get("safety_stock", 2)
+            price = p.get("unit_price", 0)
+            cost = p.get("unit_cost", 0)
+            supp = p.get("supplier", "Unassigned")
+            lead = p.get("lead_time_days", 3)
+            status = "OUT OF STOCK" if stock <= 0 else ("LOW STOCK (REORDER NEEDED)" if stock <= rop else "HEALTHY")
+            catalog_lines.append(
+                f"- {pname} (SKU: {psku}, Cat: {pcat}): Stock={stock}, ReorderPoint={rop}, SafetyStock={ss}, "
+                f"Price=₹{price}, Cost=₹{cost}, Supplier={supp}, LeadTime={lead}d [{status}]"
+            )
+
+        po_lines = []
+        for po in orders[:5]:
+            po_num = po.get("po_number", "PO")
+            po_supp = po.get("supplier", "Supplier")
+            po_stat = po.get("status", "PENDING")
+            po_amt = po.get("total_amount", 0)
+            po_lines.append(f"- {po_num}: {po_supp}, Status: {po_stat}, Amount: ₹{po_amt}")
+
+        supp_lines = []
+        for supp in suppliers[:6]:
+            sname = supp.get("name", "")
+            scat = supp.get("category", "")
+            slead = supp.get("lead_time_days", 3)
+            sphone = supp.get("phone", "")
+            supp_lines.append(f"- {sname} ({scat}): Lead time {slead} days, Contact: {sphone}")
+
+        system_instruction = (
+            f"You are SmartStock AI Assistant, an expert, practical retail inventory and operations advisor for Indian kirana storekeeper '{store_name}' ({clean_email}).\n\n"
+            "GROUNDED STORE TRUTH (AUTHENTICATED TENANT DATA):\n"
+            "Active Catalog & Current Inventory:\n" + ("\n".join(catalog_lines) if catalog_lines else "No products registered.") + "\n\n"
+            "Recent Sales Highlights:\n" + ("\n".join(top_sales_lines) if top_sales_lines else "No recent sales recorded.") + f"\nTotal recorded revenue: ₹{total_sales_amt:,.2f} across {len(sales)} transaction(s).\n\n"
+            "Recent Purchase Orders:\n" + ("\n".join(po_lines) if po_lines else "No active purchase orders.") + "\n\n"
+            "Verified Suppliers:\n" + ("\n".join(supp_lines) if supp_lines else "No suppliers registered.") + "\n\n"
+            "Seasonal & Demand Context:\n"
+            "- High-cyclicality retail patterns: Kirana staples (Atta, Oil, Rice, Spices, Biscuits) experience strong weekend surges (7-day seasonality).\n"
+            "- Upcoming festive demand (Diwali, festival rush): Cooking oils, flours, ghee, sweets, and packaged biscuits typically surge 40-70% in consumer demand. Storekeepers must place replenishment orders with suppliers 5-7 days before peak festivities to account for supplier lead times.\n\n"
+            "CRITICAL OPERATING RULES:\n"
+            "1. Ground all recommendations STRICTLY in the storekeeper's actual catalog, inventory numbers, sales, and supplier data above.\n"
+            "2. NEVER invent, hallucinate, or fabricate product names, prices, stock levels, or supplier details not listed above.\n"
+            "3. Answer practically, concisely, and supportively in clear shopkeeper-friendly language.\n"
+            "4. When asked about reordering or low stock, explicitly name the specific products, current stock on hand, reorder points, and recommended order quantities based on lead times.\n"
+            "5. When asked about slow-moving products or products not selling well, identify items in the catalog with zero or minimal recent sales.\n"
+            "6. If the requested data is not present in the store records, state so politely rather than guessing."
         )
+
         user_prompt = req.prompt or "Provide a 3-bullet store operations and inventory health summary."
+        payload = {
+            "systemInstruction": {"parts": [{"text": system_instruction}]},
+            "contents": [{"parts": [{"text": user_prompt}]}],
+            "generationConfig": {
+                "temperature": 0.2,
+                "maxOutputTokens": 1500,
+            },
+        }
 
         with httpx.Client(timeout=10.0) as client:
             resp = client.post(
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
                 headers={"x-goog-api-key": gemini_key, "Content-Type": "application/json"},
-                json={
-                    "systemInstruction": {
-                        "parts": [{"text": system_context}]
-                    },
-                    "contents": [
-                        {
-                            "role": "user",
-                            "parts": [{"text": user_prompt}],
-                        }
-                    ],
-                },
+                json=payload,
             )
             if resp.status_code == 200:
                 data = resp.json()
@@ -1637,6 +1744,7 @@ def ai_assistant_endpoint(
                     return {
                         "status": "ok",
                         "source": "gemini-2.5-flash",
+                        "model": "gemini-2.5-flash",
                         "store_name": store_name,
                         "analysis": text.strip(),
                         "metrics": {
@@ -1646,8 +1754,21 @@ def ai_assistant_endpoint(
                             "recent_sales_amount": total_sales_amt,
                         },
                     }
+            elif resp.status_code == 429:
+                logger.warning("Gemini API rate limit exceeded (HTTP 429); activating local fallback")
+                return build_local_fallback(reason="rate_limited")
+            elif resp.status_code in (400, 401, 403):
+                logger.warning("Gemini API authentication failure (HTTP %d); activating local fallback", resp.status_code)
+                return build_local_fallback(reason="auth_failure")
+            else:
+                logger.warning("Gemini API returned HTTP %d; activating local fallback", resp.status_code)
+                return build_local_fallback(reason=f"upstream_http_{resp.status_code}")
+    except httpx.TimeoutException:
+        logger.warning("Gemini API request timed out (>10.0s); activating local fallback")
+        return build_local_fallback(reason="timeout")
     except Exception as exc:
-        logger.warning("Gemini server proxy call failed (%s); using local heuristic fallback", type(exc).__name__)
+        logger.warning("Gemini proxy call failed (%s); activating local fallback", type(exc).__name__)
+        return build_local_fallback(reason=type(exc).__name__)
 
-    return build_local_fallback()
+    return build_local_fallback(reason="empty_response")
 
