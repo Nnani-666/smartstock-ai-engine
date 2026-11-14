@@ -157,3 +157,11 @@ def client(temp_db: Path, tiny_rf_model: RandomForestRegressor) -> Generator[Tes
         yield test_client
 
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limits_for_tests():
+    from app.auth import clear_rate_limits
+    clear_rate_limits()
+    yield
+    clear_rate_limits()

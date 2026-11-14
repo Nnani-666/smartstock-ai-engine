@@ -453,7 +453,7 @@ def api_list_products(
 ):
     """Retrieve live products list from Supabase (authenticated and tenant-scoped)."""
     try:
-        shop_id = current_user.get("user_id")
+        shop_id = current_user.get("id") or current_user.get("user_id")
         return get_supabase_service().list_products(shop_id=shop_id, status=status, limit=limit, offset=offset)
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
@@ -464,9 +464,10 @@ def api_list_insights(
     active_only: bool = True,
     current_user: dict[str, Any] = Depends(get_current_user),
 ):
-    """Retrieve live inventory insights from Supabase (authenticated)."""
+    """Retrieve live inventory insights from Supabase (authenticated and tenant-scoped)."""
     try:
-        return get_supabase_service().list_insights(active_only=active_only)
+        shop_id = current_user.get("id") or current_user.get("user_id")
+        return get_supabase_service().list_insights(shop_id=shop_id, active_only=active_only)
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
@@ -475,9 +476,10 @@ def api_list_insights(
 def api_list_purchase_orders(
     current_user: dict[str, Any] = Depends(get_current_user),
 ):
-    """Retrieve purchase orders from Supabase (authenticated)."""
+    """Retrieve purchase orders from Supabase (authenticated and tenant-scoped)."""
     try:
-        return get_supabase_service().list_purchase_orders()
+        shop_id = current_user.get("id") or current_user.get("user_id")
+        return get_supabase_service().list_purchase_orders(shop_id=shop_id)
     except ValueError as e:
         raise HTTPException(status_code=503, detail="Supabase not configured: " + str(e))
 
@@ -1645,7 +1647,8 @@ def ai_assistant_endpoint(
 
     for model_id in eligible_models:
         try:
-            with httpx.Client(timeout=12.0) as client:
+            transport = httpx.HTTPTransport(local_address="0.0.0.0")
+            with httpx.Client(transport=transport, timeout=12.0) as client:
                 resp = client.post(
                     f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent",
                     headers={"x-goog-api-key": gemini_key, "Content-Type": "application/json"},

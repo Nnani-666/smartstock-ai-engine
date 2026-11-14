@@ -220,6 +220,7 @@ def get_current_user(
 
     return {
         "id": session_data["id"],
+        "user_id": session_data["id"],
         "email": session_data["email"],
         "store_name": session_data["store_name"],
         "phone": session_data["phone"],

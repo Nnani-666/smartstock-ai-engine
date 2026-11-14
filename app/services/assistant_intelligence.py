@@ -181,7 +181,7 @@ def classify_user_intent(prompt: str) -> str:
         return "slow_moving"
 
     # Fast-moving / Top sales / Top revenue
-    if re.search(r"\b(fast|fastest|selling the fastest|top sales|top revenue|highest revenue|best selling|top three|top 3|most popular)\b", q):
+    if re.search(r"\b(fast|fastest|selling the fastest|top.*selling|top sales|top revenue|highest revenue|best selling|top three|top 3|most popular)\b", q):
         return "fast_moving"
 
     # General inventory situation
@@ -360,7 +360,7 @@ def generate_local_heuristic_response(
 
     elif intent == "inventory_situation":
         total_val = sum(
-            float(p.get("stock_on_hand", 0)) * float(p.get("unit_cost", 0.0))
+            float(p.get("stock_on_hand") or 0) * float(p.get("unit_cost") or 0.0)
             for p in products
         )
         reply = (

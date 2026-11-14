@@ -344,9 +344,58 @@
 
         getUserKey(baseKey) {
             const email = this.getCurrentUserEmail();
-            if (!email) return baseKey;
+            if (!email) {
+                return `${baseKey}___unauthenticated_sandbox__`;
+            }
             const safe = email.replace(/[^a-zA-Z0-9_-]/g, '_');
             return `${baseKey}_${safe}`;
+        },
+
+        purgeAllTenantData() {
+            // Abort any pending assistant or data requests
+            if (this._assistantAbortController) {
+                try {
+                    this._assistantAbortController.abort();
+                } catch (e) {}
+                this._assistantAbortController = null;
+            }
+
+            // Remove auth credentials and active session pointers
+            localStorage.removeItem('smartstock_token');
+            localStorage.removeItem('smartstock_session');
+            localStorage.removeItem('smartstock_user');
+            localStorage.removeItem('smartstock_last_active_store');
+            localStorage.removeItem('smartstock_ai_analysis_cache');
+            localStorage.removeItem('smartstock_ai_assistant_thread');
+            localStorage.removeItem('smartstock_local_products');
+            localStorage.removeItem('smartstock_revenue');
+            localStorage.removeItem('smartstock_sales');
+            localStorage.removeItem('smartstock_purchase_orders');
+            localStorage.removeItem('smartstock_accounts_registry');
+            localStorage.removeItem('smartstock_stores_registry');
+
+            // Scan and remove any user-scoped keys
+            try {
+                const preserve = new Set([
+                    'smartstock_theme',
+                    'smartstock_intelligence_mode',
+                    'smartstock_production_mode'
+                ]);
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('smartstock_') && !preserve.has(k)) {
+                        keysToRemove.push(k);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+            } catch (e) {}
+
+            try {
+                if (typeof sessionStorage !== 'undefined') {
+                    sessionStorage.clear();
+                }
+            } catch (e) {}
         },
 
         // Accounts Registry with password hashes for strict offline/online auth
@@ -419,6 +468,9 @@
             if (!cleanEmail || !password) {
                 return { data: null, error: { message: 'Please provide both email and password.' } };
             }
+
+            // CRITICAL: Purge any lingering tenant data/tokens before initiating new session
+            this.purgeAllTenantData();
 
             // 1. Try local FastAPI verification first
             let backendSuccess = false;
@@ -587,14 +639,19 @@
         async signOut() {
             const token = this.getAuthToken();
             if (token) {
-                fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                }).catch(() => {});
+                try {
+                    const ctrl = new AbortController();
+                    const timer = setTimeout(() => ctrl.abort(), 1500);
+                    await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        signal: ctrl.signal,
+                        keepalive: true
+                    }).catch(() => {});
+                    clearTimeout(timer);
+                } catch (e) {}
             }
-            localStorage.removeItem('smartstock_token');
-            localStorage.removeItem('smartstock_session');
-            localStorage.removeItem('smartstock_user');
+            this.purgeAllTenantData();
             window.location.href = '01_signin.html';
         },
 
@@ -4501,8 +4558,7 @@
                         headers: { 'Authorization': `Bearer ${authToken}` }
                     });
                     if (verifyRes.status === 401 || verifyRes.status === 403) {
-                        localStorage.removeItem('smartstock_token');
-                        localStorage.removeItem('smartstock_user');
+                        this.purgeAllTenantData();
                         window.location.href = '01_signin.html';
                         return;
                     }
@@ -5540,6 +5596,23 @@
         },
 
         async sendAssistantMessage(promptText) {
+            const reqEmail = this.getCurrentUserEmail();
+            if (!reqEmail) {
+                return {
+                    status: 'error',
+                    source: 'auth_required',
+                    analysis: 'Please sign in to access the SmartStock store advisor.',
+                    metrics: { total_products: 0, out_of_stock: 0, low_stock: 0, recent_sales_amount: 0 }
+                };
+            }
+
+            // Abort previous in-flight assistant request if any
+            if (this._assistantAbortController) {
+                try { this._assistantAbortController.abort(); } catch (e) {}
+            }
+            this._assistantAbortController = new AbortController();
+            const signal = this._assistantAbortController.signal;
+
             const products = await this.getProducts();
             const sales = this.getSales();
             const orders = this.getPurchaseOrders();
@@ -5553,15 +5626,43 @@
                     const res = await fetch(`${API_BASE_URL}/api/v1/ai/assistant`, {
                         method: 'POST',
                         headers: this.getAuthHeaders({ 'Content-Type': 'application/json' }),
-                        body: JSON.stringify({ prompt: promptText, context_type: 'custom' })
+                        body: JSON.stringify({ prompt: promptText, context_type: 'custom' }),
+                        signal: signal
                     });
+
+                    // Verification: ensure user has not changed while request was in-flight
+                    if (this.getCurrentUserEmail() !== reqEmail) {
+                        return {
+                            status: 'aborted',
+                            source: 'session_changed',
+                            analysis: 'Session changed while generating response. Discarding stale tenant output.'
+                        };
+                    }
+
                     if (res.ok) {
                         return await res.json();
+                    }
+                    if (res.status === 401 || res.status === 403) {
+                        this.purgeAllTenantData();
+                        return {
+                            status: 'error',
+                            source: 'auth_error',
+                            analysis: 'Your session has expired or been revoked. Please sign in again.'
+                        };
                     }
                     if (res.status === 429) {
                         return { status: 'error', source: 'rate_limit', analysis: 'Rate limit reached (20 requests/min). Please wait a moment before asking again.' };
                     }
-                } catch (e) {}
+                } catch (e) {
+                    if (e && e.name === 'AbortError') {
+                        return { status: 'aborted', source: 'aborted', analysis: 'Request was cancelled.' };
+                    }
+                }
+            }
+
+            // Verify user hasn't switched before fallback
+            if (this.getCurrentUserEmail() !== reqEmail) {
+                return { status: 'aborted', source: 'session_changed', analysis: 'Session changed. Discarding stale tenant output.' };
             }
 
             // Local heuristic scoped strictly to active store catalog

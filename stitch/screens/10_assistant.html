@@ -136,6 +136,8 @@
       subtitle: 'Store-grounded conversational decision advisor'
     });
 
+    let activeThreadUser = (typeof SmartStock !== 'undefined' && SmartStock.getCurrentUserEmail) ? SmartStock.getCurrentUserEmail() : '';
+
     const thread = [
       {
         role: 'assistant',
@@ -144,7 +146,21 @@
       }
     ];
 
+    function ensureCorrectUserThread() {
+      const curUser = (typeof SmartStock !== 'undefined' && SmartStock.getCurrentUserEmail) ? SmartStock.getCurrentUserEmail() : '';
+      if (curUser !== activeThreadUser) {
+        activeThreadUser = curUser;
+        thread.length = 0;
+        thread.push({
+          role: 'assistant',
+          source: 'system_greeting',
+          text: 'Namaste! I am grounded in your active store catalog, POS sales, and purchase orders. Select a quick prompt on the left or type any inventory question below.'
+        });
+      }
+    }
+
     function renderThread() {
+      ensureCorrectUserThread();
       const box = document.getElementById('ast-messages');
       if (!box) return;
       const e = SmartStock.escapeHtml.bind(SmartStock);
@@ -203,6 +219,7 @@
     }
 
     async function sendPromptText(text) {
+      const sentUser = (typeof SmartStock !== 'undefined' && SmartStock.getCurrentUserEmail) ? SmartStock.getCurrentUserEmail() : '';
       thread.push({ role: 'user', text });
       renderThread();
 
@@ -211,6 +228,11 @@
 
       try {
         const res = await SmartStock.sendAssistantMessage(text);
+        const currentUserNow = (typeof SmartStock !== 'undefined' && SmartStock.getCurrentUserEmail) ? SmartStock.getCurrentUserEmail() : '';
+        // Do not render if aborted or if active tenant switched mid-request
+        if (res?.status === 'aborted' || currentUserNow !== sentUser) {
+          return;
+        }
         thread.push({
           role: 'assistant',
           source: res?.source || 'local_heuristic',
@@ -218,11 +240,14 @@
           text: res?.analysis || res?.reply || 'Unable to generate advisor response.'
         });
       } catch (err) {
-        thread.push({
-          role: 'assistant',
-          source: 'error',
-          text: 'Advisor error: ' + (err.message || 'Please try again.')
-        });
+        const currentUserNow = (typeof SmartStock !== 'undefined' && SmartStock.getCurrentUserEmail) ? SmartStock.getCurrentUserEmail() : '';
+        if (currentUserNow === sentUser) {
+          thread.push({
+            role: 'assistant',
+            source: 'error',
+            text: 'Advisor error: ' + (err.message || 'Please try again.')
+          });
+        }
       } finally {
         if (btn) btn.disabled = false;
         renderThread();

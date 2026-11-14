@@ -1,57 +1,46 @@
-# SmartStock — Phase 1 Proposed Plan (.planning/PLAN.md)
-**Focus:** Security Hardening, Multi-Tenant Data Isolation & API Authorization  
-**Prerequisites:** Phase 0 Audit & Baseline Completed  
-**Status:** Pending User Approval Before Starting Implementation
+# Plan: Critical Cross-Account AI Data Isolation Audit & Repair
 
----
+## 1. Goal
+Identify and completely eliminate cross-account data contamination in the SmartStock AI Assistant across authentication, frontend session lifecycles, backend proxies, multi-model Gemini routing, and local heuristic fallbacks.
 
-## 1. Objectives
-Eliminate all Critical and High security vulnerabilities discovered in the Phase 0 audit without breaking any existing frontend POS, inventory, or order management workflows.
+## 2. Work Breakdown Waves
 
----
+- [x] **Wave 1: Exact Reproduction & Pipeline Tracing**
+  - Seed disposable test accounts:
+    - Account A: `tenant_alpha@smartstock.in` with `TEST_PRODUCT_ALPHA` (units: 50, price: 100, sales: 15 units = ₹1,500).
+    - Account B: `tenant_beta@smartstock.in` with `TEST_PRODUCT_BETA` (units: 30, price: 50, sales: 16 units = ₹800).
+  - Execute reproduction script and browser flow (Account A -> query -> logout -> Account B -> query).
+  - Trace request/response flow through frontend bridge, token management, backend `get_current_user`, and context construction.
+  - Identify exact source(s) of cross-account data leakage.
 
-## 2. Work Breakdown Structure (Tasks)
+- [x] **Wave 2: Full-Stack Tenant Isolation Hardening**
+  - Backend isolation:
+    - Enforce strict tenant derivation from session token.
+    - Audit all SQL queries in `ai_assistant_endpoint` and `build_grounded_store_context`.
+    - Ensure demo account defaults never pollute authenticated sessions.
+    - Fix any shared in-memory caches or state.
+  - Frontend session lifecycle hardening:
+    - In `smartstock-bridge.js`: Invalidate backend session on logout (`POST /api/v1/auth/logout`).
+    - Purge all local user storage (`smartstock_token`, `smartstock_user`, cached products, sales, carts).
+    - In `10_assistant.html`: Reset and isolate chat `thread` per tenant session.
+    - Abort in-flight requests on logout using `AbortController`.
 
-### Task 1.1: Cryptographic Authentication & Token Upgrade
-- **Files Affected:** `app/main.py`, `app/db.py`, `app/schemas.py`
-- **Actions:**
-  - Replace static-salted SHA-256 password hashing with `passlib[bcrypt]` or `hashlib.pbkdf2_hmac` with unique per-user 16-byte cryptographic salt.
-  - Implement cryptographically secure token generation (`secrets.token_hex(32)`) or signed JWTs (`python-jose` / `pyjwt`).
-  - Store tokens with explicit creation timestamp and TTL (7 days) in an `app_sessions` table or signed claims.
-  - Remove brute-force token matching loop in `get_auth_me`.
+- [x] **Wave 3: Multi-Model & Fallback Tenant Isolation Verification**
+  - Verify Account A and Account B data across:
+    - `gemini-3.5-flash-lite`
+    - `gemini-3.1-flash-lite` (quota failover)
+    - `local_heuristic` (offline fallback)
+  - Verify prompt payload and system instructions never carry stale tenant data.
 
-### Task 1.2: Strict User Authorization Middleware
-- **Files Affected:** `app/main.py`, `app/db.py`
-- **Actions:**
-  - Create a FastAPI dependency `get_current_user` that extracts and validates the `Authorization: Bearer <token>` header.
-  - Refactor all `/api/v1/user/*` endpoints (`/products`, `/purchase-orders`, `/sales`) to derive the tenant user namespace directly from the authenticated session, completely eliminating spoofable `email: str = Query(...)` and `req.user_email`.
-  - Return HTTP 401 Unauthorized for missing or invalid tokens.
+- [x] **Wave 4: Comprehensive Security Test Suite (All 16 Scenarios)**
+  - Implement pytest security test suite in `tests/test_tenant_isolation_ai.py` covering all 16 specified requirements.
+  - Implement Playwright E2E test in `tests/e2e/tenant_isolation_browser.spec.cjs` verifying actual browser account switching.
 
-### Task 1.3: Server-Side AI Assistant Proxy
-- **Files Affected:** `app/main.py`, `stitch/smartstock-bridge.js`
-- **Actions:**
-  - Add backend route `POST /api/v1/ai/assistant` in FastAPI that uses the server's `GEMINI_API_KEY` (configured in `.env`).
-  - Update `smartstock-bridge.js` to dispatch analysis prompts to `POST /api/v1/ai/assistant` instead of calling `generativelanguage.googleapis.com` directly from the client.
-  - Remove the requirement for shopkeepers to manually enter API keys into browser `localStorage`.
+- [x] **Wave 5: Independent Code Review via CodeRabbit Subagent**
+  - Invoke `code-reviewer` subagent to audit code changes for unscoped queries, session leakages, or security vulnerabilities.
+  - Address all feedback.
 
-### Task 1.4: Environment & CORS Configuration
-- **Files Affected:** `app/config.py`, `app/main.py`
-- **Actions:**
-  - Restrict CORS origins to localhost, local network IPs, and configured production origins.
-  - Enforce `API_KEY` validation on analytical machine learning endpoints when running in production mode.
-
----
-
-## 3. Verification & Acceptance Criteria
-1. Running `pytest tests/test_retail_server.py` passes with updated authenticated headers.
-2. Attempting to access another user's products via `GET /api/v1/user/products` with a mismatched token returns 401/403.
-3. Password hashes stored in `app_users` follow standard PBKDF2/bcrypt format (`$algo$iterations$salt$hash`).
-4. Running `npm run test:unit` and `npx playwright test` continues to pass 100%.
-
----
-
-# Phase 2 Execution Summary (`feature/phase2-premium-editorial-ui`) — COMPLETED
-- **Design Direction:** Option 2 — Premium Editorial (`Newsreader`, `Hanken Grotesk`, `JetBrains Mono`) with Warm Parchment Light Mode and Forest Obsidian Dark Mode.
-- **Two-Level Intelligence:** Global `Business` vs. `Academic` mode toggle integrated across all 12 screens (`stitch/editorial-theme.css`, `stitch/editorial-shell.js`).
-- **Stage E Backend Parity:** Full product CRUD (`PUT`, `DELETE`, `POST /bulk-stock`) and PO status lifecycle (`PATCH /api/v1/user/purchase-orders/{po_id}/status`) implemented with `BEGIN IMMEDIATE` transaction hardening in `app/main.py` and `app/db.py`.
-- **Verification:** `80/80` pytest, `17/17` Node.js unit tests, `10/10` Playwright E2E + Light/Dark Desktop/Mobile visual inspection passed. See `PHASE2_IMPLEMENTATION_REPORT.md` and `PHASE2_TEST_REPORT.md`.
+- [x] **Wave 6: Audit Documentation & Verification Sign-Off**
+  - Author `SMARTSTOCK_AI_TENANT_ISOLATION_AUDIT.md`.
+  - Verify full test regression suite passes (100%).
+  - Ensure clean Git commit on `feature/ai-tenant-isolation-fix`.
